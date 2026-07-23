@@ -2,7 +2,7 @@
   "name": "doosan-attendance-bot",
   "version": "0.1.0",
   "private": true,
-  "description": "mytime.doosan.com 근태계획변경(근무유형/시간)을 채팅 명령으로 자동 신청하는 Playwright 스크립트",
+  "description": "mhr.doosan.com:4433 근태계획변경(근무유형/시간)을 채팅 명령으로 자동 신청하는 Playwright 스크립트",
   "main": "src/apply.js",
   "scripts": {
     "apply": "node src/apply.js"

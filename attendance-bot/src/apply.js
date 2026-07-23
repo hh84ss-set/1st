@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * mytime.doosan.com "근태계획변경" 자동 신청 스크립트.
+ * mhr.doosan.com:4433 "근태계획변경" 자동 신청 스크립트.
  *
  * 사용법:
  *   node src/apply.js --date 2026-07-23 --type 근무 --start 08:30 --end 17:00 [--reason "사유"] [--submit]
@@ -58,7 +58,7 @@ async function main() {
   if (!DOOSAN_AD_ID || !DOOSAN_AD_PW) {
     usageAndExit('환경변수 DOOSAN_AD_ID / DOOSAN_AD_PW 가 설정되어 있지 않습니다. (.env 참고)');
   }
-  const baseUrl = DOOSAN_BASE_URL || 'https://mytime.doosan.com/';
+  const baseUrl = DOOSAN_BASE_URL || 'https://mhr.doosan.com:4433/';
 
   const outDir = path.join(__dirname, '..', 'run-logs', new Date().toISOString().replace(/[:.]/g, '-'));
   fs.mkdirSync(outDir, { recursive: true });

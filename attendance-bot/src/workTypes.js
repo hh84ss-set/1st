@@ -1,6 +1,6 @@
 // 근태계획변경 화면의 <select id="geuntae_cd"> 옵션 값 매핑
 // 화면 표시명(title) -> 실제 전송 코드(value)
-// mytime.doosan.com "근태계획변경" 상세화면 셀렉트박스 HTML을 그대로 옮긴 값.
+// mhr.doosan.com:4433 "근태계획변경" 상세화면 셀렉트박스 HTML을 그대로 옮긴 값.
 // 새 근무유형이 화면에 추가/변경되면 이 표만 갱신하면 된다.
 module.exports = {
   '근무': 'B3KR0120',
