@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>견적 산정 관리자 도구</title>
+<style>
+
+  :root{
+    --ink: #14181f;
+    --muted: #5b6472;
+    --paper: #f2f4f6;
+    --raised: #ffffff;
+    --line: #dfe3e8;
+    --accent: #c65d2e;
+    --accent-soft: #f2e2d8;
+    --accent-ink: #7a3418;
+    --ok: #2f8f5b;
+    --shadow: 0 1px 2px rgba(20,24,31,0.04), 0 8px 24px -12px rgba(20,24,31,0.12);
+    --font: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink: #eef1f4; --muted: #9aa3b0; --paper: #14171c; --raised: #1c2027;
+      --line: #2a2f38; --accent: #e2895a; --accent-soft: #3a2a20; --accent-ink: #f4c7a8;
+      --ok: #5fbf8c;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink: #eef1f4; --muted: #9aa3b0; --paper: #14171c; --raised: #1c2027;
+    --line: #2a2f38; --accent: #e2895a; --accent-soft: #3a2a20; --accent-ink: #f4c7a8;
+    --ok: #5fbf8c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.5);
+  }
+  :root[data-theme="light"]{
+    --ink: #14181f; --muted: #5b6472; --paper: #f2f4f6; --raised: #ffffff;
+    --line: #dfe3e8; --accent: #c65d2e; --accent-soft: #f2e2d8; --accent-ink: #7a3418;
+    --ok: #2f8f5b;
+    --shadow: 0 1px 2px rgba(20,24,31,0.04), 0 8px 24px -12px rgba(20,24,31,0.12);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; }
+  body{
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    line-height: 1.5;
+    font-feature-settings: "tnum" 1;
+  }
+  button, input, select, textarea{ font-family: inherit; color: inherit; }
+  :focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position: sticky; top: 0; z-index: 20;
+    background: var(--raised);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand{ display: flex; align-items: center; gap: 12px; }
+  .brand-mark{
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--accent); color: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; flex: none;
+  }
+  .brand h1{ margin: 0; font-size: 16px; font-weight: 700; }
+  .brand p{ margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+  .topbar-actions{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  select, input[type="text"], input[type="number"], input[type="date"], textarea{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13.5px;
+    color: var(--ink);
+    width: 100%;
+  }
+  select{ min-width: 160px; }
+  textarea{ resize: vertical; line-height: 1.6; }
+
+  .btn{
+    border: 1px solid var(--line);
+    background: var(--raised);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover{ border-color: var(--accent); }
+  .btn-ghost{ background: transparent; }
+  .btn-primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover{ filter: brightness(1.05); }
+  .btn-small{ padding: 5px 10px; font-size: 12.5px; }
+  .btn-danger-ghost{ color: #b3432c; }
+
+  /* ---------- Layout ---------- */
+  .layout{
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: minmax(380px, 520px) 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 900px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .form-col{ display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+  .card{
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-title{ margin: 0 0 12px; font-size: 14.5px; font-weight: 700; }
+  .card-title-row{
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .card-title-row .card-title{ margin: 0; }
+
+  .hint{ margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+
+  .field-grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .field-grid.three{ grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 520px){
+    .field-grid, .field-grid.three{ grid-template-columns: 1fr; }
+  }
+  .field{ display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--muted); }
+  .field-wide{ grid-column: 1 / -1; }
+  .pair{ display: flex; gap: 6px; }
+
+  .segmented{ display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .segmented button{
+    flex: 1; border: none; background: var(--paper); color: var(--muted);
+    padding: 8px 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    border-left: 1px solid var(--line);
+  }
+  .segmented button:first-child{ border-left: none; }
+  .segmented button.active{ background: var(--accent); color: #fff; }
+
+  details.details-card summary{
+    cursor: pointer;
+    font-size: 14.5px;
+    font-weight: 700;
+    list-style: none;
+  }
+  details.details-card summary::-webkit-details-marker{ display: none; }
+  details.details-card summary::before{
+    content: "▸ ";
+    color: var(--accent);
+  }
+  details.details-card[open] summary::before{ content: "▾ "; }
+  details.details-card .field-grid{ margin-top: 12px; }
+  details.details-card .field-grid + .field-grid{ margin-top: 12px; }
+  details.details-card .hint{ margin-top: 8px; margin-bottom: 4px; }
+
+  /* ---------- Module list ---------- */
+  .module-list-scroll{ overflow-x: auto; }
+  .module-list{ min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .module-header, .module-row{
+    display: grid;
+    grid-template-columns: 22px 1fr 92px 56px 22px;
+    gap: 8px;
+    align-items: center;
+  }
+  .module-header{ font-size: 11.5px; color: var(--muted); padding: 0 2px; }
+  .module-row{ padding: 6px 2px; border-radius: 8px; }
+  .module-row:hover{ background: var(--paper); }
+  .module-check input{ width: 16px; height: 16px; accent-color: var(--accent); }
+  .module-main{ display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .module-label{ font-weight: 600; font-size: 13px; padding: 4px 6px; min-width: 0; }
+  .module-desc{ font-size: 11.5px; color: var(--muted); padding: 4px 6px; min-width: 0; }
+  .module-num{ padding: 6px 6px; font-size: 12px; text-align: right; min-width: 0; }
+  .module-remove{
+    border: none; background: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; width: 26px; height: 26px; border-radius: 6px;
+  }
+  .module-remove:hover{ background: var(--accent-soft); color: var(--accent-ink); }
+
+  /* ---------- Preview column ---------- */
+  .preview-col{
+    display: flex; flex-direction: column; gap: 12px;
+    position: sticky; top: 76px;
+    min-width: 0;
+  }
+  .stat-row{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat{
+    background: var(--raised); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; box-shadow: var(--shadow);
+  }
+  .stat-label{ display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
+  .stat-value{ display: block; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .preview-actions{
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .save-status{ font-size: 12px; color: var(--ok); font-weight: 600; margin-right: auto; min-height: 16px; }
+
+  .preview-frame-wrap{
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    background: var(--raised);
+    height: 74vh;
+    min-height: 480px;
+  }
+  #previewFrame{ width: 100%; height: 100%; border: none; display: block; background: #fff; }
+
+  @media (max-width: 900px){
+    .preview-col{ position: static; }
+    .preview-frame-wrap{ height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">견</span>
+        <div>
+          <h1>견적 산정 관리자 도구</h1>
+          <p>고객사·프로젝트 정보를 입력하면 구축방안·가견적·수행기간을 자동 산정합니다</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <select id="savedSelect"><option value="">저장된 견적 불러오기</option></select>
+        <button id="deleteSavedBtn" class="btn btn-ghost btn-danger-ghost" title="선택한 저장 견적 삭제">삭제</button>
+        <button id="newQuoteBtn" class="btn btn-ghost">새 견적</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="form-col">
+
+      <div class="card">
+        <h2 class="card-title">기본 정보</h2>
+        <div class="field-grid">
+          <label class="field"><span>고객사명</span><input id="clientInput" type="text" placeholder="예: 대한산업(주)"></label>
+          <label class="field"><span>프로젝트명</span><input id="projectInput" type="text" placeholder="예: AI 고객상담 챗봇 구축"></label>
+          <label class="field"><span>작성일</span><input id="dateInput" type="date"></label>
+          <label class="field"><span>견적 유효기간(일)</span><input id="validDaysInput" type="number" min="1" step="1"></label>
+          <label class="field field-wide"><span>제안 담당</span><input id="preparedByInput" type="text" placeholder="예: 당사 AI솔루션팀"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">프로젝트 유형 및 규모</h2>
+        <div class="field-grid">
+          <label class="field"><span>프로젝트 유형</span>
+            <select id="typeSelect">
+              <option value="chatbot">AI/챗봇 솔루션</option>
+              <option value="web">웹/모바일 서비스</option>
+              <option value="erp">사내 업무 시스템</option>
+              <option value="custom">직접 입력</option>
+            </select>
+          </label>
+          <div class="field">
+            <span>프로젝트 규모</span>
+            <div class="segmented" id="scaleSegmented">
+              <button type="button" data-scale="small">소규모</button>
+              <button type="button" data-scale="medium" class="active">표준</button>
+              <button type="button" data-scale="large">대규모</button>
+            </div>
+          </div>
+        </div>
+        <p class="hint">유형을 바꾸면 기능 목록이 해당 유형의 기본값으로 초기화됩니다. 규모는 비용·기간에 배수로 반영됩니다.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">프로젝트 개요 / 요구사항 상세</h2>
+        <textarea id="overviewInput" rows="4" placeholder="고객의 요청 배경, 목표, 특이사항 등을 자유롭게 입력하세요. 비워두면 선택된 기능을 바탕으로 자동 요약됩니다."></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">구축 범위 (기능 모듈)</h2>
+          <button id="addModuleBtn" type="button" class="btn btn-small">+ 항목 추가</button>
+        </div>
+        <div class="module-list-scroll">
+          <div class="module-header">
+            <span></span><span>기능명 / 설명</span><span style="text-align:right">비용(원)</span><span style="text-align:right">기간(주)</span><span></span>
+          </div>
+          <div id="moduleList" class="module-list"></div>
+        </div>
+        <p class="hint">체크된 항목만 견적에 반영됩니다. 항목을 직접 추가·삭제하거나 비용·기간을 조정할 수 있습니다.</p>
+      </div>
+
+      <details class="card details-card">
+        <summary>산정 기준 (단가 · 배수 설정)</summary>
+        <p class="hint">아래 값을 기준으로 가견적과 일정이 자동 계산됩니다. 실제 조직의 단가 기준에 맞게 조정하세요.</p>
+        <div class="field-grid">
+          <label class="field"><span>기획/설계 기본비용(원)</span><input id="planningFeeInput" type="number" step="100000"></label>
+          <label class="field"><span>부가세율(%)</span><input id="vatRateInput" type="number" step="1"></label>
+          <label class="field"><span>QA 비율(%)</span><input id="qaRateInput" type="number" step="1"></label>
+          <label class="field"><span>QA 최소비용(원)</span><input id="qaMinInput" type="number" step="100000"></label>
+          <label class="field"><span>PM 비율(%)</span><input id="pmRateInput" type="number" step="1"></label>
+          <label class="field"><span>PM 최소비용(원)</span><input id="pmMinInput" type="number" step="100000"></label>
+        </div>
+        <p class="hint">고정 일정 기본값 (주)</p>
+        <div class="field-grid three">
+          <label class="field"><span>요구사항 분석·설계</span><input id="reqWeeksInput" type="number" step="1"></label>
+          <label class="field"><span>테스트·검수</span><input id="testWeeksInput" type="number" step="1"></label>
+          <label class="field"><span>오픈·안정화</span><input id="launchWeeksInput" type="number" step="1"></label>
+        </div>
+        <p class="hint">규모 배수 (비용 배수 / 기간 배수)</p>
+        <div class="field-grid three">
+          <label class="field"><span>소규모</span><div class="pair"><input id="smallCostInput" type="number" step="0.05"><input id="smallWeekInput" type="number" step="0.05"></div></label>
+          <label class="field"><span>표준</span><div class="pair"><input id="mediumCostInput" type="number" step="0.05"><input id="mediumWeekInput" type="number" step="0.05"></div></label>
+          <label class="field"><span>대규모</span><div class="pair"><input id="largeCostInput" type="number" step="0.05"><input id="largeWeekInput" type="number" step="0.05"></div></label>
+        </div>
+      </details>
+
+    </section>
+
+    <section class="preview-col">
+      <div class="stat-row">
+        <div class="stat"><span class="stat-label">총 가견적 (VAT 포함)</span><span class="stat-value" id="statTotal">-</span></div>
+        <div class="stat"><span class="stat-label">총 수행기간</span><span class="stat-value" id="statWeeks">-</span></div>
+        <div class="stat"><span class="stat-label">선택 기능</span><span class="stat-value" id="statModules">-</span></div>
+      </div>
+      <div class="preview-actions">
+        <span id="saveStatus" class="save-status"></span>
+        <button id="saveBtn" class="btn btn-ghost">저장</button>
+        <button id="openTabBtn" class="btn btn-ghost">새 탭에서 열기</button>
+        <button id="downloadBtn" class="btn btn-primary">고객용 페이지 다운로드</button>
+      </div>
+      <div class="preview-frame-wrap">
+        <iframe id="previewFrame" title="고객용 견적 페이지 미리보기"></iframe>
+      </div>
+    </section>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "estimateAdminQuotes_v1";
+
+  var TYPE_LABELS = {
+    chatbot: "AI/챗봇 솔루션",
+    web: "웹/모바일 서비스",
+    erp: "사내 업무 시스템",
+    custom: "직접 입력"
+  };
+
+  var CATALOG = {
+    chatbot: [
+      { id:"faq", label:"자연어 FAQ 자동응답", desc:"자주 묻는 질문을 의도(intent) 단위로 분류해 자동 응답", cost:6000000, weeks:2, selected:true },
+      { id:"scenario", label:"시나리오 기반 상담 흐름", desc:"업무별 상담 절차를 대화 흐름으로 설계 및 구현", cost:5000000, weeks:2, selected:true },
+      { id:"llm", label:"LLM 연동 답변 생성", desc:"정형 답변 외 영역은 LLM이 문맥에 맞게 답변 생성", cost:9000000, weeks:3, selected:true },
+      { id:"handoff", label:"상담원 핸드오프", desc:"챗봇 처리 불가 건을 상담원에게 매끄럽게 인계", cost:3000000, weeks:1, selected:true },
+      { id:"dashboard", label:"관리자 대시보드", desc:"대화 로그 조회, 답변 수정, 이용 통계 확인", cost:8000000, weeks:3, selected:true },
+      { id:"channel", label:"채널 연동 (웹/카카오톡)", desc:"웹, 카카오톡 등 상담 채널 연동", cost:4000000, weeks:2, selected:true },
+      { id:"crm", label:"CRM/DB 연동", desc:"기존 CRM 및 데이터베이스와 연동 API 구축", cost:5000000, weeks:2, selected:false },
+      { id:"uiux", label:"UI/UX 디자인", desc:"채팅 UI 및 관리자 화면 디자인", cost:3000000, weeks:2, selected:true }
+    ],
+    web: [
+      { id:"ia", label:"정보구조 / 화면설계", desc:"사이트맵, 정보구조 및 주요 화면 와이어프레임 설계", cost:4000000, weeks:2, selected:true },
+      { id:"uiux", label:"UI/UX 디자인", desc:"서비스 전 화면 UI/UX 디자인", cost:6000000, weeks:3, selected:true },
+      { id:"frontend", label:"프론트엔드 개발", desc:"웹 화면 퍼블리싱 및 프론트엔드 기능 구현", cost:12000000, weeks:4, selected:true },
+      { id:"backend", label:"백엔드 / API 개발", desc:"서버 로직 및 API 설계·개발", cost:14000000, weeks:4, selected:true },
+      { id:"auth", label:"회원 / 인증 시스템", desc:"회원가입, 로그인, 권한 관리 기능", cost:5000000, weeks:2, selected:true },
+      { id:"payment", label:"결제 연동", desc:"PG사 결제 모듈 연동", cost:6000000, weeks:2, selected:false },
+      { id:"admin", label:"관리자 페이지", desc:"콘텐츠·회원·주문 등 관리 기능", cost:7000000, weeks:3, selected:true },
+      { id:"mobile", label:"모바일 앱 (iOS/Android)", desc:"하이브리드 또는 네이티브 모바일 앱 개발", cost:15000000, weeks:5, selected:false }
+    ],
+    erp: [
+      { id:"process", label:"업무 프로세스 분석", desc:"현행 업무 프로세스 분석 및 개선안 도출", cost:5000000, weeks:2, selected:true },
+      { id:"masterdata", label:"기준정보 / DB 설계", desc:"기준정보 체계 및 데이터베이스 설계", cost:6000000, weeks:2, selected:true },
+      { id:"core", label:"핵심 업무 기능 개발", desc:"주요 업무 모듈(생산/재고/영업 등) 개발", cost:18000000, weeks:5, selected:true },
+      { id:"approval", label:"결재 / 워크플로우", desc:"전자결재 및 업무 승인 흐름 구현", cost:7000000, weeks:3, selected:true },
+      { id:"report", label:"통계 / 리포트", desc:"경영 지표 통계 및 리포트 기능", cost:5000000, weeks:2, selected:true },
+      { id:"permission", label:"권한 / 조직 관리", desc:"부서·직급별 접근 권한 관리", cost:4000000, weeks:2, selected:true },
+      { id:"integration", label:"외부 시스템 연동", desc:"기존 그룹웨어·회계 시스템 등과 연동", cost:6000000, weeks:2, selected:false }
+    ],
+    custom: []
+  };
+
+  function defaultBasis(){
+    return {
+      planningFee: 5000000,
+      vatRate: 10,
+      qaRate: 10,
+      qaMin: 2000000,
+      pmRate: 8,
+      pmMin: 1500000,
+      reqWeeksBase: 2,
+      testWeeksBase: 2,
+      launchWeeksBase: 2,
+      scale: {
+        small:  { cost:0.8,  week:0.85 },
+        medium: { cost:1,    week:1 },
+        large:  { cost:1.35, week:1.25 }
+      }
+    };
+  }
+
+  function cloneModules(list){
+    return list.map(function(m){ return Object.assign({}, m); });
+  }
+
+  function uid(){ return "m_" + Math.random().toString(36).slice(2, 9); }
+
+  function todayISO(){
+    var d = new Date();
+    var tz = d.getTimezoneOffset() * 60000;
+    return new Date(d - tz).toISOString().slice(0, 10);
+  }
+
+  function addDays(iso, days){
+    var d = new Date(iso + "T00:00:00");
+    d.setDate(d.getDate() + Number(days || 0));
+    return d.toISOString().slice(0, 10);
+  }
+
+  function formatKoreanDate(iso){
+    if(!iso) return "-";
+    var parts = iso.split("-");
+    return parts[0] + ". " + parts[1] + ". " + parts[2] + ".";
+  }
+
+  function roundTo(n, step){
+    if(!step) return Math.round(n);
+    return Math.round(n / step) * step;
+  }
+
+  function won(n){
+    return Math.round(n || 0).toLocaleString("ko-KR");
+  }
+
+  function escapeHtml(str){
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function(ch){
+      return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[ch];
+    });
+  }
+
+  function defaultState(){
+    return {
+      client: "",
+      project: "",
+      preparedBy: "당사 AI솔루션팀",
+      date: todayISO(),
+      validDays: 30,
+      projectType: "chatbot",
+      scale: "medium",
+      overview: "",
+      modules: cloneModules(CATALOG.chatbot),
+      basis: defaultBasis()
+    };
+  }
+
+  var state = defaultState();
+  var currentQuoteId = null;
+  var lastGeneratedHTML = "";
+
+  // ---------- Estimation engine ----------
+
+  function computeEstimate(st){
+    var sc = st.basis.scale[st.scale] || st.basis.scale.medium;
+    var selected = st.modules.filter(function(m){ return m.selected; });
+
+    var moduleRows = selected.map(function(m){
+      return {
+        id: m.id,
+        label: m.label,
+        desc: m.desc,
+        amount: roundTo(Number(m.cost || 0) * sc.cost, 10000),
+        weeks: Number(m.weeks || 0)
+      };
+    });
+
+    var devSubtotal = moduleRows.reduce(function(s, r){ return s + r.amount; }, 0);
+    var qaFee = Math.max(st.basis.qaMin, roundTo(devSubtotal * (st.basis.qaRate / 100), 10000));
+    var pmFee = Math.max(st.basis.pmMin, roundTo(devSubtotal * (st.basis.pmRate / 100), 10000));
+    var planningFee = roundTo(st.basis.planningFee * sc.cost, 10000);
+    var subtotal = devSubtotal + qaFee + pmFee + planningFee;
+    var vat = roundTo(subtotal * (st.basis.vatRate / 100), 10000);
+    var total = subtotal + vat;
+
+    var devWeeksRaw = moduleRows.reduce(function(s, r){ return s + r.weeks; }, 0);
+    var phase1 = Math.max(1, Math.round(st.basis.reqWeeksBase * sc.week));
+    var phase2 = Math.max(1, Math.ceil(devWeeksRaw * 0.75 * sc.week));
+    var phase3 = Math.max(1, Math.round(st.basis.testWeeksBase * sc.week));
+    var phase4 = Math.max(1, Math.round(st.basis.launchWeeksBase * sc.week));
+    var totalWeeks = phase1 + phase2 + phase3 + phase4;
+
+    var phases = [
+      { tag:"PHASE 01", title:"요구사항 분석 및 설계", desc:"프로젝트 목표와 요구사항을 구체화하고 상세 설계를 진행합니다.", weeks:phase1 },
+      { tag:"PHASE 02", title:"핵심 기능 개발", desc:"선택된 기능 모듈을 개발하고 필요한 시스템과 통합합니다.", weeks:phase2 },
+      { tag:"PHASE 03", title:"테스트 및 검수", desc:"기능 검증과 품질 점검을 진행하고 고객 검수를 지원합니다.", weeks:phase3 },
+      { tag:"PHASE 04", title:"오픈 및 안정화", desc:"실 서비스를 오픈하고 초기 운영을 모니터링하며 안정화합니다.", weeks:phase4 }
+    ];
+
+    return {
+      moduleRows: moduleRows,
+      devSubtotal: devSubtotal,
+      qaFee: qaFee,
+      pmFee: pmFee,
+      planningFee: planningFee,
+      subtotal: subtotal,
+      vat: vat,
+      total: total,
+      phases: phases,
+      totalWeeks: totalWeeks
+    };
+  }
+
+  // ---------- Customer page generation ----------
+
+  var CUSTOMER_CSS = [
+    ":root{--ink:#14181f;--muted:#5b6472;--paper:#f2f4f6;--raised:#ffffff;--line:#dfe3e8;",
+    "--accent:#c65d2e;--accent-soft:#f2e2d8;--accent-ink:#7a3418;--header-ink:#eef1f4;--hero-bg:#14181f;",
+    "--shadow:0 1px 2px rgba(20,24,31,0.04),0 8px 24px -12px rgba(20,24,31,0.12);",
+    '--font:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",-apple-system,BlinkMacSystemFont,sans-serif;}',
+    "@media (prefers-color-scheme: dark){:root{--ink:#eef1f4;--muted:#9aa3b0;--paper:#14171c;--raised:#1c2027;",
+    "--line:#2a2f38;--accent:#e2895a;--accent-soft:#3a2a20;--accent-ink:#f4c7a8;",
+    "--shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 32px -16px rgba(0,0,0,0.5);}}",
+    ':root[data-theme="dark"]{--ink:#eef1f4;--muted:#9aa3b0;--paper:#14171c;--raised:#1c2027;',
+    "--line:#2a2f38;--accent:#e2895a;--accent-soft:#3a2a20;--accent-ink:#f4c7a8;",
+    "--shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 32px -16px rgba(0,0,0,0.5);}",
+    ':root[data-theme="light"]{--ink:#14181f;--muted:#5b6472;--paper:#f2f4f6;--raised:#ffffff;',
+    "--line:#dfe3e8;--accent:#c65d2e;--accent-soft:#f2e2d8;--accent-ink:#7a3418;",
+    "--shadow:0 1px 2px rgba(20,24,31,0.04),0 8px 24px -12px rgba(20,24,31,0.12);}",
+    "*{box-sizing:border-box;}",
+    "body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);line-height:1.7;font-feature-settings:'tnum' 1;}",
+    ".page{max-width:900px;margin:0 auto;padding:0 24px 96px;}",
+    ".hero{background:var(--hero-bg);color:var(--header-ink);margin:0 0 56px;padding:56px 24px 40px;}",
+    ".hero-inner{max-width:852px;margin:0 auto;display:flex;flex-direction:column;gap:20px;}",
+    ".eyebrow{font-size:13px;font-weight:600;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase;}",
+    ".hero h1{margin:0;font-size:clamp(28px,4vw,38px);font-weight:800;letter-spacing:-0.01em;text-wrap:balance;}",
+    ".hero p.lede{margin:0;max-width:62ch;font-size:16px;color:rgba(238,241,244,0.72);}",
+    ".meta-grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;border-top:1px solid rgba(238,241,244,0.16);padding-top:20px;}",
+    ".meta-item dt{font-size:12px;color:rgba(238,241,244,0.5);margin-bottom:4px;}",
+    ".meta-item dd{margin:0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}",
+    "section{margin-bottom:64px;}",
+    ".section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:20px;padding-left:14px;border-left:3px solid var(--accent);}",
+    ".section-head .num{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:0.04em;}",
+    ".section-head h2{margin:0;font-size:21px;font-weight:700;letter-spacing:-0.01em;}",
+    ".section-body p{color:var(--muted);max-width:68ch;}",
+    ".scope-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}",
+    ".scope-card{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);}",
+    ".scope-card h3{margin:0 0 6px;font-size:15px;font-weight:700;}",
+    ".scope-card p{margin:0;font-size:14px;color:var(--muted);}",
+    ".phases{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--raised);box-shadow:var(--shadow);}",
+    ".phase{display:grid;grid-template-columns:88px 1fr auto;gap:18px;align-items:start;padding:20px 22px;}",
+    ".phase + .phase{border-top:1px solid var(--line);}",
+    ".phase .tag{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:0.02em;font-variant-numeric:tabular-nums;}",
+    ".phase h3{margin:0 0 4px;font-size:16px;font-weight:700;}",
+    ".phase p{margin:0;font-size:14px;color:var(--muted);}",
+    ".phase .dur{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px 12px;}",
+    ".gantt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--raised);box-shadow:var(--shadow);padding:20px 22px 16px;}",
+    ".gantt{min-width:640px;display:grid;row-gap:10px;column-gap:4px;align-items:center;}",
+    ".gantt .week-num{font-size:11px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;}",
+    ".gantt .row-label{font-size:13px;font-weight:600;color:var(--ink);}",
+    ".gantt .bar{height:18px;border-radius:6px;background:var(--accent);opacity:0.88;}",
+    ".gantt .bar span{display:block;font-size:11px;line-height:18px;text-align:center;color:var(--header-ink);font-weight:700;white-space:nowrap;overflow:hidden;}",
+    ".total-callout{margin-top:16px;font-size:14px;color:var(--muted);}",
+    ".total-callout strong{color:var(--ink);font-variant-numeric:tabular-nums;}",
+    ".table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--raised);box-shadow:var(--shadow);}",
+    "table.cost{width:100%;border-collapse:collapse;font-size:14px;min-width:480px;}",
+    "table.cost th, table.cost td{padding:13px 20px;text-align:left;}",
+    "table.cost thead th{font-size:12px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);}",
+    "table.cost td.num, table.cost th.num{text-align:right;font-variant-numeric:tabular-nums;}",
+    "table.cost tbody tr + tr td{border-top:1px solid var(--line);}",
+    "table.cost tfoot td{border-top:1px solid var(--line);font-weight:600;}",
+    "table.cost tfoot tr.grand td{font-size:16px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);}",
+    "table.cost tfoot tr.grand td:first-child{border-radius:0 0 0 12px;}",
+    "table.cost tfoot tr.grand td:last-child{border-radius:0 0 12px 0;}",
+    ".cost-footnote{margin-top:12px;font-size:13px;color:var(--muted);}",
+    ".notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}",
+    ".notes li{position:relative;padding-left:18px;font-size:14px;color:var(--muted);}",
+    ".notes li::before{content:'';position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--accent);}",
+    ".cta{background:var(--accent-soft);border:1px solid var(--line);border-radius:14px;padding:32px 28px;display:flex;flex-direction:column;gap:8px;}",
+    ".cta h2{margin:0;font-size:19px;font-weight:700;color:var(--accent-ink);}",
+    ".cta p{margin:0;font-size:14px;color:var(--ink);opacity:0.8;}",
+    "@media (max-width: 560px){.phase{grid-template-columns:1fr;}.phase .dur{justify-self:start;}}"
+  ].join("\n");
+
+  function generateCustomerHTML(st, computed){
+    var expiry = addDays(st.date, st.validDays);
+    var overviewText = (st.overview || "").trim();
+    if(!overviewText){
+      overviewText = (st.project ? escapeHtml(st.project) : "본 프로젝트") + "는 " +
+        escapeHtml(TYPE_LABELS[st.projectType] || "솔루션") + " 구축을 목표로 하며, 선택된 " +
+        computed.moduleRows.length + "개 핵심 기능을 중심으로 진행됩니다.";
+    } else {
+      overviewText = escapeHtml(overviewText);
+    }
+
+    var scopeHtml = computed.moduleRows.length
+      ? computed.moduleRows.map(function(m){
+          return '<div class="scope-card"><h3>' + escapeHtml(m.label) + '</h3><p>' + escapeHtml(m.desc || "") + '</p></div>';
+        }).join("")
+      : '<div class="scope-card"><h3>선택된 기능이 없습니다</h3><p>관리자 도구에서 기능 모듈을 선택해 주세요.</p></div>';
+
+    var phasesHtml = computed.phases.map(function(p){
+      return '<div class="phase"><div class="tag">' + p.tag + '</div><div><h3>' + escapeHtml(p.title) +
+        '</h3><p>' + escapeHtml(p.desc) + '</p></div><div class="dur">' + p.weeks + '주</div></div>';
+    }).join("");
+
+    var totalWeeks = Math.max(1, computed.totalWeeks);
+    var weekNums = "";
+    for(var w = 1; w <= totalWeeks; w++){
+      weekNums += '<div class="week-num" style="grid-row: 1; grid-column: ' + (w + 1) + ';">W' + w + '</div>';
+    }
+
+    var cursor = 1;
+    var ganttRows = computed.phases.map(function(p, idx){
+      var startCol = 2 + (cursor - 1);
+      var rowIndex = idx + 2;
+      cursor += p.weeks;
+      return '<div class="row-label" style="grid-row: ' + rowIndex + '; grid-column: 1;">' + escapeHtml(p.title) +
+        '</div><div class="bar" style="grid-row: ' + rowIndex + '; grid-column: ' + startCol + ' / span ' + p.weeks +
+        ';"><span>' + p.weeks + '주</span></div>';
+    }).join("");
+
+    var costRows = [];
+    costRows.push({ label:"기획/설계", desc:"요구사항 분석, 상세 설계", amount: computed.planningFee });
+    computed.moduleRows.forEach(function(m){
+      costRows.push({ label:m.label, desc:m.desc, amount:m.amount });
+    });
+    costRows.push({ label:"테스트 및 QA", desc:"기능 검증, 품질 점검", amount: computed.qaFee });
+    costRows.push({ label:"프로젝트 관리", desc:"일정·품질 관리, 고객 커뮤니케이션", amount: computed.pmFee });
+
+    var costRowsHtml = costRows.map(function(r){
+      return '<tr><td>' + escapeHtml(r.label) + '</td><td>' + escapeHtml(r.desc || "") + '</td><td class="num">' + won(r.amount) + '</td></tr>';
+    }).join("");
+
+    var title = (st.project ? st.project : "프로젝트") + " 가견적서";
+
+    var html = "";
+    html += '<!doctype html><html lang="ko"><head><meta charset="UTF-8" />';
+    html += '<meta name="viewport" content="width=device-width, initial-scale=1.0" />';
+    html += '<title>' + escapeHtml(title) + '</title>';
+    html += '<style>' + CUSTOMER_CSS + '</style></head><body>';
+
+    html += '<header class="hero"><div class="hero-inner">';
+    html += '<div class="eyebrow">가견적 제안서</div>';
+    html += '<h1>' + escapeHtml(st.project || "프로젝트") + ' 견적서</h1>';
+    html += '<p class="lede">' + overviewText + '</p>';
+    html += '<dl class="meta-grid">';
+    html += '<div class="meta-item"><dt>고객사</dt><dd>' + escapeHtml(st.client || "귀사") + '</dd></div>';
+    html += '<div class="meta-item"><dt>작성일</dt><dd>' + formatKoreanDate(st.date) + '</dd></div>';
+    html += '<div class="meta-item"><dt>견적 유효기간</dt><dd>발행일로부터 ' + st.validDays + '일 (~' + formatKoreanDate(expiry) + ')</dd></div>';
+    html += '<div class="meta-item"><dt>제안</dt><dd>' + escapeHtml(st.preparedBy || "당사") + '</dd></div>';
+    html += '</dl></div></header>';
+
+    html += '<main class="page">';
+
+    html += '<section><div class="section-head"><span class="num">01</span><h2>프로젝트 개요</h2></div>';
+    html += '<div class="section-body"><p>' + overviewText + '</p></div></section>';
+
+    html += '<section><div class="section-head"><span class="num">02</span><h2>구축 범위 및 주요 기능</h2></div>';
+    html += '<div class="scope-grid">' + scopeHtml + '</div></section>';
+
+    html += '<section><div class="section-head"><span class="num">03</span><h2>구축 방안</h2></div>';
+    html += '<div class="phases">' + phasesHtml + '</div></section>';
+
+    html += '<section><div class="section-head"><span class="num">04</span><h2>프로젝트 일정</h2></div>';
+    html += '<div class="gantt-wrap"><div class="gantt" style="grid-template-columns: 140px repeat(' + totalWeeks + ', 1fr);">';
+    html += '<div class="ruler-label" style="grid-row: 1; grid-column: 1;"></div>' + weekNums + ganttRows;
+    html += '</div><p class="total-callout">총 프로젝트 기간 &nbsp;<strong>' + totalWeeks + '주 (약 ' + Math.ceil(totalWeeks / 4.345) + '개월)</strong> &nbsp;· 계약일로부터 오픈까지 기준</p></div></section>';
+
+    html += '<section><div class="section-head"><span class="num">05</span><h2>가견적 산정</h2></div>';
+    html += '<div class="table-wrap"><table class="cost"><thead><tr><th>항목</th><th>내용</th><th class="num">금액 (원)</th></tr></thead>';
+    html += '<tbody>' + costRowsHtml + '</tbody>';
+    html += '<tfoot>';
+    html += '<tr><td colspan="2">소계</td><td class="num">' + won(computed.subtotal) + '</td></tr>';
+    html += '<tr><td colspan="2">부가세 (' + st.basis.vatRate + '%)</td><td class="num">' + won(computed.vat) + '</td></tr>';
+    html += '<tr class="grand"><td colspan="2">합계</td><td class="num">' + won(computed.total) + '</td></tr>';
+    html += '</tfoot></table></div>';
+    html += '<p class="cost-footnote">※ 상기 금액은 입력하신 요구사항을 기준으로 산정된 가견적이며, 세부 협의 후 변동될 수 있습니다.</p></section>';
+
+    html += '<section><div class="section-head"><span class="num">06</span><h2>유의사항</h2></div><ul class="notes">';
+    html += '<li>본 견적은 입력하신 요구사항을 기준으로 산정된 가견적이며, 상세 협의를 통해 최종 확정됩니다.</li>';
+    html += '<li>상기 합계 금액은 부가세를 포함한 금액이며, 결제 조건은 계약 시 협의합니다.</li>';
+    html += '<li>외부 API·서비스(LLM, 메시징, PG 등) 사용료는 별도이며, 사용량에 따라 달라질 수 있습니다.</li>';
+    html += '<li>요구사항 변경 또는 기능 추가 시 일정 및 금액이 조정될 수 있습니다.</li>';
+    html += '<li>본 견적의 유효기간은 발행일로부터 ' + st.validDays + '일이며, ' + formatKoreanDate(expiry) + '까지 유효합니다.</li>';
+    html += '</ul></section>';
+
+    html += '<section style="margin-bottom:0;"><div class="cta"><h2>상세 상담이 필요하신가요?</h2>';
+    html += '<p>프로젝트 범위와 요구사항을 함께 확인한 뒤, 확정 견적서를 다시 안내드립니다.</p></div></section>';
+
+    html += '</main></body></html>';
+    return html;
+  }
+
+  // ---------- Rendering: form <-> state ----------
+
+  var el = {};
+  ["clientInput","projectInput","dateInput","validDaysInput","preparedByInput",
+   "typeSelect","overviewInput","moduleList","addModuleBtn",
+   "planningFeeInput","vatRateInput","qaRateInput","qaMinInput","pmRateInput","pmMinInput",
+   "reqWeeksInput","testWeeksInput","launchWeeksInput",
+   "smallCostInput","smallWeekInput","mediumCostInput","mediumWeekInput","largeCostInput","largeWeekInput",
+   "scaleSegmented","statTotal","statWeeks","statModules","previewFrame",
+   "saveBtn","openTabBtn","downloadBtn","saveStatus","savedSelect","deleteSavedBtn","newQuoteBtn"
+  ].forEach(function(id){ el[id] = document.getElementById(id); });
+
+  function renderModuleList(){
+    el.moduleList.innerHTML = "";
+    state.modules.forEach(function(m){
+      var row = document.createElement("div");
+      row.className = "module-row";
+      row.dataset.id = m.id;
+
+      var checkWrap = document.createElement("label");
+      checkWrap.className = "module-check";
+      var check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = !!m.selected;
+      check.dataset.field = "selected";
+      checkWrap.appendChild(check);
+
+      var main = document.createElement("div");
+      main.className = "module-main";
+      var labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.className = "module-label";
+      labelInput.value = m.label;
+      labelInput.dataset.field = "label";
+      var descInput = document.createElement("input");
+      descInput.type = "text";
+      descInput.className = "module-desc";
+      descInput.value = m.desc || "";
+      descInput.dataset.field = "desc";
+      main.appendChild(labelInput);
+      main.appendChild(descInput);
+
+      var costInput = document.createElement("input");
+      costInput.type = "number";
+      costInput.className = "module-num";
+      costInput.step = "100000";
+      costInput.value = m.cost;
+      costInput.dataset.field = "cost";
+
+      var weeksInput = document.createElement("input");
+      weeksInput.type = "number";
+      weeksInput.className = "module-num";
+      weeksInput.step = "1";
+      weeksInput.value = m.weeks;
+      weeksInput.dataset.field = "weeks";
+
+      var removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "module-remove";
+      removeBtn.title = "항목 삭제";
+      removeBtn.textContent = "✕";
+      removeBtn.dataset.action = "remove";
+
+      row.appendChild(checkWrap);
+      row.appendChild(main);
+      row.appendChild(costInput);
+      row.appendChild(weeksInput);
+      row.appendChild(removeBtn);
+      el.moduleList.appendChild(row);
+    });
+  }
+
+  el.moduleList.addEventListener("input", function(e){
+    var field = e.target.dataset.field;
+    if(!field) return;
+    var row = e.target.closest(".module-row");
+    var m = state.modules.find(function(x){ return x.id === row.dataset.id; });
+    if(!m) return;
+    if(field === "cost" || field === "weeks"){
+      m[field] = Number(e.target.value || 0);
+    } else {
+      m[field] = e.target.value;
+    }
+    recalcAndRender();
+  });
+  el.moduleList.addEventListener("change", function(e){
+    if(e.target.dataset.field === "selected"){
+      var row = e.target.closest(".module-row");
+      var m = state.modules.find(function(x){ return x.id === row.dataset.id; });
+      if(m){ m.selected = e.target.checked; recalcAndRender(); }
+    }
+  });
+  el.moduleList.addEventListener("click", function(e){
+    if(e.target.dataset.action === "remove"){
+      var row = e.target.closest(".module-row");
+      state.modules = state.modules.filter(function(x){ return x.id !== row.dataset.id; });
+      renderModuleList();
+      recalcAndRender();
+    }
+  });
+  el.addModuleBtn.addEventListener("click", function(){
+    state.modules.push({ id: uid(), label: "새 항목", desc: "", cost: 1000000, weeks: 1, selected: true });
+    renderModuleList();
+    recalcAndRender();
+    var inputs = el.moduleList.querySelectorAll(".module-label");
+    if(inputs.length){ inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); }
+  });
+
+  function syncFormFromState(){
+    el.clientInput.value = state.client;
+    el.projectInput.value = state.project;
+    el.dateInput.value = state.date;
+    el.validDaysInput.value = state.validDays;
+    el.preparedByInput.value = state.preparedBy;
+    el.typeSelect.value = state.projectType;
+    el.overviewInput.value = state.overview;
+
+    el.planningFeeInput.value = state.basis.planningFee;
+    el.vatRateInput.value = state.basis.vatRate;
+    el.qaRateInput.value = state.basis.qaRate;
+    el.qaMinInput.value = state.basis.qaMin;
+    el.pmRateInput.value = state.basis.pmRate;
+    el.pmMinInput.value = state.basis.pmMin;
+    el.reqWeeksInput.value = state.basis.reqWeeksBase;
+    el.testWeeksInput.value = state.basis.testWeeksBase;
+    el.launchWeeksInput.value = state.basis.launchWeeksBase;
+    el.smallCostInput.value = state.basis.scale.small.cost;
+    el.smallWeekInput.value = state.basis.scale.small.week;
+    el.mediumCostInput.value = state.basis.scale.medium.cost;
+    el.mediumWeekInput.value = state.basis.scale.medium.week;
+    el.largeCostInput.value = state.basis.scale.large.cost;
+    el.largeWeekInput.value = state.basis.scale.large.week;
+
+    Array.prototype.forEach.call(el.scaleSegmented.querySelectorAll("button"), function(btn){
+      btn.classList.toggle("active", btn.dataset.scale === state.scale);
+    });
+
+    renderModuleList();
+  }
+
+  function bindSimple(input, path, isNumber){
+    input.addEventListener("input", function(){
+      setPath(path, isNumber ? Number(input.value || 0) : input.value);
+      recalcAndRender();
+    });
+  }
+
+  function setPath(path, value){
+    var parts = path.split(".");
+    var obj = state;
+    for(var i = 0; i < parts.length - 1; i++){ obj = obj[parts[i]]; }
+    obj[parts[parts.length - 1]] = value;
+  }
+
+  bindSimple(el.clientInput, "client", false);
+  bindSimple(el.projectInput, "project", false);
+  bindSimple(el.dateInput, "date", false);
+  bindSimple(el.validDaysInput, "validDays", true);
+  bindSimple(el.preparedByInput, "preparedBy", false);
+  bindSimple(el.overviewInput, "overview", false);
+
+  bindSimple(el.planningFeeInput, "basis.planningFee", true);
+  bindSimple(el.vatRateInput, "basis.vatRate", true);
+  bindSimple(el.qaRateInput, "basis.qaRate", true);
+  bindSimple(el.qaMinInput, "basis.qaMin", true);
+  bindSimple(el.pmRateInput, "basis.pmRate", true);
+  bindSimple(el.pmMinInput, "basis.pmMin", true);
+  bindSimple(el.reqWeeksInput, "basis.reqWeeksBase", true);
+  bindSimple(el.testWeeksInput, "basis.testWeeksBase", true);
+  bindSimple(el.launchWeeksInput, "basis.launchWeeksBase", true);
+  bindSimple(el.smallCostInput, "basis.scale.small.cost", true);
+  bindSimple(el.smallWeekInput, "basis.scale.small.week", true);
+  bindSimple(el.mediumCostInput, "basis.scale.medium.cost", true);
+  bindSimple(el.mediumWeekInput, "basis.scale.medium.week", true);
+  bindSimple(el.largeCostInput, "basis.scale.large.cost", true);
+  bindSimple(el.largeWeekInput, "basis.scale.large.week", true);
+
+  el.typeSelect.addEventListener("change", function(){
+    state.projectType = el.typeSelect.value;
+    state.modules = cloneModules(CATALOG[state.projectType] || []);
+    renderModuleList();
+    recalcAndRender();
+  });
+
+  el.scaleSegmented.addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-scale]");
+    if(!btn) return;
+    state.scale = btn.dataset.scale;
+    Array.prototype.forEach.call(el.scaleSegmented.querySelectorAll("button"), function(b){
+      b.classList.toggle("active", b === btn);
+    });
+    recalcAndRender();
+  });
+
+  // ---------- Compute + preview ----------
+
+  function recalcAndRender(){
+    var computed = computeEstimate(state);
+    el.statTotal.textContent = won(computed.total) + "원";
+    el.statWeeks.textContent = computed.totalWeeks + "주";
+    el.statModules.textContent = computed.moduleRows.length + "개";
+    lastGeneratedHTML = generateCustomerHTML(state, computed);
+    el.previewFrame.srcdoc = lastGeneratedHTML;
+  }
+
+  // ---------- Save / load / delete ----------
+
+  function loadSavedQuotes(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ return []; }
+  }
+  function persistSavedQuotes(list){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+  function populateSavedSelect(selectId){
+    var list = loadSavedQuotes();
+    el.savedSelect.innerHTML = '<option value="">저장된 견적 불러오기</option>';
+    list.forEach(function(q){
+      var opt = document.createElement("option");
+      opt.value = q.id;
+      var d = new Date(q.savedAt);
+      var stamp = d.getFullYear() + "." + String(d.getMonth()+1).padStart(2,"0") + "." + String(d.getDate()).padStart(2,"0") +
+        " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+      opt.textContent = (q.client || "(고객사 미입력)") + " · " + (q.project || "(프로젝트 미입력)") + " — " + stamp;
+      el.savedSelect.appendChild(opt);
+    });
+    if(selectId){ el.savedSelect.value = selectId; }
+  }
+
+  el.saveBtn.addEventListener("click", function(){
+    var list = loadSavedQuotes();
+    var now = Date.now();
+    if(currentQuoteId){
+      var idx = list.findIndex(function(q){ return q.id === currentQuoteId; });
+      if(idx >= 0){
+        list[idx] = { id: currentQuoteId, savedAt: now, client: state.client, project: state.project, state: JSON.parse(JSON.stringify(state)) };
+      } else {
+        currentQuoteId = uid();
+        list.push({ id: currentQuoteId, savedAt: now, client: state.client, project: state.project, state: JSON.parse(JSON.stringify(state)) });
+      }
+    } else {
+      currentQuoteId = uid();
+      list.push({ id: currentQuoteId, savedAt: now, client: state.client, project: state.project, state: JSON.parse(JSON.stringify(state)) });
+    }
+    persistSavedQuotes(list);
+    populateSavedSelect(currentQuoteId);
+    var d = new Date(now);
+    el.saveStatus.textContent = "저장됨 " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+    setTimeout(function(){ el.saveStatus.textContent = ""; }, 4000);
+  });
+
+  el.savedSelect.addEventListener("change", function(){
+    var id = el.savedSelect.value;
+    if(!id) return;
+    var list = loadSavedQuotes();
+    var q = list.find(function(x){ return x.id === id; });
+    if(!q) return;
+    state = q.state;
+    currentQuoteId = q.id;
+    syncFormFromState();
+    recalcAndRender();
+  });
+
+  el.deleteSavedBtn.addEventListener("click", function(){
+    var id = el.savedSelect.value;
+    if(!id) return;
+    var list = loadSavedQuotes().filter(function(q){ return q.id !== id; });
+    persistSavedQuotes(list);
+    if(currentQuoteId === id){ currentQuoteId = null; }
+    populateSavedSelect("");
+  });
+
+  el.newQuoteBtn.addEventListener("click", function(){
+    state = defaultState();
+    currentQuoteId = null;
+    el.savedSelect.value = "";
+    syncFormFromState();
+    recalcAndRender();
+  });
+
+  // ---------- Export ----------
+
+  function asciiSlug(str){
+    return String(str || "")
+      .normalize("NFKD")
+      .replace(/[^\x00-\x7F]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function downloadFileName(st){
+    // Non-ASCII (e.g. Korean) filenames are unreliable across browsers/OSes
+    // on <a download>, so build an ASCII slug and fall back to a timestamp.
+    // The client/project name is still shown inside the document itself.
+    var slugParts = [asciiSlug(st.project), asciiSlug(st.client)].filter(Boolean);
+    var base = slugParts.length ? slugParts.join("_") : "estimate";
+    var d = new Date();
+    var stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") +
+      "-" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
+    return base + "_" + stamp + ".html";
+  }
+
+  el.downloadBtn.addEventListener("click", function(){
+    var blob = new Blob([lastGeneratedHTML], { type: "text/html;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var name = downloadFileName(state);
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+  });
+
+  el.openTabBtn.addEventListener("click", function(){
+    var blob = new Blob([lastGeneratedHTML], { type: "text/html;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+  });
+
+  // ---------- Init ----------
+
+  syncFormFromState();
+  populateSavedSelect("");
+  recalcAndRender();
+
+})();
+</script>
+
+</body>
+</html>

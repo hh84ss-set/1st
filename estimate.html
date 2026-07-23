@@ -16,6 +16,7 @@
     --accent-soft: #f2e2d8;
     --accent-ink: #7a3418;
     --header-ink: #eef1f4;
+    --hero-bg: #14181f;
     --shadow: 0 1px 2px rgba(20,24,31,0.04), 0 8px 24px -12px rgba(20,24,31,0.12);
     --font: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   }
@@ -77,7 +78,7 @@
 
   /* ---------- Header band ---------- */
   .hero{
-    background: var(--ink);
+    background: var(--hero-bg);
     color: var(--header-ink);
     margin: 0 0 56px;
     padding: 56px 24px 40px;
@@ -109,8 +110,6 @@
     font-size: 16px;
     color: rgba(238,241,244,0.72);
   }
-  :root[data-theme="light"] .hero p.lede,
-  @media (prefers-color-scheme: light){ .hero p.lede{ color: rgba(20,24,31,0.6); } }
 
   .meta-grid{
     margin-top: 12px;
@@ -503,27 +502,35 @@
       <div class="section-head"><span class="num">04</span><h2>프로젝트 일정</h2></div>
       <div class="gantt-wrap">
         <div class="gantt">
-          <div class="ruler-label"></div>
-          <div class="week-num">W1</div><div class="week-num">W2</div><div class="week-num">W3</div>
-          <div class="week-num">W4</div><div class="week-num">W5</div><div class="week-num">W6</div>
-          <div class="week-num">W7</div><div class="week-num">W8</div><div class="week-num">W9</div>
-          <div class="week-num">W10</div><div class="week-num">W11</div><div class="week-num">W12</div>
-          <div class="week-num">W13</div>
+          <div class="ruler-label" style="grid-row: 1; grid-column: 1;"></div>
+          <div class="week-num" style="grid-row: 1; grid-column: 2;">W1</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 3;">W2</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 4;">W3</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 5;">W4</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 6;">W5</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 7;">W6</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 8;">W7</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 9;">W8</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 10;">W9</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 11;">W10</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 12;">W11</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 13;">W12</div>
+          <div class="week-num" style="grid-row: 1; grid-column: 14;">W13</div>
 
-          <div class="row-label">요구사항·설계</div>
-          <div class="bar" style="grid-column: 2 / span 2;"><span>2주</span></div>
+          <div class="row-label" style="grid-row: 2; grid-column: 1;">요구사항·설계</div>
+          <div class="bar" style="grid-row: 2; grid-column: 2 / span 2;"><span>2주</span></div>
 
-          <div class="row-label">시나리오·데이터</div>
-          <div class="bar" style="grid-column: 4 / span 3;"><span>3주</span></div>
+          <div class="row-label" style="grid-row: 3; grid-column: 1;">시나리오·데이터</div>
+          <div class="bar" style="grid-row: 3; grid-column: 4 / span 3;"><span>3주</span></div>
 
-          <div class="row-label">개발·연동</div>
-          <div class="bar" style="grid-column: 7 / span 4;"><span>4주</span></div>
+          <div class="row-label" style="grid-row: 4; grid-column: 1;">개발·연동</div>
+          <div class="bar" style="grid-row: 4; grid-column: 7 / span 4;"><span>4주</span></div>
 
-          <div class="row-label">테스트·검수</div>
-          <div class="bar" style="grid-column: 11 / span 2;"><span>2주</span></div>
+          <div class="row-label" style="grid-row: 5; grid-column: 1;">테스트·검수</div>
+          <div class="bar" style="grid-row: 5; grid-column: 11 / span 2;"><span>2주</span></div>
 
-          <div class="row-label">오픈·안정화</div>
-          <div class="bar" style="grid-column: 13 / span 2;"><span>2주</span></div>
+          <div class="row-label" style="grid-row: 6; grid-column: 1;">오픈·안정화</div>
+          <div class="bar" style="grid-row: 6; grid-column: 13 / span 2;"><span>2주</span></div>
         </div>
         <p class="total-callout">총 프로젝트 기간 &nbsp;<strong>13주 (약 3개월)</strong> &nbsp;· 계약일로부터 오픈까지 기준</p>
       </div>
