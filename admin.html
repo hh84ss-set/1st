@@ -376,6 +376,28 @@
     custom: "직접 입력"
   };
 
+  // Benefit-led lede clause per project type (copywriting: benefits over features).
+  // custom has no entry — falls back to the generic feature-first phrasing below,
+  // since we can't assume a benefit for a type the admin defines themselves.
+  var TYPE_LEDE = {
+    chatbot: "반복 문의 응대에 들어가는 상담 인력 부담을 줄이는 것을 목표로 하며",
+    web: "목표 사용자에게 서비스를 빠르게 선보이는 것을 목표로 하며",
+    erp: "반복적인 수작업 업무를 줄이는 것을 목표로 하며"
+  };
+
+  // Stabilization-period guarantee text per type (offers: guarantee tied to a
+  // measurable condition, not a blanket promise). {W} is replaced with the
+  // computed 오픈·안정화 phase length in weeks.
+  var TYPE_GUARANTEE = {
+    chatbot: "안정화 기간({W}주) 중 사전 정의된 시나리오의 응답 정확도 목표에 미달할 경우, 목표 충족 시점까지 오픈 이후 보정 작업을 추가 비용 없이 진행합니다.",
+    __default__: "안정화 기간({W}주) 중 사전 정의된 인수 조건을 충족하지 못하는 결함이 발견될 경우, 해당 결함에 대한 보정 작업을 추가 비용 없이 진행합니다."
+  };
+
+  // Good/better/best tier ratios applied to the computed total (offers +
+  // marketing-psychology: anchoring, price relativity). 표준형 is always the
+  // exact configured scope; 핵심형/확장형 are illustrative until re-scoped.
+  var TIER_RATIOS = { basic: 0.6, premium: 1.35 };
+
   var CATALOG = {
     chatbot: [
       { id:"faq", label:"자연어 FAQ 자동응답", desc:"자주 묻는 질문을 의도(intent) 단위로 분류해 자동 응답", cost:6000000, weeks:2, selected:true },
@@ -606,6 +628,25 @@
     ".cta{background:var(--accent-soft);border:1px solid var(--line);border-radius:14px;padding:32px 28px;display:flex;flex-direction:column;gap:8px;}",
     ".cta h2{margin:0;font-size:19px;font-weight:700;color:var(--accent-ink);}",
     ".cta p{margin:0;font-size:14px;color:var(--ink);opacity:0.8;}",
+    ".urgency-note{margin-top:16px;background:rgba(238,241,244,0.06);border:1px solid rgba(238,241,244,0.16);border-radius:10px;padding:14px 16px;font-size:13px;color:rgba(238,241,244,0.85);}",
+    ".urgency-note strong{color:var(--accent);}",
+    ".tier-note{margin:0 0 16px;font-size:13px;color:var(--muted);}",
+    ".tiers{display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;margin-bottom:28px;}",
+    ".tier{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:20px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;position:relative;}",
+    ".tier.recommended{border:1.5px solid var(--accent);}",
+    ".tier .badge{position:absolute;top:-11px;left:18px;background:var(--accent);color:var(--header-ink);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;}",
+    ".tier h3{margin:4px 0 0;font-size:15px;font-weight:700;}",
+    ".tier .price{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent-ink);}",
+    ".tier .price small{font-size:12px;font-weight:600;color:var(--muted);}",
+    ".tier ul{margin:0;padding-left:16px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:5px;}",
+    ".tier .tier-desc{font-size:12px;color:var(--muted);margin:0;}",
+    "@media (max-width: 620px){.tiers{grid-template-columns:1fr;}}",
+    ".detail-toggle-label{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 12px;}",
+    ".cost-framing{margin-top:8px;font-size:13px;color:var(--muted);background:var(--accent-soft);border-radius:8px;padding:10px 14px;}",
+    ".cost-framing b{color:var(--accent-ink);}",
+    ".guarantee{background:var(--accent-soft);border:1px solid var(--line);border-radius:14px;padding:24px 26px;display:flex;flex-direction:column;gap:8px;}",
+    ".guarantee h3{margin:0;font-size:16px;font-weight:700;color:var(--accent-ink);}",
+    ".guarantee p{margin:0;font-size:14px;color:var(--ink);opacity:0.85;max-width:68ch;}",
     "@media (max-width: 560px){.phase{grid-template-columns:1fr;}.phase .dur{justify-self:start;}}"
   ].join("\n");
 
@@ -613,9 +654,12 @@
     var expiry = addDays(st.date, st.validDays);
     var overviewText = (st.overview || "").trim();
     if(!overviewText){
-      overviewText = (st.project ? escapeHtml(st.project) : "본 프로젝트") + "는 " +
-        escapeHtml(TYPE_LABELS[st.projectType] || "솔루션") + " 구축을 목표로 하며, 선택된 " +
-        computed.moduleRows.length + "개 핵심 기능을 중심으로 진행됩니다.";
+      var subject = st.project ? escapeHtml(st.project) : "본 프로젝트";
+      var ledePhrase = TYPE_LEDE[st.projectType];
+      overviewText = ledePhrase
+        ? subject + "는 " + ledePhrase + ", 선택된 " + computed.moduleRows.length + "개 핵심 기능으로 구현됩니다."
+        : subject + "는 " + escapeHtml(TYPE_LABELS[st.projectType] || "솔루션") + " 구축을 목표로 하며, 선택된 " +
+          computed.moduleRows.length + "개 핵심 기능을 중심으로 진행됩니다.";
     } else {
       overviewText = escapeHtml(overviewText);
     }
@@ -659,6 +703,11 @@
       return '<tr><td>' + escapeHtml(r.label) + '</td><td>' + escapeHtml(r.desc || "") + '</td><td class="num">' + won(r.amount) + '</td></tr>';
     }).join("");
 
+    var basicTotal = roundTo(computed.total * TIER_RATIOS.basic, 100000);
+    var premiumTotal = roundTo(computed.total * TIER_RATIOS.premium, 100000);
+    var guaranteeTpl = TYPE_GUARANTEE[st.projectType] || TYPE_GUARANTEE.__default__;
+    var guaranteeText = guaranteeTpl.replace("{W}", computed.phases[3].weeks);
+
     var title = (st.project ? st.project : "프로젝트") + " 가견적서";
 
     var html = "";
@@ -676,7 +725,9 @@
     html += '<div class="meta-item"><dt>작성일</dt><dd>' + formatKoreanDate(st.date) + '</dd></div>';
     html += '<div class="meta-item"><dt>견적 유효기간</dt><dd>발행일로부터 ' + st.validDays + '일 (~' + formatKoreanDate(expiry) + ')</dd></div>';
     html += '<div class="meta-item"><dt>제안</dt><dd>' + escapeHtml(st.preparedBy || "당사") + '</dd></div>';
-    html += '</dl></div></header>';
+    html += '</dl>';
+    html += '<p class="urgency-note"><strong>안내</strong> 본 견적은 ' + formatKoreanDate(expiry) + '까지 투입 예정인 인력 기준으로 산정되었습니다. 그 이후 착수하시는 경우 일정 재조정이 필요할 수 있습니다.</p>';
+    html += '</div></header>';
 
     html += '<main class="page">';
 
@@ -695,6 +746,16 @@
     html += '</div><p class="total-callout">총 프로젝트 기간 &nbsp;<strong>' + totalWeeks + '주 (약 ' + Math.ceil(totalWeeks / 4.345) + '개월)</strong> &nbsp;· 계약일로부터 오픈까지 기준</p></div></section>';
 
     html += '<section><div class="section-head"><span class="num">05</span><h2>가견적 산정</h2></div>';
+    html += '<p class="tier-note">범위에 따라 세 가지 구성으로 진행할 수 있습니다. 표준형이 02·03·04에서 설명한 현재 선택 범위이며, 상세 내역은 아래 표로 확인하실 수 있습니다.</p>';
+    html += '<div class="tiers">';
+    html += '<div class="tier"><h3>핵심형</h3><div class="price">' + won(basicTotal) + '<small>원 (VAT 포함)</small></div>';
+    html += '<p class="tier-desc">핵심 기능 중심 축소 구성 · 세부 범위는 협의 후 조정</p></div>';
+    html += '<div class="tier recommended"><div class="badge">추천</div><h3>표준형</h3><div class="price">' + won(computed.total) + '<small>원 (VAT 포함)</small></div>';
+    html += '<ul><li>구축 범위 및 주요 기능 ' + computed.moduleRows.length + '종 전체 (현재 선택 구성)</li></ul></div>';
+    html += '<div class="tier"><h3>확장형</h3><div class="price">' + won(premiumTotal) + '<small>원 (VAT 포함)</small></div>';
+    html += '<p class="tier-desc">채널·기능 확장 구성 · 세부 범위는 협의 후 조정</p></div>';
+    html += '</div>';
+    html += '<p class="detail-toggle-label">표준형 상세 내역</p>';
     html += '<div class="table-wrap"><table class="cost"><thead><tr><th>항목</th><th>내용</th><th class="num">금액 (원)</th></tr></thead>';
     html += '<tbody>' + costRowsHtml + '</tbody>';
     html += '<tfoot>';
@@ -702,7 +763,11 @@
     html += '<tr><td colspan="2">부가세 (' + st.basis.vatRate + '%)</td><td class="num">' + won(computed.vat) + '</td></tr>';
     html += '<tr class="grand"><td colspan="2">합계</td><td class="num">' + won(computed.total) + '</td></tr>';
     html += '</tfoot></table></div>';
-    html += '<p class="cost-footnote">※ 상기 금액은 입력하신 요구사항을 기준으로 산정된 가견적이며, 세부 협의 후 변동될 수 있습니다.</p></section>';
+    html += '<p class="cost-footnote">※ 상기 금액은 입력하신 요구사항을 기준으로 산정된 가견적이며, 세부 협의 후 변동될 수 있습니다. 핵심형·확장형 금액은 범위 배분 예시이며 실제 재산정이 필요합니다.</p>';
+    html += '<p class="cost-framing">참고용 문장 (귀사 데이터로 채워 사용): &ldquo;동일 업무량을 인력으로 직접 처리할 경우 연간 약 <b>[운영 비용]</b>원이 소요됩니다 — 본 견적은 1회성 구축 비용입니다.&rdquo;</p>';
+    html += '</section>';
+
+    html += '<section><div class="guarantee"><h3>안정화 기간 성능 보증</h3><p>' + guaranteeText + '</p></div></section>';
 
     html += '<section><div class="section-head"><span class="num">06</span><h2>유의사항</h2></div><ul class="notes">';
     html += '<li>본 견적은 입력하신 요구사항을 기준으로 산정된 가견적이며, 상세 협의를 통해 최종 확정됩니다.</li>';
