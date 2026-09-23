@@ -1,0 +1,729 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>쿠키런 킹덤 메모리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+  /* 단일 테마: 갓 구운 쿠키 — 버터 반죽, 초콜릿 글씨, 젤리 핑크 */
+  :root {
+    color-scheme: light;
+    --ground: #fff5e4;
+    --ground-2: #fde7c4;
+    --dough: #f2c27b;
+    --crust: #c9803a;
+    --ink: #4a2c1a;
+    --ink-soft: #8a6446;
+    --jelly: #ff5c8a;
+    --jelly-soft: #ffd6e2;
+    --candy: #3fa9f5;
+    --gold: #ffbf1f;
+    --line: #f1d7ae;
+    --panel: #fffdf8;
+    --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--body);
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255,191,31,.22) 0 120px, transparent 121px),
+      radial-gradient(circle at 92% 18%, rgba(255,92,138,.14) 0 90px, transparent 91px),
+      var(--ground);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 28px; }
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .logo {
+    font-family: var(--display); font-weight: 400; margin: 0; line-height: 1;
+    font-size: clamp(21px, 5.6vw, 36px); color: var(--ink); white-space: nowrap;
+    text-shadow: 0 3px 0 var(--dough);
+  }
+  .logo span { color: var(--jelly); }
+  .top-tools { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .pill-btn {
+    font: 600 13px/1 var(--body); color: var(--ink); background: var(--panel);
+    border: 2px solid var(--line); border-radius: 999px; padding: 9px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .pill-btn:hover { border-color: var(--crust); }
+  .pill-btn[aria-pressed="true"] { background: var(--jelly-soft); border-color: var(--jelly); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--candy); outline-offset: 2px; }
+
+  /* ---------- 설정 화면 ---------- */
+  .setup { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 22px; padding: 20px; box-shadow: 0 5px 0 var(--line); }
+  .panel h2 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 0 0 4px; }
+  .panel p.lead { margin: 0 0 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+  .count-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .count-row label { font-weight: 700; font-size: 14px; }
+  .stepper { display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .stepper button { width: 44px; height: 44px; border: 0; background: var(--ground-2); color: var(--ink); font: 700 22px/1 var(--body); cursor: pointer; }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper input { width: 56px; height: 44px; border: 0; text-align: center; font: 400 24px/1 var(--display); color: var(--ink); background: var(--panel); -moz-appearance: textfield; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .hint { font-size: 12px; color: var(--ink-soft); }
+  .player-rows { display: grid; gap: 10px; }
+  .player-row { display: grid; grid-template-columns: 48px 70px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 10px; border-radius: 16px; background: var(--ground); }
+  .player-row label { font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+  .player-row select { width: 100%; font: 600 15px var(--body); color: var(--ink); padding: 11px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); }
+  .player-row.dup select { border-color: #d93a3a; }
+  .err { color: #c02a2a; font-size: 13px; font-weight: 600; min-height: 20px; margin: 10px 0 0; }
+  .start-btn {
+    margin-top: 8px; width: 100%; font: 400 22px/1 var(--display); color: #fff; border: 0; border-radius: 18px; padding: 18px; cursor: pointer;
+    background: linear-gradient(180deg, #ff7aa0, var(--jelly)); box-shadow: 0 6px 0 #c93a64; transition: transform .1s, box-shadow .1s;
+  }
+  .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c93a64; }
+  .start-btn:disabled { filter: grayscale(.7); opacity: .6; cursor: not-allowed; }
+  .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14px; line-height: 1.55; }
+  .rules li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; }
+  .rules li b { font-family: var(--display); font-weight: 400; color: var(--jelly); font-size: 18px; }
+  .roster { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
+  .roster figure { margin: 0; text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-soft); line-height: 1.2; word-break: keep-all; }
+  .roster .av { width: 100%; height: auto; aspect-ratio: 1; margin-bottom: 3px; }
+
+  /* 아바타(쿠키 얼굴) */
+  .av {
+    width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: none;
+    display: grid; place-items: center; font-size: 22px;
+    border: 3px solid #fff; box-shadow: 0 2px 0 var(--line);
+  }
+  .av img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; transform: scale(1.5) translateY(14%); display: block; }
+
+  /* ---------- 게임 화면 ---------- */
+  .game { margin-top: 10px; display: grid; gap: 8px; }
+  .scoreboard { display: flex; gap: 6px; overflow-x: auto; padding-block: 4px 6px; scrollbar-width: none; }
+  .scoreboard::-webkit-scrollbar { display: none; }
+  .player-chip {
+    flex: 1 0 auto; min-width: 118px; display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px 5px 5px; border-radius: 16px; background: var(--panel); border: 2px solid var(--line);
+    transition: transform .25s, border-color .25s, box-shadow .25s;
+  }
+  .player-chip .av { width: 36px; height: 36px; border-width: 2px; }
+  .player-chip .meta { min-width: 0; flex: 1; }
+  .player-chip .nm { display: block; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 9em; }
+  .player-chip .loot { display: flex; gap: 1px; height: 18px; overflow: hidden; max-width: 9em; }
+  .player-chip .loot img { width: 18px; height: 18px; object-fit: cover; object-position: 50% 10%; border-radius: 50%; background: var(--ground-2); flex: none; }
+  .player-chip .loot .none { font-size: 11px; color: var(--ink-soft); }
+  .player-chip .sc { display: inline-block; font-family: var(--display); font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .player-chip .sc small { font-family: var(--body); font-size: 11px; color: var(--ink-soft); margin-left: 1px; }
+  .player-chip.active { border-color: var(--jelly); box-shadow: 0 4px 0 var(--jelly-soft), 0 0 0 3px var(--jelly-soft); transform: translateY(-2px); }
+  .player-chip.bump .sc { animation: bump .5s; }
+  @keyframes bump { 40% { transform: scale(1.5); color: var(--jelly); } }
+
+  .turn-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+  .turn { font-family: var(--display); font-size: clamp(17px, 4.4vw, 22px); display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .turn .av { width: 28px; height: 28px; border-width: 2px; }
+  .turn .who { color: var(--jelly); }
+  .turn.pop { animation: pop .45s; }
+  @keyframes pop { 0% { transform: scale(.85); opacity: .2; } 60% { transform: scale(1.06); } }
+  .left { font-size: 13px; color: var(--ink-soft); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .msg { min-height: 20px; font-size: 13px; font-weight: 700; color: var(--crust); }
+
+  /* 보드: 세로 화면 4 × 6, 가로 화면 6 × 4 — 카드 비율 3:4 */
+  .board-wrap { display: flex; justify-content: center; }
+  .board {
+    --cols: 4;
+    width: min(100%, max(290px, calc((100dvh - 245px) / 2)));
+    display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: clamp(6px, 1.6vw, 12px);
+  }
+  @media (orientation: landscape) and (min-width: 700px) {
+    .board { --cols: 6; width: min(100%, 900px, max(420px, calc((100dvh - 210px) * 1.125))); }
+  }
+  .card { position: relative; aspect-ratio: 3 / 4; max-width: 100%; perspective: 800px; border: 0; padding: 0; background: none; cursor: pointer; font: inherit; color: inherit; }
+  .card:disabled { cursor: default; }
+  .card .inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3,1.4,.5,1); }
+  .card.up .inner, .card.taken .inner { transform: rotateY(180deg); }
+  .card .face { position: absolute; inset: 0; border-radius: clamp(10px, 2.4vw, 16px); backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+  /* 뒷면: 구운 비스킷 + 설탕 테두리 + 진저브레드 실루엣 */
+  .card .back {
+    background:
+      url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 70'%3E%3Cpath fill='%23fff5e4' fill-opacity='.9' d='M30 4a11 11 0 0 1 8 18.5c5 1 9 2 14 1a5 5 0 0 1 1 10c-5 1-9 1-13 0 1 7 3 13 7 20a5.5 5.5 0 0 1-9 6c-3-5-5-9-8-13-3 4-5 8-8 13a5.5 5.5 0 0 1-9-6c4-7 6-13 7-20-4 1-8 1-13 0a5 5 0 0 1 1-10c5 1 9 0 14-1A11 11 0 0 1 30 4z'/%3E%3Ccircle cx='26' cy='14' r='1.8' fill='%23a65f24'/%3E%3Ccircle cx='34' cy='14' r='1.8' fill='%23a65f24'/%3E%3Cpath d='M26 19q4 3 8 0' stroke='%23a65f24' stroke-width='1.6' fill='none'/%3E%3Ccircle cx='30' cy='31' r='2' fill='%23ff5c8a'/%3E%3Ccircle cx='30' cy='39' r='2' fill='%233fa9f5'/%3E%3C/svg%3E") center / 46% no-repeat,
+      radial-gradient(circle at 22% 20%, rgba(255,255,255,.35) 0 3px, transparent 4px) 0 0 / 18px 18px,
+      linear-gradient(160deg, #e59a4c, #c46f2c);
+    border: 3px solid #fff; box-shadow: inset 0 0 0 3px #f7d3a3, 0 4px 0 #b5652a;
+  }
+  .card:not(:disabled):hover .back { filter: brightness(1.06); }
+  .card .front { transform: rotateY(180deg); border: 3px solid #fff; box-shadow: 0 4px 0 rgba(74,44,26,.2); display: grid; place-items: center; }
+  .card .front img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; user-select: none; }
+  .card .front .fallback { font-family: var(--display); font-size: clamp(12px, 3.4vw, 18px); text-align: center; padding: 6px; word-break: keep-all; line-height: 1.2; }
+  .card .front .fallback b { display: block; font-size: 2.2em; line-height: 1.1; font-weight: 400; }
+  .card.match .front { animation: glow .65s ease-in-out; }
+  @keyframes glow { 50% { box-shadow: 0 0 0 4px var(--gold), 0 0 24px var(--gold); transform: rotateY(180deg) scale(1.06); } }
+  .card.miss .front { animation: shake .45s; }
+  @keyframes shake { 25% { transform: rotateY(180deg) translateX(-5px); } 75% { transform: rotateY(180deg) translateX(5px); } }
+  .card.taken .inner { opacity: .25; transform: rotateY(180deg) scale(.88); transition: transform .45s, opacity .6s; }
+  .card.taken .owner {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 46%; height: auto; aspect-ratio: 1;
+  }
+
+  /* ---------- 크게 보기(스포트라이트) ---------- */
+  .spot {
+    position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 16px;
+    background: rgba(74,44,26,.45); backdrop-filter: blur(2px);
+    pointer-events: none; opacity: 0; transition: opacity .18s;
+  }
+  .spot.show { opacity: 1; }
+  .spot.solid { pointer-events: auto; }
+  .spot-cards { display: flex; gap: clamp(10px, 3vw, 24px); justify-content: center; align-items: center; width: 100%; }
+  .spot-card {
+    width: min(78vw, 56vh * .75, 380px); max-width: 100%; aspect-ratio: 3 / 4; border-radius: 22px; overflow: hidden;
+    border: 5px solid #fff; box-shadow: 0 18px 40px rgba(74,44,26,.45); display: grid; place-items: center;
+    animation: zoomIn .28s cubic-bezier(.2,1.5,.4,1);
+  }
+  .spot-cards.two .spot-card { width: min(44vw, 50vh * .75, 340px); }
+  .spot-card img { width: 100%; height: 100%; object-fit: contain; }
+  .spot-card .fallback { font-family: var(--display); font-size: 28px; text-align: center; }
+  .spot-card .fallback b { display: block; font-size: 80px; font-weight: 400; }
+  @keyframes zoomIn { from { transform: scale(.4); opacity: 0; } }
+  .spot-name {
+    margin-top: 12px; text-align: center; font-family: var(--display); font-size: clamp(20px, 5.4vw, 30px); color: #fff;
+    text-shadow: 0 3px 0 rgba(74,44,26,.6);
+  }
+  .spot-inner { display: grid; justify-items: center; width: 100%; }
+  .spot-verdict { font-family: var(--display); font-size: clamp(26px, 7vw, 44px); color: #fff; text-shadow: 0 4px 0 rgba(74,44,26,.6); margin-bottom: 10px; animation: zoomIn .3s .1s backwards; }
+  .spot-verdict.ok { color: #fff3a8; }
+
+  /* ---------- 우승 연출 ---------- */
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+  .win { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 40%, rgba(255,245,228,.7), rgba(74,44,26,.6)); backdrop-filter: blur(4px); }
+  .win-card {
+    position: relative; width: min(460px, 100%); background: var(--panel); border-radius: 28px; padding: 26px 20px 20px; text-align: center;
+    border: 4px solid #fff; box-shadow: 0 0 0 6px var(--dough), 0 24px 60px rgba(74,44,26,.4);
+    animation: winIn .7s cubic-bezier(.2,1.6,.4,1); max-height: calc(100% - 20px); overflow: auto;
+  }
+  @keyframes winIn { from { transform: scale(.4) rotate(-8deg); opacity: 0; } }
+  .win-card .champ { width: 96px; height: 96px; margin: 0 auto; font-size: 48px; animation: bob 1.4s ease-in-out infinite; border-width: 4px; box-shadow: 0 0 0 4px var(--gold); }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(6deg); } }
+  .win-card .congrats { font-family: var(--display); font-size: 16px; color: var(--ink-soft); margin: 12px 0 4px; letter-spacing: .08em; }
+  .win-card h2 { font-family: var(--display); font-weight: 400; margin: 0; line-height: 1.15; font-size: clamp(28px, 7vw, 40px); color: var(--jelly); text-shadow: 0 3px 0 var(--jelly-soft); }
+  .win-card .sub { margin: 8px 0 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  .haul { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 0 0 14px; }
+  .haul img { width: 40px; height: 40px; object-fit: cover; object-position: 50% 10%; border-radius: 50%; background: var(--ground-2); border: 2px solid #fff; box-shadow: 0 2px 4px rgba(74,44,26,.25); animation: dealIn .5s backwards; }
+  @keyframes dealIn { from { transform: translateY(14px) scale(.4); opacity: 0; } }
+  .rank { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; text-align: left; }
+  .rank li { display: grid; grid-template-columns: 30px 34px 1fr auto; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 14px; background: var(--ground); font-weight: 600; font-size: 14px; }
+  .rank li.first { background: #fff0bf; }
+  .rank .pl { font-family: var(--display); color: var(--ink-soft); font-size: 16px; }
+  .rank .av { width: 34px; height: 34px; border-width: 2px; }
+  .rank .pt { font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums; }
+  .win-actions { display: flex; gap: 8px; }
+  .win-actions button { flex: 1; }
+  .win-actions .start-btn { margin: 0; font-size: 18px; padding: 14px; }
+  .win-actions .pill-btn { border-radius: 18px; font-size: 15px; }
+
+  @media (max-width: 760px) { .setup { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 520px) {
+    .wrap { padding-block: 10px 20px; }
+    .top-tools .pill-btn { padding: 8px 10px; font-size: 14px; }
+    .top-tools .lbl { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="logo">쿠키런 킹덤 <span>메모리</span></h1>
+    <div class="top-tools">
+      <button class="pill-btn" id="zoomBtn" type="button" aria-pressed="true" aria-label="카드 크게 보기">🔍<span class="lbl"> 크게 보기</span></button>
+      <button class="pill-btn" id="soundBtn" type="button" aria-pressed="true">🔊</button>
+      <button class="pill-btn" id="homeBtn" type="button" hidden aria-label="처음으로">🏠<span class="lbl"> 처음으로</span></button>
+    </div>
+  </header>
+
+  <!-- 설정 화면 -->
+  <section class="setup" id="setup">
+    <div class="panel">
+      <h2>누가 왕국에 출전할까요?</h2>
+      <p class="lead">플레이어 수를 정하고, 각자 함께할 쿠키를 골라 주세요.</p>
+      <div class="count-row">
+        <label for="playerCount">플레이어 수</label>
+        <div class="stepper">
+          <button type="button" id="minusBtn" aria-label="플레이어 한 명 줄이기">−</button>
+          <input type="number" id="playerCount" min="2" max="6" value="2" inputmode="numeric">
+          <button type="button" id="plusBtn" aria-label="플레이어 한 명 늘리기">+</button>
+        </div>
+        <span class="hint">2 ~ 6명</span>
+      </div>
+      <div class="player-rows" id="playerRows"></div>
+      <p class="err" id="setupErr" role="alert"></p>
+      <button class="start-btn" id="startBtn" type="button">모험 시작! 🍪</button>
+    </div>
+
+    <div class="panel">
+      <h2>게임 방법</h2>
+      <p class="lead">4 × 6, 모두 24장 · 12쌍. 판마다 쿠키 12종이 무작위로 나와요.</p>
+      <ul class="rules">
+        <li><b>1</b><span>내 차례에 카드 두 장을 차례로 눌러 뒤집어요. 뒤집은 카드는 화면 가운데에 <strong>크게</strong> 보여요.</span></li>
+        <li><b>2</b><span>같은 쿠키면 그 짝은 <strong>내 것</strong>! 한 번 더 뒤집을 수 있어요.</span></li>
+        <li><b>3</b><span>다른 쿠키면 다시 덮이고 <strong>다음 플레이어</strong> 차례로 넘어가요.</span></li>
+        <li><b>4</b><span>모든 짝을 찾으면 끝. 가장 많은 짝을 모은 플레이어가 우승이에요.</span></li>
+      </ul>
+      <div class="roster" id="roster" aria-label="등장하는 쿠키"></div>
+    </div>
+  </section>
+
+  <!-- 게임 화면 -->
+  <section class="game" id="game" hidden>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="turn-bar">
+      <div class="turn" id="turn" aria-live="polite"></div>
+      <div class="left" id="left"></div>
+    </div>
+    <div class="msg" id="msg" aria-live="polite"></div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+  </section>
+</div>
+
+<div class="spot" id="spot" aria-hidden="true"><div class="spot-inner" id="spotInner"></div></div>
+
+<div class="win" id="win" hidden>
+  <div class="win-card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="av champ" id="champ">🏆</div>
+    <p class="congrats">🏆 CONGRATULATIONS! 🏆</p>
+    <h2 id="winTitle"></h2>
+    <p class="sub" id="winSub"></p>
+    <div class="haul" id="haul" aria-label="우승자가 모은 쿠키"></div>
+    <ol class="rank" id="rank"></ol>
+    <div class="win-actions">
+      <button class="pill-btn" id="newBtn" type="button">쿠키 다시 고르기</button>
+      <button class="start-btn" id="againBtn" type="button">한 판 더! 🍪</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  // 『쿠키런: 킹덤』 쿠키 — 이미지는 cookies/<id>.webp (없으면 이름 카드로 표시)
+  const COOKIES = [
+    { id: "gingerbrave",   name: "용감한 쿠키",     color: "#f4b56a" },
+    { id: "strawberry",    name: "딸기맛 쿠키",     color: "#ff9bb3" },
+    { id: "custard",       name: "커스터드 3세맛 쿠키", color: "#ffd86b" },
+    { id: "pure_vanilla",  name: "퓨어바닐라 쿠키", color: "#f6e7b0" },
+    { id: "hollyberry",    name: "홀리베리 쿠키",   color: "#ff8a8a" },
+    { id: "dark_cacao",    name: "다크카카오 쿠키", color: "#b08a74" },
+    { id: "golden_cheese", name: "골든치즈 쿠키",   color: "#ffd24a" },
+    { id: "white_lily",    name: "화이트릴리 쿠키", color: "#f3eee2" },
+    { id: "espresso",      name: "에스프레소맛 쿠키", color: "#c39a78" },
+    { id: "madeleine",     name: "마들렌맛 쿠키",   color: "#f2cf73" },
+    { id: "licorice",      name: "감초맛 쿠키",     color: "#9d97c9" },
+    { id: "pomegranate",   name: "석류맛 쿠키",     color: "#e37a8c" },
+    { id: "latte",         name: "라떼맛 쿠키",     color: "#e2c09e" },
+    { id: "vampire",       name: "뱀파이어맛 쿠키", color: "#c77a95" },
+    { id: "moonlight",     name: "달빛술사 쿠키",   color: "#9fa4e8" },
+    { id: "sea_fairy",     name: "바다요정 쿠키",   color: "#8fd3f4" },
+    { id: "frost_queen",   name: "서리여왕 쿠키",   color: "#b9e4f7" },
+    { id: "wizard",        name: "마법사맛 쿠키",   color: "#b9a3ea" },
+  ];
+  COOKIES.forEach(c => { c.img = `cookies/${c.id}.webp`; c.ok = true; });
+  const byId = Object.fromEntries(COOKIES.map(c => [c.id, c]));
+  const PAIRS = 12;
+  const $ = (id) => document.getElementById(id);
+
+  // 이미지를 못 받은 쿠키는 이름 카드로 대신 보여줌
+  COOKIES.forEach(c => {
+    const im = new Image();
+    im.onerror = () => { c.ok = false; renderRoster(); renderRows(); };
+    im.src = c.img;
+  });
+  function faceBg(c) { return `background: radial-gradient(circle at 50% 38%, #fff 0 34%, ${c.color} 75%)`; }
+  function avatar(c, cls = "") {
+    return `<span class="av ${cls}" style="${faceBg(c)}">${c.ok ? `<img src="${c.img}" alt="">` : "🍪"}</span>`;
+  }
+  function cardFace(c) {
+    return c.ok ? `<img src="${c.img}" alt="" draggable="false">`
+                : `<span class="fallback"><b>🍪</b>${c.name}</span>`;
+  }
+
+  // ---------- 사운드 ----------
+  let actx = null, soundOn = true;
+  function ac() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+    if (actx && actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  function tone(freq, start, dur, type = "triangle", vol = 0.12) {
+    const a = soundOn && ac(); if (!a) return;
+    const t = a.currentTime + start;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    flip:  () => tone(760, 0, 0.1, "sine", 0.08),
+    match: () => { tone(988, 0, 0.16); tone(1318, 0.08, 0.2); tone(1760, 0.16, 0.32); },
+    miss:  () => { tone(300, 0, 0.16, "square", 0.04); tone(220, 0.12, 0.24, "square", 0.04); },
+    win:   () => {
+      [523, 659, 784, 1046, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * 0.11, 0.3, "triangle", 0.13));
+      [1046, 1318, 1568, 2093].forEach((f, i) => tone(f, 1.0 + i * 0.05, 0.9, "sine", 0.08));
+    },
+  };
+  $("soundBtn").addEventListener("click", () => {
+    soundOn = !soundOn;
+    $("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+    $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+    $("soundBtn").setAttribute("aria-label", soundOn ? "소리 끄기" : "소리 켜기");
+    if (soundOn) sfx.flip();
+  });
+  $("soundBtn").setAttribute("aria-label", "소리 끄기");
+
+  let zoomOn = true;
+  try { zoomOn = localStorage.getItem("crk-zoom") !== "off"; } catch (e) {}
+  function syncZoom() {
+    $("zoomBtn").setAttribute("aria-pressed", String(zoomOn));
+    $("zoomBtn").innerHTML = zoomOn ? `🔍<span class="lbl"> 크게 보기</span>` : `🔍<span class="lbl"> 크게 보기 꺼짐</span>`;
+  }
+  $("zoomBtn").addEventListener("click", () => {
+    zoomOn = !zoomOn; syncZoom();
+    try { localStorage.setItem("crk-zoom", zoomOn ? "on" : "off"); } catch (e) {}
+  });
+  syncZoom();
+
+  // ---------- 설정 화면 ----------
+  let chosen = ["gingerbrave", "strawberry", "pure_vanilla", "dark_cacao", "hollyberry", "golden_cheese"];
+
+  function renderRoster() {
+    $("roster").innerHTML = COOKIES.map(c => `<figure>${avatar(c)}<figcaption>${c.name}</figcaption></figure>`).join("");
+  }
+  function clampCount(n) { return Math.min(6, Math.max(2, Number.isFinite(n) ? Math.round(n) : 2)); }
+  function renderRows() {
+    const n = clampCount(+$("playerCount").value);
+    $("playerCount").value = n;
+    $("minusBtn").disabled = n <= 2;
+    $("plusBtn").disabled = n >= 6;
+    let html = "";
+    for (let i = 0; i < n; i++) {
+      const cur = byId[chosen[i]];
+      html += `<div class="player-row" data-i="${i}">
+          ${avatar(cur)}
+          <label for="p${i + 1}">플레이어 ${i + 1}</label>
+          <select id="p${i + 1}" data-i="${i}">
+            ${COOKIES.map(c => `<option value="${c.id}" ${c.id === cur.id ? "selected" : ""}>${c.name}</option>`).join("")}
+          </select>
+        </div>`;
+    }
+    $("playerRows").innerHTML = html;
+    validate();
+  }
+  function validate() {
+    const n = clampCount(+$("playerCount").value);
+    const picks = chosen.slice(0, n);
+    const dups = new Set(picks.filter((id, i) => picks.indexOf(id) !== i));
+    document.querySelectorAll(".player-row").forEach(row => row.classList.toggle("dup", dups.has(picks[+row.dataset.i])));
+    $("setupErr").textContent = dups.size
+      ? `${[...dups].map(id => byId[id].name).join(", ")}을(를) 두 명 이상이 골랐어요. 서로 다른 쿠키를 골라 주세요.`
+      : "";
+    $("startBtn").disabled = dups.size > 0;
+  }
+  $("playerRows").addEventListener("change", (e) => {
+    if (e.target.tagName !== "SELECT") return;
+    chosen[+e.target.dataset.i] = e.target.value;
+    renderRows();
+  });
+  $("playerCount").addEventListener("change", renderRows);
+  $("minusBtn").addEventListener("click", () => { $("playerCount").value = +$("playerCount").value - 1; renderRows(); });
+  $("plusBtn").addEventListener("click", () => {
+    const n = clampCount(+$("playerCount").value);
+    if (n >= 6) return;
+    const used = new Set(chosen.slice(0, n));
+    if (used.has(chosen[n])) chosen[n] = COOKIES.find(c => !used.has(c.id)).id;
+    $("playerCount").value = n + 1; renderRows();
+  });
+
+  // ---------- 게임 ----------
+  let S = null;
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+
+  function startGame(playerIds) {
+    const picks = shuffle(COOKIES.slice()).slice(0, PAIRS);
+    S = {
+      players: playerIds.map(id => ({ id, score: 0, loot: [] })),
+      cur: 0,
+      deck: shuffle(picks.flatMap(c => [c.id, c.id])),
+      up: [], taken: {}, lock: false,
+    };
+    $("setup").hidden = true; $("game").hidden = false; $("homeBtn").hidden = false; $("win").hidden = true;
+    stopFx(); hideSpot(true);
+    buildBoard(); renderScore(); renderTurn(); setMsg("");
+    window.scrollTo(0, 0);
+  }
+
+  function buildBoard() {
+    $("board").innerHTML = S.deck.map((id, i) => {
+      const c = byId[id];
+      return `<button class="card" type="button" data-i="${i}" aria-label="${i + 1}번 카드, 뒤집힘">
+        <span class="inner">
+          <span class="face back"></span>
+          <span class="face front" style="${faceBg(c)}">${cardFace(c)}</span>
+        </span>
+      </button>`;
+    }).join("");
+  }
+  const cardEl = (i) => $("board").children[i];
+
+  function renderScore() {
+    $("scoreboard").innerHTML = S.players.map((p, i) => {
+      const c = byId[p.id];
+      return `<div class="player-chip ${i === S.cur ? "active" : ""}">
+        ${avatar(c)}
+        <span class="meta">
+          <span class="nm">${c.name}</span>
+          <span class="loot">${p.loot.map(id => byId[id].ok ? `<img src="${byId[id].img}" alt="">` : "🍪").join("") || `<span class="none">아직 없어요</span>`}</span>
+        </span>
+        <span class="sc">${p.score}<small>쌍</small></span>
+      </div>`;
+    }).join("");
+    $("left").textContent = `남은 짝 ${PAIRS - Object.keys(S.taken).length / 2}`;
+    const chip = $("scoreboard").children[S.cur];
+    if (chip) chip.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+  function renderTurn() {
+    const c = byId[S.players[S.cur].id];
+    const t = $("turn");
+    t.innerHTML = `${avatar(c)}<span><span class="who">${c.name}</span> 차례!</span>`;
+    t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop");
+  }
+  function setMsg(s) { $("msg").textContent = s; }
+
+  // ---------- 크게 보기 ----------
+  let spotTimer = 0;
+  function spotCard(c) {
+    return `<div class="spot-card" style="${faceBg(c)}">${c.ok ? `<img src="${c.img}" alt="">` : `<span class="fallback"><b>🍪</b>${c.name}</span>`}</div>`;
+  }
+  // 첫 장: 잠깐 크게 보여주고 사라짐(다음 카드 누르기를 막지 않음)
+  function peek(c) {
+    if (!zoomOn) return;
+    clearTimeout(spotTimer);
+    $("spotInner").innerHTML = `<div class="spot-cards">${spotCard(c)}</div><div class="spot-name">${c.name}</div>`;
+    const sp = $("spot"); sp.classList.remove("solid"); sp.classList.add("show");
+    spotTimer = setTimeout(() => hideSpot(), 1000);
+  }
+  // 두 장: 나란히 크게 보여주고 결과 표시. 화면을 누르면 바로 넘어감
+  function showPair(a, b, ok, done) {
+    if (!zoomOn) { setTimeout(done, ok ? 700 : 1100); return; }
+    clearTimeout(spotTimer);
+    $("spotInner").innerHTML = `
+      <div class="spot-verdict ${ok ? "ok" : ""}">${ok ? "짝 찾았다! 🎉" : "아쉬워요 😢"}</div>
+      <div class="spot-cards two">${spotCard(a)}${spotCard(b)}</div>
+      <div class="spot-name">${ok ? a.name : `${a.name} · ${b.name}`}</div>`;
+    const sp = $("spot"); sp.classList.add("show", "solid");
+    let finished = false;
+    const finish = () => { if (finished) return; finished = true; sp.removeEventListener("click", finish); hideSpot(); done(); };
+    sp.addEventListener("click", finish);
+    spotTimer = setTimeout(finish, ok ? 1300 : 1600);
+  }
+  function hideSpot(now) {
+    clearTimeout(spotTimer);
+    const sp = $("spot"); sp.classList.remove("show", "solid");
+    if (now) $("spotInner").innerHTML = "";
+  }
+
+  $("board").addEventListener("click", (e) => {
+    const btn = e.target.closest(".card");
+    if (!btn || !S || S.lock) return;
+    const i = +btn.dataset.i;
+    if (S.taken[i] !== undefined || S.up.includes(i)) return;
+    ac();
+    const c = byId[S.deck[i]];
+    btn.classList.add("up");
+    btn.setAttribute("aria-label", `${i + 1}번 카드, ${c.name}`);
+    sfx.flip();
+    S.up.push(i);
+    if (S.up.length < 2) { peek(c); return; }
+
+    S.lock = true;
+    const [a, b] = S.up;
+    const player = S.players[S.cur];
+    const pc = byId[player.id];
+    const ca = byId[S.deck[a]], cb = byId[S.deck[b]];
+    const ok = S.deck[a] === S.deck[b];
+    cardEl(a).classList.add(ok ? "match" : "miss"); cardEl(b).classList.add(ok ? "match" : "miss");
+    ok ? sfx.match() : sfx.miss();
+    setTimeout(() => showPair(ca, cb, ok, () => ok ? take(a, b, player, pc, ca) : pass(a, b)), 350);
+  });
+
+  function take(a, b, player, pc, got) {
+    [a, b].forEach(k => {
+      const el = cardEl(k);
+      el.classList.remove("match", "up");
+      el.classList.add("taken");
+      el.disabled = true;
+      el.setAttribute("aria-label", `${k + 1}번 카드, ${got.name} — ${pc.name}이(가) 획득`);
+      el.insertAdjacentHTML("beforeend", avatar(pc, "owner"));
+      S.taken[k] = S.cur;
+    });
+    player.score++; player.loot.push(got.id);
+    S.up = []; S.lock = false;
+    setMsg(`🎉 ${pc.name}, ${got.name} 획득! 한 번 더 뒤집어요.`);
+    renderScore();
+    $("scoreboard").children[S.cur].classList.add("bump");
+    if (Object.keys(S.taken).length === S.deck.length) finish();
+  }
+  function pass(a, b) {
+    [a, b].forEach(k => {
+      const el = cardEl(k);
+      el.classList.remove("up", "miss");
+      el.setAttribute("aria-label", `${k + 1}번 카드, 뒤집힘`);
+    });
+    S.up = []; S.lock = false;
+    S.cur = (S.cur + 1) % S.players.length;
+    setMsg(`아쉬워요! ${byId[S.players[S.cur].id].name}에게 차례가 넘어가요.`);
+    renderScore(); renderTurn();
+  }
+
+  function finish() {
+    const ranked = S.players.map(p => ({ ...p })).sort((x, y) => y.score - x.score);
+    const top = ranked[0].score;
+    const winners = ranked.filter(p => p.score === top);
+    const names = winners.map(p => byId[p.id].name);
+    const champ = byId[winners[0].id];
+    $("champ").outerHTML = avatar(champ, "champ").replace('class="av champ"', 'class="av champ" id="champ"');
+    $("winTitle").textContent = winners.length > 1 ? `${names.join(" & ")} 공동 우승!` : `${names[0]} 우승!`;
+    $("winSub").textContent = winners.length > 1
+      ? `${top}쌍으로 나란히 1위! 쿠키 왕국에 축제가 열렸어요 ✨`
+      : `${PAIRS}쌍 중 ${top}쌍을 모아 오늘의 쿠키 왕국 챔피언이 되었어요! 👑`;
+    $("haul").innerHTML = winners.length === 1
+      ? winners[0].loot.map((id, n) => byId[id].ok ? `<img src="${byId[id].img}" alt="${byId[id].name}" style="animation-delay:${0.5 + n * 0.07}s">` : "").join("")
+      : "";
+    let place = 0, prev = null;
+    $("rank").innerHTML = ranked.map((p, idx) => {
+      if (p.score !== prev) { place = idx + 1; prev = p.score; }
+      const c = byId[p.id];
+      return `<li class="${place === 1 ? "first" : ""}">
+        <span class="pl">${place === 1 ? "👑" : place + "위"}</span>
+        ${avatar(c)}
+        <span>${c.name}</span>
+        <span class="pt">${p.score}쌍</span>
+      </li>`;
+    }).join("");
+    setTimeout(() => {
+      $("win").hidden = false;
+      $("againBtn").focus();
+      sfx.win();
+      celebrate(winners.map(p => byId[p.id].color));
+    }, 450);
+  }
+
+  $("startBtn").addEventListener("click", () => { ac(); startGame(chosen.slice(0, clampCount(+$("playerCount").value))); });
+  $("againBtn").addEventListener("click", () => startGame(S.players.map(p => p.id)));
+  $("newBtn").addEventListener("click", goHome);
+  $("homeBtn").addEventListener("click", goHome);
+  function goHome() {
+    $("win").hidden = true; stopFx(); hideSpot(true);
+    $("game").hidden = true; $("setup").hidden = false; $("homeBtn").hidden = true;
+    renderRows();
+  }
+
+  // ---------- 축하 효과: 꽃가루 + 불꽃 ----------
+  const cv = $("fx"), cx = cv.getContext("2d");
+  let parts = [], raf = 0, fxUntil = 0, burstTimer = 0;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function resize() {
+    const d = window.devicePixelRatio || 1;
+    cv.width = innerWidth * d; cv.height = innerHeight * d;
+    cx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  addEventListener("resize", resize); resize();
+
+  function confetti(n, colors) {
+    for (let k = 0; k < n; k++) {
+      const fromLeft = k % 2 === 0;
+      parts.push({
+        kind: Math.random() < 0.25 ? "heart" : Math.random() < 0.4 ? "star" : "rect",
+        x: fromLeft ? -10 : innerWidth + 10,
+        y: innerHeight * (0.55 + Math.random() * 0.4),
+        vx: (fromLeft ? 1 : -1) * (6 + Math.random() * 9),
+        vy: -(10 + Math.random() * 10),
+        g: 0.28, drag: 0.985,
+        r: 5 + Math.random() * 7,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1, fade: 0.0025 + Math.random() * 0.003,
+      });
+    }
+  }
+  function burst(colors) {
+    const x = innerWidth * (0.15 + Math.random() * 0.7), y = innerHeight * (0.12 + Math.random() * 0.35);
+    const n = 46;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2, sp = 3 + Math.random() * 4.5;
+      parts.push({
+        kind: "spark", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        g: 0.06, drag: 0.975, r: 2 + Math.random() * 2, rot: 0, vr: 0,
+        color: colors[k % colors.length], life: 1, fade: 0.012 + Math.random() * 0.01,
+      });
+    }
+    tone(180 + Math.random() * 60, 0, 0.25, "sawtooth", 0.02);
+  }
+  function drawHeart(r) {
+    cx.beginPath();
+    cx.moveTo(0, r * 0.35);
+    cx.bezierCurveTo(-r, -r * 0.4, -r * 0.45, -r * 1.1, 0, -r * 0.45);
+    cx.bezierCurveTo(r * 0.45, -r * 1.1, r, -r * 0.4, 0, r * 0.35);
+    cx.fill();
+  }
+  function drawStar(r) {
+    cx.beginPath();
+    for (let k = 0; k < 10; k++) {
+      const rr = k % 2 ? r * 0.45 : r, a = (k / 10) * Math.PI * 2 - Math.PI / 2;
+      cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    cx.closePath(); cx.fill();
+  }
+  function tick() {
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+    for (const p of parts) {
+      p.vx *= p.drag; p.vy = p.vy * p.drag + p.g;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= p.fade;
+      cx.save();
+      cx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.4));
+      cx.translate(p.x, p.y); cx.rotate(p.rot);
+      cx.fillStyle = p.color;
+      if (p.kind === "rect") cx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+      else if (p.kind === "heart") drawHeart(p.r);
+      else if (p.kind === "star") drawStar(p.r);
+      else { cx.beginPath(); cx.arc(0, 0, p.r, 0, Math.PI * 2); cx.fill(); }
+      cx.restore();
+    }
+    if (parts.length || performance.now() < fxUntil) raf = requestAnimationFrame(tick);
+    else raf = 0;
+  }
+  function celebrate(winnerCards) {
+    const colors = ["#ff5c8a", "#3fa9f5", "#ffbf1f", "#c9803a", "#ffffff", "#8a5a3a"]
+      .concat(winnerCards);
+    if (reduce) { confetti(40, colors); parts.forEach(p => { p.vx *= .3; p.vy = 0; p.y = Math.random() * innerHeight; }); tick(); return; }
+    fxUntil = performance.now() + 6000;
+    confetti(160, colors);
+    let shots = 0;
+    burstTimer = setInterval(() => {
+      burst(colors);
+      if (shots % 3 === 0) confetti(50, colors);
+      if (++shots > 12) { clearInterval(burstTimer); burstTimer = 0; }
+    }, 420);
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  function stopFx() {
+    if (burstTimer) clearInterval(burstTimer);
+    burstTimer = 0; parts = []; fxUntil = 0;
+    if (raf) cancelAnimationFrame(raf); raf = 0;
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+  }
+
+  renderRoster();
+  renderRows();
+})();
+</script>

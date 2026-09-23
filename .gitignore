@@ -1,4 +1,5 @@
 # 공식 아이프리 이미지(저작물)는 개인용으로만 받아 쓰고 저장소에는 올리지 않음
-# 다시 받기: python3 cards/fetch_official.py
+# 다시 받기: python3 cards/fetch_official.py (쿠키런 이미지는 cookies/)
 cards/oa4/
 cards/chara/
+cookies/*.webp
