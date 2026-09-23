@@ -167,12 +167,34 @@
 
   /* ---------- 우승 연출 ---------- */
   #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
-  .win { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 40%, rgba(255,245,228,.7), rgba(74,44,26,.6)); backdrop-filter: blur(4px); }
+  .win { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px 16px; background: radial-gradient(circle at 50% 40%, rgba(255,245,228,.7), rgba(74,44,26,.6)); backdrop-filter: blur(4px); }
   .win-card {
     position: relative; width: min(460px, 100%); background: var(--panel); border-radius: 28px; padding: 26px 20px 20px; text-align: center;
     border: 4px solid #fff; box-shadow: 0 0 0 6px var(--dough), 0 24px 60px rgba(74,44,26,.4);
-    animation: winIn .7s cubic-bezier(.2,1.6,.4,1); max-height: calc(100% - 20px); overflow: auto;
+    animation: winIn .7s cubic-bezier(.2,1.6,.4,1); min-height: 0; flex: 0 1 auto; overflow: auto;
   }
+  /* 용감한 쿠키의 축하 */
+  .cheer { display: flex; align-items: flex-end; gap: 4px; width: min(480px, 100%); flex: none; z-index: 1; margin-bottom: -18px; }
+  .cheer-host {
+    flex: none; width: clamp(92px, 27vw, 140px); border: 0; padding: 0; background: none; cursor: pointer;
+    animation: cheerIn .7s .35s cubic-bezier(.2,1.6,.4,1) backwards, cheerJump .9s 1.2s ease-in-out infinite;
+  }
+  .cheer-host img { width: 100%; display: block; filter: drop-shadow(0 8px 10px rgba(74,44,26,.35)); }
+  .cheer-host.again { animation: cheerSpin .7s ease-in-out, cheerJump .9s .7s ease-in-out infinite; }
+  @keyframes cheerIn { from { transform: translate(-80%, 60%) rotate(-30deg) scale(.4); opacity: 0; } }
+  @keyframes cheerJump { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-16px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
+  @keyframes cheerSpin { 50% { transform: translateY(-26px) rotate(-200deg) scale(1.1); } }
+  .cheer-bubble {
+    position: relative; flex: 1; min-width: 0; margin-bottom: 34px; padding: 10px 14px; border-radius: 20px;
+    background: #fff; border: 3px solid var(--ink); box-shadow: 0 5px 0 rgba(74,44,26,.2);
+    font-family: var(--display); font-size: clamp(16px, 4.6vw, 22px); line-height: 1.3; color: var(--ink); word-break: keep-all;
+    animation: pop .35s .8s cubic-bezier(.2,1.6,.4,1) backwards; min-height: 2.9em;
+  }
+  .cheer-bubble::before {
+    content: ""; position: absolute; left: -12px; bottom: 16px; width: 18px; height: 18px;
+    background: #fff; border: 3px solid var(--ink); border-top: 0; border-right: 0; transform: rotate(45deg);
+  }
+  .cheer-bubble b { color: var(--jelly); font-weight: 400; }
   @keyframes winIn { from { transform: scale(.4) rotate(-8deg); opacity: 0; } }
   .win-card .champ { width: 96px; height: 96px; margin: 0 auto; font-size: 48px; animation: bob 1.4s ease-in-out infinite; border-width: 4px; box-shadow: 0 0 0 4px var(--gold); }
   @keyframes bob { 50% { transform: translateY(-8px) rotate(6deg); } }
@@ -331,6 +353,10 @@
 
 
 <div class="win" id="win" hidden>
+  <div class="cheer">
+    <button class="cheer-host" id="cheerHost" type="button" aria-label="용감한 쿠키에게 한 번 더 축하받기"></button>
+    <div class="cheer-bubble" id="cheerBubble" aria-live="polite"></div>
+  </div>
   <div class="win-card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
     <div class="av champ" id="champ">🏆</div>
     <p class="congrats">🏆 CONGRATULATIONS! 🏆</p>
@@ -496,6 +522,10 @@
       [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, i * 0.05, 0.5, "triangle", 0.12));
       bell(2093, 0.25, 0.08, 0.9); noise(0.05, 0.6, 0.06, 5000, 12000, null, "highpass");
       tone(80, 0, 0.3, "sine", 0.25, 40);
+    },
+    cheer:  () => {                                                                                 // 관중 환호 + 휘파람
+      for (let i = 0; i < 18; i++) noise(i * 0.06, 0.18, 0.05, 900 + Math.random() * 2500, 0);
+      tone(1400, 0.1, 0.35, "sine", 0.05, 2600); tone(1600, 0.55, 0.3, "sine", 0.05, 2900);
     },
     deal:   () => { for (let i = 0; i < 8; i++) noise(i * 0.09, 0.06, 0.06, 1500 + i * 300, 4000); },
     turn:   () => { tone(784, 0, 0.09, "sine", 0.06); tone(1046, 0.08, 0.12, "sine", 0.06); },
@@ -715,6 +745,7 @@
     buildBoard(); renderScore(); renderTurn(); setMsg("");
     window.scrollTo(0, 0);
     S.lock = true;
+    cheerTimers.forEach(clearTimeout); cheerTimers = [];
     playOpening(S.players.map(p => byId[p.id]), () => {
       S.lock = false;
       bgmWanted = true; bgmSync();
@@ -911,14 +942,42 @@
         <span class="pt">${p.score}쌍</span>
       </li>`;
     }).join("");
+    cheerLine = winners.length > 1
+      ? `와아~ 모두 대단해요! <b>${names.join(", ")}</b>, 공동 우승 축하해요!`
+      : winners[0].id === "gingerbrave"
+        ? `해냈다! 바로 나, <b>용감한 쿠키</b>가 챔피언이야! 다들 고마워!`
+        : `축하해요, <b>${names[0]}</b>! 오늘의 쿠키 왕국 챔피언이에요!`;
+    $("cheerHost").innerHTML = byId.gingerbrave.ok ? `<img src="${byId.gingerbrave.img}" alt="">` : "🍪";
+    $("cheerBubble").innerHTML = "";
     setTimeout(() => {
       $("win").hidden = false;
       $("againBtn").focus();
-      duckBgm(3.5);
+      duckBgm(4.5);
       sfx.win();
       celebrate(winners.map(p => byId[p.id].color));
+      cheer(900);
     }, 450);
   }
+
+  // ---------- 우승 축하: 용감한 쿠키 ----------
+  let cheerLine = "", cheerTimers = [];
+  function cheer(delay) {
+    cheerTimers.forEach(clearTimeout); cheerTimers = [];
+    const plain = cheerLine.replace(/<\/?b>/g, "");
+    const at = (ms, fn) => cheerTimers.push(setTimeout(fn, delay + ms));
+    at(0, () => { sfx.cheer(); speak(plain); });
+    [...plain].forEach((ch, i) => at(i * 38, () => {
+      $("cheerBubble").textContent = plain.slice(0, i + 1);
+      if (ch.trim() && i % 2 === 0) sfx.blip(i);
+    }));
+    at(plain.length * 38 + 30, () => { $("cheerBubble").innerHTML = cheerLine; });
+  }
+  $("cheerHost").addEventListener("click", () => {
+    const h = $("cheerHost");
+    h.classList.remove("again"); void h.offsetWidth; h.classList.add("again");
+    celebrate(["#f4b56a", "#ff5c8a", "#ffbf1f"]);
+    cheer(0);
+  });
 
   $("startBtn").addEventListener("click", () => { ac(); sfx.start(); startGame(chosen.slice(0, clampCount(+$("playerCount").value))); });
   $("againBtn").addEventListener("click", () => { sfx.start(); startGame(S.players.map(p => p.id)); });
@@ -929,6 +988,8 @@
     bgmWanted = false; bgmSync();
     $("bgmPreview").textContent = "▶ 미리 듣기";
     $("win").hidden = true; stopFx();
+    cheerTimers.forEach(clearTimeout); cheerTimers = [];
+    try { speechSynthesis.cancel(); } catch (e) {}
     $("game").hidden = true; $("setup").hidden = false; $("homeBtn").hidden = true;
     renderRows();
   }
