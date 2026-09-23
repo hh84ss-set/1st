@@ -173,6 +173,12 @@
     background: var(--ground-2); color: var(--ink);
   }
 
+  .av { overflow: hidden; }
+  .av img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; transform: scale(1.35) translateY(8%); }
+  .turn .av { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; background: var(--pink-soft); flex: none; }
+  .card.taken .owner img { border-radius: 50%; }
+  .card.taken .owner { overflow: hidden; }
+
   /* ---------- 카드 이미지 ---------- */
   .deck-panel { grid-column: 1 / -1; display: grid; gap: 14px; }
   .deck-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
@@ -261,9 +267,9 @@
 
   .board-wrap { display: flex; justify-content: center; }
   .board {
-    width: min(100%, max(340px, calc(100dvh - 250px)));
+    width: min(100%, 720px, max(300px, calc((100dvh - 250px) * 0.9)));
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: clamp(4px, 1vw, 9px);
   }
   .card {
@@ -298,25 +304,14 @@
   }
   .card .back::after {
     content: "♥";
-    font-size: clamp(12px, 2.4vw, 24px);
+    font-size: clamp(16px, 3.4vw, 32px);
     color: var(--pink);
   }
   .card:not(:disabled):hover .back { filter: brightness(1.07); transform: translateY(-2px); }
   .card .front {
     transform: rotateY(180deg);
-    border: 2px solid #fff;
+    border: 3px solid #fff;
     box-shadow: 0 3px 0 rgba(59,36,71,.15);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 2px; padding: 4px; text-align: center;
-  }
-  .card .front .em { font-size: clamp(16px, 3.6vw, 36px); line-height: 1.1; filter: drop-shadow(0 2px 0 rgba(255,255,255,.7)); }
-  .card .front .nm {
-    font-family: var(--display); font-size: clamp(9px, 1.35vw, 14px); line-height: 1.15; color: var(--ink);
-    word-break: keep-all;
-  }
-  .card .front .tg {
-    font-size: clamp(7px, .95vw, 10px); font-weight: 700; color: rgba(59,36,71,.65); line-height: 1.1;
-    word-break: keep-all;
   }
   .card .front.photo { padding: 0; background: #fff; }
   .card .front.photo img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; user-select: none; }
@@ -335,10 +330,6 @@
     width: 44%; aspect-ratio: 1; border-radius: 50%;
     display: grid; place-items: center; font-size: clamp(10px, 2vw, 18px);
     border: 2px solid #fff; box-shadow: 0 2px 6px rgba(59,36,71,.2);
-  }
-  @media (max-width: 560px) {
-    .card .front .tg { display: none; }
-    .card .front .nm { font-size: 8px; }
   }
 
   /* ---------- 우승 연출 ---------- */
@@ -415,9 +406,9 @@
       <div class="deck-head">
         <div>
           <h2>카드 이미지</h2>
-          <p class="lead">아이프리 게임기에서 뽑은 카드의 사진이나 이미지를 올려 주세요. 서로 다른 그림이 24장 있으면 48장 모두 실제 카드로 짝을 맞춰요.</p>
+          <p class="lead">아이프리 게임기에서 뽑은 카드의 사진이나 이미지를 올려 주세요. 올린 이미지가 먼저 쓰이고, 15장이 안 되면 모자란 만큼 캐릭터 일러스트 카드로 채워요.</p>
         </div>
-        <div class="deck-count" id="deckCount"><strong id="imgCount">0</strong> / 24장</div>
+        <div class="deck-count" id="deckCount"><strong id="imgCount">0</strong> / 15장</div>
       </div>
       <div class="meter" aria-hidden="true"><i id="meterBar"></i></div>
       <label class="drop" id="drop" for="fileIn">
@@ -451,7 +442,7 @@
 
     <div class="panel">
       <h2>게임 방법</h2>
-      <p class="lead">8 × 6, 모두 48장 · 24쌍의 카드가 뒤집힌 채 시작해요.</p>
+      <p class="lead">6 × 5, 모두 30장 · 15쌍의 카드가 뒤집힌 채 시작해요.</p>
       <ul class="rules">
         <li><b>1</b><span>내 차례에 카드 두 장을 차례로 눌러 뒤집어요.</span></li>
         <li><b>2</b><span>같은 그림의 카드면 그 짝은 <strong>내 것</strong>! 한 번 더 뒤집을 수 있어요.</span></li>
@@ -492,36 +483,146 @@
 
 <script>
 (() => {
-  // 『おねがいアイプリ』(2026) 등장 캐릭터 — 앞의 15명은 플레이어 이름으로도 선택 가능
+  // 『おねがいアイプリ』(2026) 등장 캐릭터 15명 — 카드 15쌍이자 플레이어 이름 목록
+  // 그림은 이 게임을 위해 직접 그린 SVG 일러스트 (공식 디자인 아님)
+  // style: 머리 모양 · acc: 액세서리 · hair/eye/outfit: 색
   const CARDS = [
-    { id: "inori",   name: "이노리",     jp: "好実いのり",   emoji: "💗", tag: "주인공",         c1: "#ff7ab6", c2: "#ffe0ee" },
-    { id: "aoi",     name: "아오이",     jp: "夢宮あおい",   emoji: "💙", tag: "주인공",         c1: "#4aaeff", c2: "#dcefff" },
-    { id: "fortu",   name: "포츄",       jp: "フォーチュ",   emoji: "🧸", tag: "신비한 친구",     c1: "#ffc75a", c2: "#fff4d6" },
-    { id: "gumi",    name: "구미",       jp: "友坂ぐみ",     emoji: "🍬", tag: "카나데대",        c1: "#ff9f6b", c2: "#ffe9dc" },
-    { id: "olivia",  name: "올리비아",   jp: "勇樹おりびあ", emoji: "⚡", tag: "카나데대",        c1: "#9b7bff", c2: "#ece5ff" },
-    { id: "nana",    name: "나나",       jp: "熱海ナナ",     emoji: "👑", tag: "하이센스 학원",   c1: "#e6405a", c2: "#ffdfe4" },
-    { id: "ema",     name: "에마",       jp: "望永エマ",     emoji: "🌙", tag: "카나데대",        c1: "#5b6ee8", c2: "#e2e6ff" },
-    { id: "koharu",  name: "코하루",     jp: "花咲こはる",   emoji: "🌸", tag: "학생회장",        c1: "#ff9ec7", c2: "#fff0f6" },
-    { id: "wakaba",  name: "와카바",     jp: "夢宮わかば",   emoji: "🍀", tag: "등장인물",        c1: "#4cc38a", c2: "#dcf7ea" },
-    { id: "kanpeki", name: "칸페키",     jp: "小池かんぺき", emoji: "💯", tag: "등장인물",        c1: "#f06a6a", c2: "#ffe3e3" },
-    { id: "kocho",   name: "교장 선생님", jp: "校長先生",    emoji: "🎓", tag: "오네가이 중학교", c1: "#8a7f73", c2: "#efe9e2" },
-    { id: "aina",    name: "아이나",     jp: "アイナ",       emoji: "🏰", tag: "새 아이프리",     c1: "#35c6d6", c2: "#dcf7fa" },
-    { id: "momoka",  name: "모모카",     jp: "モモカ",       emoji: "🍑", tag: "새 아이프리",     c1: "#ff8c8c", c2: "#ffe6e0" },
-    { id: "satsuki", name: "사츠키",     jp: "さつき",       emoji: "🌺", tag: "등장인물",        c1: "#d85fb8", c2: "#fbe2f4" },
-    { id: "kiko",    name: "키코",       jp: "きこ",         emoji: "🎧", tag: "등장인물",        c1: "#58a6a6", c2: "#dff2f2" },
-    // 스페셜 카드 (코디 · 아이템)
-    { id: "buzz",    name: "올리비아 버즈리움", jp: "バズリウムコーデ", emoji: "💫", tag: "스페셜 코디", c1: "#b98bff", c2: "#fff0fb" },
-    { id: "duo1",    name: "구미×올리비아", jp: "デュオコーデ", emoji: "🍭", tag: "듀오 코디",       c1: "#ffa66b", c2: "#eadfff" },
-    { id: "duo2",    name: "아오이×구미", jp: "デュオコーデ",   emoji: "🫧", tag: "듀오 코디",       c1: "#6bbcff", c2: "#ffe6d6" },
-    { id: "duo3",    name: "이노리×아오이", jp: "W主人公",      emoji: "🩷", tag: "더블 주인공",     c1: "#ff7ab6", c2: "#cfe8ff" },
-    { id: "prism",   name: "오네가이 프리즘", jp: "おねがいプリズム", emoji: "💎", tag: "보상 아이템", c1: "#7fd6ff", c2: "#f4e6ff" },
-    { id: "team",    name: "카나데대",   jp: "おねがいかなえ隊", emoji: "🎀", tag: "소원을 이루는 팀", c1: "#ff6fa8", c2: "#fff2d6" },
-    { id: "miracle", name: "미라클 카드", jp: "ミラクルカード", emoji: "🌈", tag: "레어 카드",      c1: "#ffd24a", c2: "#ffe0f1" },
-    { id: "sanrio",  name: "산리오 콜라보", jp: "サンリオコラボ", emoji: "🐰", tag: "콜라보 코디",  c1: "#ff9fc2", c2: "#fffbe0" },
-    { id: "town",    name: "오네가이 타운", jp: "おねがい町",   emoji: "🏡", tag: "무대",             c1: "#8fd37a", c2: "#e6f7ff" },
+    { id: "inori",   name: "이노리",     jp: "好実いのり",   emoji: "💗", c1: "#ff7ab6", c2: "#ffe0ee", hair: "#ff86b8", eye: "#ff3f8e", outfit: "#ff5fa2", style: "twin", acc: "bow" },
+    { id: "aoi",     name: "아오이",     jp: "夢宮あおい",   emoji: "💙", c1: "#4aaeff", c2: "#dcefff", hair: "#4c8fe8", eye: "#2a6fd6", outfit: "#3aa0ff", style: "long", acc: "star" },
+    { id: "fortu",   name: "포츄",       jp: "フォーチュ",   emoji: "🧸", c1: "#ffc75a", c2: "#fff4d6", kind: "mascot" },
+    { id: "gumi",    name: "구미",       jp: "友坂ぐみ",     emoji: "🍬", c1: "#ff9f6b", c2: "#ffe9dc", hair: "#ff9448", eye: "#f06a1e", outfit: "#ff8a5c", style: "side", acc: "candy" },
+    { id: "olivia",  name: "올리비아",   jp: "勇樹おりびあ", emoji: "⚡", c1: "#9b7bff", c2: "#ece5ff", hair: "#8c63f0", eye: "#6a3fd8", outfit: "#7b5cff", style: "pony", acc: "bolt" },
+    { id: "nana",    name: "나나",       jp: "熱海ナナ",     emoji: "👑", c1: "#e6405a", c2: "#ffdfe4", hair: "#f7c44f", eye: "#d8283f", outfit: "#e6405a", style: "long", acc: "crown" },
+    { id: "ema",     name: "에마",       jp: "望永エマ",     emoji: "🌙", c1: "#5b6ee8", c2: "#e2e6ff", hair: "#34408f", eye: "#6b7bff", outfit: "#4b5bd6", style: "bob", acc: "moon" },
+    { id: "koharu",  name: "코하루",     jp: "花咲こはる",   emoji: "🌸", c1: "#ff9ec7", c2: "#fff0f6", hair: "#f7b2cf", eye: "#e0508d", outfit: "#ff9ec7", style: "buns", acc: "flower" },
+    { id: "wakaba",  name: "와카바",     jp: "夢宮わかば",   emoji: "🍀", c1: "#4cc38a", c2: "#dcf7ea", hair: "#57c486", eye: "#1f9d63", outfit: "#3fb57a", style: "short", acc: "leaf" },
+    { id: "kanpeki", name: "칸페키",     jp: "小池かんぺき", emoji: "💯", c1: "#f06a6a", c2: "#ffe3e3", hair: "#4a3030", eye: "#c23c3c", outfit: "#e25555", style: "bob", acc: "glasses" },
+    { id: "kocho",   name: "교장 선생님", jp: "校長先生",    emoji: "🎓", c1: "#8a7f73", c2: "#efe9e2", kind: "principal" },
+    { id: "aina",    name: "아이나",     jp: "アイナ",       emoji: "🏰", c1: "#35c6d6", c2: "#dcf7fa", hair: "#3cc3d3", eye: "#128c9c", outfit: "#2fb6c8", style: "side", acc: "tiara" },
+    { id: "momoka",  name: "모모카",     jp: "モモカ",       emoji: "🍑", c1: "#ff8c8c", c2: "#ffe6e0", hair: "#ff9a8a", eye: "#e9546a", outfit: "#ff7f7f", style: "twin", acc: "peach" },
+    { id: "satsuki", name: "사츠키",     jp: "さつき",       emoji: "🌺", c1: "#d85fb8", c2: "#fbe2f4", hair: "#b8479c", eye: "#9c2f84", outfit: "#d05cb0", style: "pony", acc: "flower" },
+    { id: "kiko",    name: "키코",       jp: "きこ",         emoji: "🎧", c1: "#58a6a6", c2: "#dff2f2", hair: "#5f8f99", eye: "#2f7a7a", outfit: "#4f9d9d", style: "short", acc: "headphones" },
   ];
 
-  const PLAYABLE = CARDS.slice(0, 15);
+  // ---------- 캐릭터 일러스트 (SVG, 120 × 160) ----------
+  function starPts(cx, cy, R, r) {
+    const pts = [];
+    for (let k = 0; k < 10; k++) {
+      const rr = k % 2 ? r : R, a = (k / 10) * Math.PI * 2 - Math.PI / 2;
+      pts.push((cx + Math.cos(a) * rr).toFixed(1) + "," + (cy + Math.sin(a) * rr).toFixed(1));
+    }
+    return pts.join(" ");
+  }
+  function sparkles(c) {
+    return [[16, 20, 5], [104, 30, 4], [12, 118, 3.5], [108, 108, 5], [98, 12, 3]]
+      .map(([x, y, r]) => `<polygon points="${starPts(x, y, r, r * 0.4)}" fill="#fff" opacity=".8"/>`).join("");
+  }
+  function bgDefs(c) {
+    return `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.c2}"/><stop offset="1" stop-color="${c.c1}"/></linearGradient></defs>
+      <rect width="120" height="160" fill="url(#bg)"/>
+      <circle cx="60" cy="70" r="46" fill="#fff" opacity=".35"/>${sparkles(c)}`;
+  }
+  const SKIN = "#ffe4d4", LINE = "#3b2447";
+  function eyes(color, y = 76) {
+    return [47, 73].map(x => `
+      <ellipse cx="${x}" cy="${y}" rx="7.2" ry="8.4" fill="#fff"/>
+      <ellipse cx="${x}" cy="${y + 0.8}" rx="6.2" ry="7.6" fill="${color}"/>
+      <ellipse cx="${x}" cy="${y + 2}" rx="3.2" ry="4.4" fill="${LINE}" opacity=".75"/>
+      <circle cx="${x - 2.2}" cy="${y - 2.6}" r="2.3" fill="#fff"/>
+      <circle cx="${x + 2.4}" cy="${y + 3.4}" r="1.1" fill="#fff"/>
+      <path d="M${x - 8} ${y - 6} Q${x} ${y - 11.5} ${x + 8} ${y - 6}" stroke="${LINE}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`).join("");
+  }
+  function faceBase(eyeColor) {
+    return `<ellipse cx="60" cy="72" rx="30" ry="31" fill="${SKIN}"/>
+      ${eyes(eyeColor)}
+      <ellipse cx="39" cy="88" rx="5" ry="2.6" fill="#ff8fb0" opacity=".6"/>
+      <ellipse cx="81" cy="88" rx="5" ry="2.6" fill="#ff8fb0" opacity=".6"/>
+      <path d="M55.5 91 Q60 95.5 64.5 91" stroke="#c2456b" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  }
+  function body(outfit) {
+    return `<rect x="53" y="98" width="14" height="22" fill="#f6d2c0"/>
+      <path d="M16 160 C18 130 36 118 60 118 C84 118 102 130 104 160 Z" fill="${outfit}"/>
+      <path d="M44 119 L60 136 L76 119" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M54 136 L60 130 L66 136 L60 146 Z" fill="${outfit}" opacity=".7"/>`;
+  }
+  function backHair(st, h) {
+    const tail = (cx, cy, rot) => `<ellipse cx="${cx}" cy="${cy}" rx="12" ry="30" fill="${h}" transform="rotate(${rot} ${cx} ${cy})"/>`;
+    const top = `<path d="M26 74 C22 30 98 30 94 74 L94 92 L26 92 Z" fill="${h}"/>`;
+    switch (st) {
+      case "long":  return `<path d="M24 72 C20 26 100 26 96 72 L102 146 C86 152 34 152 18 146 Z" fill="${h}"/>`;
+      case "bob":   return `<path d="M24 74 C20 28 100 28 96 74 L98 108 C84 114 36 114 22 108 Z" fill="${h}"/>`;
+      case "short": return top;
+      case "twin":  return top + tail(17, 104, 12) + tail(103, 104, -12)
+                      + `<circle cx="24" cy="74" r="5" fill="#fff"/><circle cx="96" cy="74" r="5" fill="#fff"/>`;
+      case "pony":  return top + `<path d="M86 40 C118 50 116 110 100 132 C104 100 100 70 82 54 Z" fill="${h}"/>`;
+      case "side":  return top + tail(18, 104, 18) + `<circle cx="26" cy="76" r="5" fill="#fff"/>`;
+      case "buns":  return `<circle cx="32" cy="34" r="13" fill="${h}"/><circle cx="88" cy="34" r="13" fill="${h}"/>`
+                      + `<path d="M24 74 C20 28 100 28 96 74 L98 104 C84 110 36 110 22 104 Z" fill="${h}"/>`;
+    }
+    return top;
+  }
+  function bangs(h) {
+    return `<path d="M29 70 C26 36 48 30 60 32 C72 30 96 36 91 70 C88 58 82 52 77 48 C73 58 66 58 61 50 C56 58 46 60 42 50 C37 56 32 62 29 70 Z" fill="${h}"/>
+      <path d="M38 44 Q50 34 66 36" stroke="#fff" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>`;
+  }
+  function accessory(c) {
+    const col = c.outfit;
+    switch (c.acc) {
+      case "bow": return `<g transform="translate(84 40) rotate(15)"><path d="M0 0 L-14 -9 L-14 9 Z M0 0 L14 -9 L14 9 Z" fill="${col}" stroke="#fff" stroke-width="1.5"/><circle r="4" fill="#fff"/></g>`;
+      case "star": return `<polygon points="${starPts(86, 40, 10, 4.5)}" fill="#ffd84a" stroke="#fff" stroke-width="1.5"/>`;
+      case "crown": return `<path d="M42 30 L46 16 L53 26 L60 12 L67 26 L74 16 L78 30 Z" fill="#ffd84a" stroke="#e0a800" stroke-width="1.5"/><circle cx="60" cy="24" r="2.6" fill="#e6405a"/>`;
+      case "moon": return `<path d="M92 32 A11 11 0 1 1 80 48 A8 8 0 1 0 92 32 Z" fill="#ffe37a" stroke="#fff" stroke-width="1.2"/>`;
+      case "flower": return `<g transform="translate(86 42)">${[0, 72, 144, 216, 288].map(r => `<ellipse cx="0" cy="-6" rx="4.5" ry="6" fill="#fff" transform="rotate(${r})"/>`).join("")}<circle r="3.6" fill="${col}"/></g>`;
+      case "leaf": return `<g transform="translate(86 40) rotate(-30)"><ellipse rx="7" ry="12" fill="#7fe0a8" stroke="#fff" stroke-width="1.5"/><path d="M0 -10 L0 10" stroke="#2f9d63" stroke-width="1.5"/></g>`;
+      case "candy": return `<g transform="translate(86 42)"><path d="M-8 0 L-15 -6 L-15 6 Z M8 0 L15 -6 L15 6 Z" fill="#fff"/><circle r="8" fill="${col}" stroke="#fff" stroke-width="1.5"/><path d="M-4 -3 Q0 -7 4 -3 Q0 1 -4 -3" fill="#fff"/></g>`;
+      case "bolt": return `<polygon points="88,28 78,44 86,44 80,58 94,38 86,38 92,28" fill="#ffd84a" stroke="#fff" stroke-width="1.5"/>`;
+      case "tiara": return `<path d="M44 34 Q60 22 76 34 L72 38 Q60 30 48 38 Z" fill="#dff" stroke="#fff" stroke-width="1.2"/><polygon points="${starPts(60, 26, 6, 2.6)}" fill="#7fe8f2" stroke="#fff"/>`;
+      case "peach": return `<g transform="translate(86 42)"><path d="M0 9 C-12 4 -10 -10 0 -6 C10 -10 12 4 0 9 Z" fill="#ffb3a3" stroke="#fff" stroke-width="1.5"/><ellipse cx="5" cy="-9" rx="4" ry="2" fill="#6fcf8f" transform="rotate(-20 5 -9)"/></g>`;
+      case "glasses": return `<g fill="none" stroke="${LINE}" stroke-width="2.2"><circle cx="47" cy="76" r="10"/><circle cx="73" cy="76" r="10"/><path d="M57 76 L63 76"/></g>`;
+      case "headphones": return `<path d="M26 70 C24 28 96 28 94 70" fill="none" stroke="#fff" stroke-width="5"/><rect x="20" y="64" width="12" height="20" rx="5" fill="${col}" stroke="#fff" stroke-width="2"/><rect x="88" y="64" width="12" height="20" rx="5" fill="${col}" stroke="#fff" stroke-width="2"/>`;
+    }
+    return "";
+  }
+  function drawGirl(c) {
+    return bgDefs(c) + backHair(c.style, c.hair) + body(c.outfit) + faceBase(c.eye) + bangs(c.hair) + accessory(c);
+  }
+  function drawMascot(c) {
+    return bgDefs(c) + `
+      <circle cx="30" cy="54" r="14" fill="#fff4d6" stroke="#f2c261" stroke-width="2"/><circle cx="30" cy="54" r="7" fill="#ffc2d8"/>
+      <circle cx="90" cy="54" r="14" fill="#fff4d6" stroke="#f2c261" stroke-width="2"/><circle cx="90" cy="54" r="7" fill="#ffc2d8"/>
+      <ellipse cx="60" cy="96" rx="44" ry="46" fill="#fffaf0" stroke="#f2c261" stroke-width="2"/>
+      <ellipse cx="60" cy="112" rx="22" ry="16" fill="#fff4d6"/>
+      <polygon points="${starPts(60, 58, 9, 4)}" fill="#ffd84a" stroke="#fff" stroke-width="1.5"/>
+      <ellipse cx="46" cy="86" rx="6" ry="8" fill="${LINE}"/><circle cx="44" cy="83" r="2.4" fill="#fff"/>
+      <ellipse cx="74" cy="86" rx="6" ry="8" fill="${LINE}"/><circle cx="72" cy="83" r="2.4" fill="#fff"/>
+      <ellipse cx="36" cy="100" rx="6" ry="3" fill="#ff8fb0" opacity=".6"/><ellipse cx="84" cy="100" rx="6" ry="3" fill="#ff8fb0" opacity=".6"/>
+      <path d="M54 102 Q60 108 66 102" stroke="#c2456b" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M22 118 C10 112 8 126 18 130" fill="#fffaf0" stroke="#f2c261" stroke-width="2"/>
+      <path d="M98 118 C110 112 112 126 102 130" fill="#fffaf0" stroke="#f2c261" stroke-width="2"/>`;
+  }
+  function drawPrincipal(c) {
+    return bgDefs(c) + `
+      <rect x="53" y="98" width="14" height="22" fill="#f6d2c0"/>
+      <path d="M16 160 C18 130 36 118 60 118 C84 118 102 130 104 160 Z" fill="#4a4a5e"/>
+      <path d="M46 119 L60 140 L74 119 Z" fill="#fff"/>
+      <path d="M57 124 L63 124 L65 146 L60 152 L55 146 Z" fill="#e6405a"/>
+      <ellipse cx="60" cy="72" rx="30" ry="32" fill="${SKIN}"/>
+      <path d="M30 66 C30 38 90 38 90 66 C84 52 36 52 30 66 Z" fill="#b8b2aa"/>
+      <ellipse cx="31" cy="72" rx="4" ry="9" fill="#b8b2aa"/><ellipse cx="89" cy="72" rx="4" ry="9" fill="#b8b2aa"/>
+      <path d="M38 62 Q46 58 54 62 M66 62 Q74 58 82 62" stroke="#8a847c" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g fill="none" stroke="${LINE}" stroke-width="2"><circle cx="46" cy="74" r="8"/><circle cx="74" cy="74" r="8"/><path d="M54 74 L66 74"/></g>
+      <circle cx="46" cy="75" r="2.6" fill="${LINE}"/><circle cx="74" cy="75" r="2.6" fill="${LINE}"/>
+      <path d="M46 90 C52 86 58 88 60 90 C62 88 68 86 74 90 C68 96 62 94 60 92 C58 94 52 96 46 90 Z" fill="#a39d95"/>
+      <path d="M56 98 Q60 100 64 98" stroke="#c2456b" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M36 32 L60 22 L84 32 L60 42 Z" fill="${LINE}"/><path d="M84 32 L84 44" stroke="#ffd84a" stroke-width="2"/><circle cx="84" cy="46" r="2.5" fill="#ffd84a"/>`;
+  }
+  CARDS.forEach(c => {
+    const inner = c.kind === "mascot" ? drawMascot(c) : c.kind === "principal" ? drawPrincipal(c) : drawGirl(c);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">${inner}</svg>`;
+    c.img = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+
+  const PLAYABLE = CARDS;
   const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
   const $ = (id) => document.getElementById(id);
 
@@ -564,6 +665,7 @@
 
 
   function avatarStyle(c) { return `background:linear-gradient(145deg, ${c.c2}, ${c.c1})`; }
+  function face(c) { return `<img src="${c.img}" alt="">`; }
 
   function renderRows() {
     const n = clampCount(+$("playerCount").value);
@@ -575,7 +677,7 @@
       const cur = byId[chosen[i]];
       rows.push(`
         <div class="player-row" data-i="${i}">
-          <span class="av" style="${avatarStyle(cur)}">${cur.emoji}</span>
+          <span class="av" style="${avatarStyle(cur)}">${face(cur)}</span>
           <label for="p${i + 1}">플레이어 ${i + 1}</label>
           <select id="p${i + 1}" data-i="${i}">
             ${PLAYABLE.map(c => `<option value="${c.id}" ${c.id === cur.id ? "selected" : ""}>${c.emoji} ${c.name} (${c.jp})</option>`).join("")}
@@ -604,7 +706,7 @@
     chosen[i] = e.target.value;
     const c = byId[chosen[i]];
     const av = e.target.closest(".player-row").querySelector(".av");
-    av.textContent = c.emoji; av.setAttribute("style", avatarStyle(c));
+    av.innerHTML = face(c); av.setAttribute("style", avatarStyle(c));
     validate();
   });
   $("playerCount").addEventListener("change", renderRows);
@@ -627,7 +729,7 @@
   }
 
   // ---------- 카드 이미지: 올린 이미지(IndexedDB) + cards/ 폴더(manifest.json) ----------
-  const PAIRS = 24;
+  const PAIRS = 15;
   let images = [];   // { id, key, name, url, from: "upload" | "repo" }
   const DB_NAME = "aipri-memory", STORE = "cards";
 
@@ -721,10 +823,10 @@
       </div>`).join("");
     $("clearImgs").hidden = !images.some(im => im.from === "upload");
     const status = n >= PAIRS
-      ? (n > PAIRS ? `준비 완료! ${n}장 중 24장을 판마다 무작위로 골라요.` : "준비 완료! 24쌍 모두 실제 카드로 플레이해요.")
+      ? (n > PAIRS ? `준비 완료! ${n}장 중 ${PAIRS}장을 판마다 무작위로 골라요.` : `준비 완료! ${PAIRS}쌍 모두 올린 카드로 플레이해요.`)
       : n === 0
-        ? "아직 올린 이미지가 없어요. 이대로 시작하면 기본 그림 카드로 플레이해요."
-        : `${PAIRS - n}장 더 올리면 모두 실제 카드가 돼요. 모자란 ${PAIRS - n}쌍은 기본 그림 카드로 채워요.`;
+        ? "올린 이미지가 없어서 캐릭터 일러스트 카드 15쌍으로 플레이해요."
+        : `${PAIRS - n}장 더 올리면 모두 실제 카드가 돼요. 모자란 ${PAIRS - n}쌍은 캐릭터 일러스트로 채워요.`;
     deckNote(note ? `${note} ${status}` : status, n >= PAIRS);
   }
   function esc(t) { return String(t).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch])); }
@@ -779,16 +881,16 @@
     renderThumbs("");
   }
 
-  // 이번 판에 쓸 24가지 그림: 이미지 우선, 모자라면 기본 그림 카드
+  // 이번 판에 쓸 15가지 그림: 올린 이미지 우선, 모자라면 캐릭터 일러스트
   function pickFaces() {
     const photos = shuffle(images.slice()).slice(0, PAIRS)
       .map(im => ({ key: "img:" + im.id, kind: "img", name: im.name, url: im.url }));
     const fill = shuffle(CARDS.slice()).slice(0, PAIRS - photos.length)
-      .map(c => ({ ...c, key: "emo:" + c.id, kind: "emo" }));
+      .map(c => ({ key: "chr:" + c.id, kind: "img", name: c.name, url: c.img }));
     return photos.concat(fill);
   }
   function lootHtml(f) {
-    return f.kind === "img" ? `<img src="${f.url}" alt="">` : `<span>${f.emoji}</span>`;
+    return `<img src="${f.url}" alt="">`;
   }
 
   function startGame(playerIds) {
@@ -816,13 +918,7 @@
   function buildBoard() {
     $("board").innerHTML = S.deck.map((key, i) => {
       const c = S.faces[key];
-      const front = c.kind === "img"
-        ? `<span class="face front photo"><img src="${c.url}" alt="" draggable="false"></span>`
-        : `<span class="face front" style="background:linear-gradient(160deg, ${c.c2} 0%, #fff 45%, ${c.c1} 140%)">
-            <span class="em">${c.emoji}</span>
-            <span class="nm">${c.name}</span>
-            <span class="tg">${c.tag}</span>
-          </span>`;
+      const front = `<span class="face front photo"><img src="${c.url}" alt="" draggable="false"></span>`;
       return `<button class="card" type="button" data-i="${i}" aria-label="${i + 1}번 카드, 뒤집힘">
         <span class="inner">
           <span class="face back"></span>
@@ -837,7 +933,7 @@
     $("scoreboard").innerHTML = S.players.map((p, i) => {
       const c = byId[p.id];
       return `<div class="player-chip ${i === S.cur ? "active" : ""}" data-i="${i}">
-        <span class="av" style="${avatarStyle(c)}">${c.emoji}</span>
+        <span class="av" style="${avatarStyle(c)}">${face(c)}</span>
         <span class="meta">
           <span class="nm">${c.name}${i === S.cur ? " 🎤" : ""}</span>
           <span class="loot">${p.loot.map(k => lootHtml(S.faces[k])).join("") || `<span class="none">아직 없어요</span>`}</span>
@@ -845,14 +941,14 @@
         <span class="sc">${p.score}<small>쌍</small></span>
       </div>`;
     }).join("");
-    const left = 24 - Object.keys(S.taken).length / 2;
-    $("left").textContent = `남은 짝 ${left} / 24`;
+    const left = PAIRS - Object.keys(S.taken).length / 2;
+    $("left").textContent = `남은 짝 ${left} / ${PAIRS}`;
   }
 
   function renderTurn() {
     const c = byId[S.players[S.cur].id];
     const t = $("turn");
-    t.innerHTML = `<span>${c.emoji}</span><span><span class="who">${c.name}</span>의 차례예요!</span>`;
+    t.innerHTML = `<span class="av">${face(c)}</span><span><span class="who">${c.name}</span>의 차례예요!</span>`;
     t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop");
   }
   function setMsg(s) { $("msg").textContent = s; }
@@ -877,9 +973,9 @@
       const got = S.faces[S.deck[a]];
       cardEl(a).classList.add("match"); cardEl(b).classList.add("match");
       sfx.match();
-      setMsg(got.kind === "img"
-        ? `🎉 ${pc.name}, 같은 카드 발견! 짝을 획득하고 한 번 더 뒤집어요.`
-        : `🎉 ${pc.name}, ‘${got.name}’ 카드 획득! 한 번 더 뒤집어요.`);
+      setMsg(S.deck[a].startsWith("chr:")
+        ? `🎉 ${pc.name}, ‘${got.name}’ 카드 획득! 한 번 더 뒤집어요.`
+        : `🎉 ${pc.name}, 같은 카드 발견! 짝을 획득하고 한 번 더 뒤집어요.`);
       setTimeout(() => {
         [a, b].forEach(k => {
           const el = cardEl(k);
@@ -887,7 +983,7 @@
           el.classList.add("taken");
           el.disabled = true;
           el.setAttribute("aria-label", `${k + 1}번 카드, ${got.name} — ${pc.name}이(가) 획득`);
-          el.insertAdjacentHTML("beforeend", `<span class="owner" style="${avatarStyle(pc)}">${pc.emoji}</span>`);
+          el.insertAdjacentHTML("beforeend", `<span class="owner" style="${avatarStyle(pc)}">${face(pc)}</span>`);
           S.taken[k] = S.cur;
         });
         player.score++; player.loot.push(got.key);
@@ -923,7 +1019,7 @@
     $("winTitle").textContent = winners.length > 1 ? `${names.join(" & ")} 공동 우승!` : `${names[0]} 우승!`;
     $("winSub").textContent = winners.length > 1
       ? `${top}쌍으로 나란히 1위! 모두의 소원이 이루어졌어요 ✨`
-      : `24쌍 중 ${top}쌍을 모아 오늘의 톱 아이프리가 되었어요! 💖`;
+      : `${PAIRS}쌍 중 ${top}쌍을 모아 오늘의 톱 아이프리가 되었어요! 💖`;
     $("haul").innerHTML = winners.length === 1
       ? winners[0].loot.map((k, n) => lootHtml(S.faces[k]).replace("<img ", `<img style="animation-delay:${0.5 + n * 0.06}s" `)).join("")
       : "";
@@ -933,7 +1029,7 @@
       const c = byId[p.id];
       return `<li class="${place === 1 ? "first" : ""}">
         <span class="pl">${place === 1 ? "👑" : place + "위"}</span>
-        <span class="av" style="${avatarStyle(c)}">${c.emoji}</span>
+        <span class="av" style="${avatarStyle(c)}">${face(c)}</span>
         <span>${c.name}</span>
         <span class="pt">${p.score}쌍</span>
       </li>`;
