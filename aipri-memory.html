@@ -1,0 +1,830 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>오네가이 아이프리 메모리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+  /* 단일 테마: 사탕빛 무대 — 이노리의 핑크 🩷 와 아오이의 하늘색 🩵 */
+  :root {
+    color-scheme: light;
+    --ground: #fff6fb;
+    --ground-2: #eef7ff;
+    --ink: #3b2447;
+    --ink-soft: #7a6388;
+    --pink: #ff4f9a;
+    --pink-soft: #ffd3e6;
+    --sky: #2f9dff;
+    --sky-soft: #cfe8ff;
+    --gold: #ffb400;
+    --line: #f0d6e6;
+    --panel: #ffffff;
+    --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--body);
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 500px at 0% 0%, var(--pink-soft) 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, var(--sky-soft) 0%, transparent 60%),
+      var(--ground);
+    background-attachment: fixed;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 18px 32px;
+  }
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-family: var(--display);
+    font-size: clamp(24px, 4.2vw, 36px);
+    line-height: 1;
+    margin: 0;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--pink), #b36bff 55%, var(--sky));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .logo small {
+    display: block;
+    font-family: var(--body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--ink-soft);
+    -webkit-text-fill-color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .top-tools { display: flex; gap: 8px; align-items: center; }
+  .pill-btn {
+    font: 600 13px/1 var(--body);
+    color: var(--ink);
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 14px;
+    cursor: pointer;
+  }
+  .pill-btn:hover { border-color: var(--pink); }
+  button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 3px solid var(--sky);
+    outline-offset: 2px;
+  }
+
+  /* ---------- 설정 화면 ---------- */
+  .setup {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: 22px;
+    padding: 22px;
+  }
+  .panel h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 24px;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+  .panel p.lead { margin: 0 0 18px; color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+  .count-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .count-row label { font-weight: 700; font-size: 14px; }
+  .stepper { display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .stepper button {
+    width: 40px; height: 40px; border: 0; background: var(--pink-soft); color: var(--ink);
+    font: 700 20px/1 var(--body); cursor: pointer;
+  }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper input {
+    width: 56px; height: 40px; border: 0; text-align: center;
+    font: 400 22px/1 var(--display); color: var(--ink); background: var(--panel);
+    -moz-appearance: textfield;
+  }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .hint { font-size: 12px; color: var(--ink-soft); }
+  .player-rows { display: grid; gap: 10px; }
+  .player-row {
+    display: grid;
+    grid-template-columns: 44px 76px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 16px;
+    background: var(--ground);
+  }
+  .player-row .av {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 22px;
+    border: 3px solid #fff; box-shadow: 0 2px 0 var(--line);
+  }
+  .player-row label { font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+  .player-row select {
+    width: 100%;
+    font: 600 15px var(--body);
+    color: var(--ink);
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--panel);
+  }
+  .player-row.dup select { border-color: #e5484d; }
+  .err { color: #c5282e; font-size: 13px; font-weight: 600; min-height: 20px; margin: 10px 0 0; }
+  .start-btn {
+    margin-top: 10px;
+    width: 100%;
+    font: 400 22px/1 var(--display);
+    color: #fff;
+    border: 0;
+    border-radius: 18px;
+    padding: 18px;
+    cursor: pointer;
+    background: linear-gradient(100deg, var(--pink), #b36bff, var(--sky));
+    box-shadow: 0 6px 0 #c23c83;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c23c83; }
+  .start-btn:disabled { filter: grayscale(.7); opacity: .6; cursor: not-allowed; }
+  .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14px; line-height: 1.55; }
+  .rules li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; }
+  .rules li b { font-family: var(--display); font-weight: 400; color: var(--pink); font-size: 18px; }
+  .cast { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .cast span {
+    font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 999px;
+    background: var(--ground-2); color: var(--ink);
+  }
+
+  /* ---------- 게임 화면 ---------- */
+  .game { margin-top: 16px; display: grid; gap: 12px; }
+  .scoreboard { display: flex; flex-wrap: wrap; gap: 8px; }
+  .player-chip {
+    flex: 1 1 140px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 18px;
+    background: var(--panel);
+    border: 2px solid var(--line);
+    transition: transform .25s, border-color .25s, box-shadow .25s;
+    min-width: 0;
+  }
+  .player-chip .av {
+    flex: none; width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 20px; border: 3px solid #fff;
+  }
+  .player-chip .meta { min-width: 0; flex: 1; }
+  .player-chip .nm, .player-chip .loot { display: block; }
+  .player-chip .nm { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-chip .loot { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 16px; }
+  .player-chip .sc {
+    display: inline-block; font-family: var(--display); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .player-chip .sc small { font-family: var(--body); font-size: 11px; color: var(--ink-soft); margin-left: 2px; }
+  .player-chip.active {
+    border-color: var(--pink);
+    box-shadow: 0 6px 0 var(--pink-soft), 0 0 0 4px var(--pink-soft);
+    transform: translateY(-3px);
+  }
+  .player-chip.bump .sc { animation: bump .5s; }
+  @keyframes bump { 40% { transform: scale(1.5); color: var(--pink); } }
+
+  .turn-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .turn {
+    font-family: var(--display);
+    font-size: clamp(18px, 3vw, 24px);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .turn .who { color: var(--pink); }
+  .turn.pop { animation: pop .45s; }
+  @keyframes pop { 0% { transform: scale(.85); opacity: .2; } 60% { transform: scale(1.06); } }
+  .left { font-size: 13px; color: var(--ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .msg {
+    min-height: 22px; font-size: 14px; font-weight: 700; color: var(--sky);
+  }
+
+  .board-wrap { display: flex; justify-content: center; }
+  .board {
+    width: min(100%, max(340px, calc(100dvh - 250px)));
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: clamp(4px, 1vw, 9px);
+  }
+  .card {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    max-width: 100%;
+    perspective: 700px;
+    border: 0; padding: 0; background: none; cursor: pointer;
+    font: inherit; color: inherit;
+  }
+  .card:disabled { cursor: default; }
+  .card .inner {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    transition: transform .45s cubic-bezier(.3,1.4,.5,1);
+  }
+  .card.up .inner, .card.taken .inner { transform: rotateY(180deg); }
+  .card .face {
+    position: absolute; inset: 0;
+    border-radius: clamp(6px, 1.2vw, 12px);
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    overflow: hidden;
+  }
+  .card .back {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0 18%, transparent 19%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px),
+      linear-gradient(145deg, var(--pink) 0%, #c77dff 50%, var(--sky) 100%);
+    border: 2px solid #fff;
+    box-shadow: 0 3px 0 #e7bcd6;
+    display: grid; place-items: center;
+  }
+  .card .back::after {
+    content: "♥";
+    font-size: clamp(12px, 2.4vw, 24px);
+    color: var(--pink);
+  }
+  .card:not(:disabled):hover .back { filter: brightness(1.07); transform: translateY(-2px); }
+  .card .front {
+    transform: rotateY(180deg);
+    border: 2px solid #fff;
+    box-shadow: 0 3px 0 rgba(59,36,71,.15);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; padding: 4px; text-align: center;
+  }
+  .card .front .em { font-size: clamp(16px, 3.6vw, 36px); line-height: 1.1; filter: drop-shadow(0 2px 0 rgba(255,255,255,.7)); }
+  .card .front .nm {
+    font-family: var(--display); font-size: clamp(9px, 1.35vw, 14px); line-height: 1.15; color: var(--ink);
+    word-break: keep-all;
+  }
+  .card .front .tg {
+    font-size: clamp(7px, .95vw, 10px); font-weight: 700; color: rgba(59,36,71,.65); line-height: 1.1;
+    word-break: keep-all;
+  }
+  .card.match .front { animation: glow .65s ease-in-out; }
+  @keyframes glow {
+    50% { box-shadow: 0 0 0 4px var(--gold), 0 0 22px var(--gold); transform: rotateY(180deg) scale(1.08); }
+  }
+  .card.miss .front { animation: shake .45s; }
+  @keyframes shake {
+    25% { transform: rotateY(180deg) translateX(-4px); }
+    75% { transform: rotateY(180deg) translateX(4px); }
+  }
+  .card.taken .inner { opacity: .22; transform: rotateY(180deg) scale(.86); transition: transform .45s, opacity .6s; }
+  .card.taken .owner {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 44%; aspect-ratio: 1; border-radius: 50%;
+    display: grid; place-items: center; font-size: clamp(10px, 2vw, 18px);
+    border: 2px solid #fff; box-shadow: 0 2px 6px rgba(59,36,71,.2);
+  }
+  @media (max-width: 560px) {
+    .card .front .tg { display: none; }
+    .card .front .nm { font-size: 8px; }
+  }
+
+  /* ---------- 우승 연출 ---------- */
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+  .win {
+    position: fixed; inset: 0; z-index: 30;
+    display: grid; place-items: center;
+    padding: 16px;
+    background: radial-gradient(circle at 50% 40%, rgba(255,246,251,.75), rgba(59,36,71,.55));
+    backdrop-filter: blur(4px);
+  }
+  .win-card {
+    position: relative;
+    width: min(460px, 100%);
+    background: var(--panel);
+    border-radius: 28px;
+    padding: 28px 22px 22px;
+    text-align: center;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 6px var(--pink-soft), 0 24px 60px rgba(59,36,71,.35);
+    animation: winIn .7s cubic-bezier(.2,1.6,.4,1);
+    max-height: calc(100% - 20px);
+    overflow: auto;
+  }
+  @keyframes winIn { from { transform: scale(.4) rotate(-8deg); opacity: 0; } }
+  .trophy { font-size: 64px; line-height: 1; animation: bob 1.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(6deg); } }
+  .win-card .congrats {
+    font-family: var(--display); font-size: 16px; color: var(--ink-soft); margin: 10px 0 4px; letter-spacing: .08em;
+  }
+  .win-card h2 {
+    font-family: var(--display); font-weight: 400; margin: 0; line-height: 1.15;
+    font-size: clamp(28px, 7vw, 40px);
+    background: linear-gradient(90deg, var(--pink), #b36bff, var(--sky));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-wrap: balance;
+  }
+  .win-card .sub { margin: 8px 0 16px; font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  .rank { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 6px; text-align: left; }
+  .rank li {
+    display: grid; grid-template-columns: 30px 32px 1fr auto; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 14px; background: var(--ground);
+    font-weight: 600; font-size: 14px;
+  }
+  .rank li.first { background: #fff3c9; }
+  .rank .pl { font-family: var(--display); color: var(--ink-soft); font-size: 16px; }
+  .rank .av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; }
+  .rank .pt { font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums; }
+  .win-actions { display: flex; gap: 8px; }
+  .win-actions button { flex: 1; }
+  .win-actions .start-btn { margin: 0; font-size: 18px; padding: 14px; }
+  .win-actions .pill-btn { border-radius: 18px; font-size: 15px; }
+
+  @media (max-width: 760px) {
+    .setup { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="logo">오네가이 아이프리 메모리<small>おねがいアイプリ · 짝 맞추기 파티</small></h1>
+    <div class="top-tools">
+      <button class="pill-btn" id="soundBtn" type="button" aria-pressed="true">🔊 소리 켜짐</button>
+      <button class="pill-btn" id="homeBtn" type="button" hidden>처음으로</button>
+    </div>
+  </header>
+
+  <!-- 설정 화면 -->
+  <section class="setup" id="setup">
+    <div class="panel">
+      <h2>누가 무대에 오를까요?</h2>
+      <p class="lead">플레이어 수를 정하고, 각자 함께할 아이프리 캐릭터를 골라 주세요.</p>
+      <div class="count-row">
+        <label for="playerCount">플레이어 수</label>
+        <div class="stepper">
+          <button type="button" id="minusBtn" aria-label="플레이어 한 명 줄이기">−</button>
+          <input type="number" id="playerCount" min="2" max="6" value="3" inputmode="numeric">
+          <button type="button" id="plusBtn" aria-label="플레이어 한 명 늘리기">+</button>
+        </div>
+        <span class="hint">2 ~ 6명</span>
+      </div>
+      <div class="player-rows" id="playerRows"></div>
+      <p class="err" id="setupErr" role="alert"></p>
+      <button class="start-btn" id="startBtn" type="button">라이브 스타트! ✨</button>
+    </div>
+
+    <div class="panel">
+      <h2>게임 방법</h2>
+      <p class="lead">8 × 6, 모두 48장 · 24쌍의 카드가 뒤집힌 채 시작해요.</p>
+      <ul class="rules">
+        <li><b>1</b><span>내 차례에 카드 두 장을 차례로 눌러 뒤집어요.</span></li>
+        <li><b>2</b><span>같은 카드면 그 짝은 <strong>내 것</strong>! 한 번 더 뒤집을 수 있어요.</span></li>
+        <li><b>3</b><span>다른 카드면 다시 덮이고 <strong>다음 플레이어</strong> 차례로 넘어가요.</span></li>
+        <li><b>4</b><span>모든 짝을 찾으면 끝. 가장 많은 짝을 모은 플레이어가 우승이에요.</span></li>
+      </ul>
+      <div class="cast" id="castList" aria-label="카드에 등장하는 캐릭터"></div>
+    </div>
+  </section>
+
+  <!-- 게임 화면 -->
+  <section class="game" id="game" hidden>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="turn-bar">
+      <div class="turn" id="turn" aria-live="polite"></div>
+      <div class="left" id="left"></div>
+    </div>
+    <div class="msg" id="msg" aria-live="polite"></div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+  </section>
+</div>
+
+<div class="win" id="win" hidden>
+  <div class="win-card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="trophy">🏆</div>
+    <p class="congrats">CONGRATULATIONS!</p>
+    <h2 id="winTitle"></h2>
+    <p class="sub" id="winSub"></p>
+    <ol class="rank" id="rank"></ol>
+    <div class="win-actions">
+      <button class="pill-btn" id="newBtn" type="button">캐릭터 다시 고르기</button>
+      <button class="start-btn" id="againBtn" type="button">한 판 더! 🎤</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  // 『おねがいアイプリ』(2026) 등장 캐릭터 — 앞의 15명은 플레이어 이름으로도 선택 가능
+  const CARDS = [
+    { id: "inori",   name: "이노리",     jp: "好実いのり",   emoji: "💗", tag: "주인공",         c1: "#ff7ab6", c2: "#ffe0ee" },
+    { id: "aoi",     name: "아오이",     jp: "夢宮あおい",   emoji: "💙", tag: "주인공",         c1: "#4aaeff", c2: "#dcefff" },
+    { id: "fortu",   name: "포츄",       jp: "フォーチュ",   emoji: "🧸", tag: "신비한 친구",     c1: "#ffc75a", c2: "#fff4d6" },
+    { id: "gumi",    name: "구미",       jp: "友坂ぐみ",     emoji: "🍬", tag: "카나데대",        c1: "#ff9f6b", c2: "#ffe9dc" },
+    { id: "olivia",  name: "올리비아",   jp: "勇樹おりびあ", emoji: "⚡", tag: "카나데대",        c1: "#9b7bff", c2: "#ece5ff" },
+    { id: "nana",    name: "나나",       jp: "熱海ナナ",     emoji: "👑", tag: "하이센스 학원",   c1: "#e6405a", c2: "#ffdfe4" },
+    { id: "ema",     name: "에마",       jp: "望永エマ",     emoji: "🌙", tag: "카나데대",        c1: "#5b6ee8", c2: "#e2e6ff" },
+    { id: "koharu",  name: "코하루",     jp: "花咲こはる",   emoji: "🌸", tag: "학생회장",        c1: "#ff9ec7", c2: "#fff0f6" },
+    { id: "wakaba",  name: "와카바",     jp: "夢宮わかば",   emoji: "🍀", tag: "등장인물",        c1: "#4cc38a", c2: "#dcf7ea" },
+    { id: "kanpeki", name: "칸페키",     jp: "小池かんぺき", emoji: "💯", tag: "등장인물",        c1: "#f06a6a", c2: "#ffe3e3" },
+    { id: "kocho",   name: "교장 선생님", jp: "校長先生",    emoji: "🎓", tag: "오네가이 중학교", c1: "#8a7f73", c2: "#efe9e2" },
+    { id: "aina",    name: "아이나",     jp: "アイナ",       emoji: "🏰", tag: "새 아이프리",     c1: "#35c6d6", c2: "#dcf7fa" },
+    { id: "momoka",  name: "모모카",     jp: "モモカ",       emoji: "🍑", tag: "새 아이프리",     c1: "#ff8c8c", c2: "#ffe6e0" },
+    { id: "satsuki", name: "사츠키",     jp: "さつき",       emoji: "🌺", tag: "등장인물",        c1: "#d85fb8", c2: "#fbe2f4" },
+    { id: "kiko",    name: "키코",       jp: "きこ",         emoji: "🎧", tag: "등장인물",        c1: "#58a6a6", c2: "#dff2f2" },
+    // 스페셜 카드 (코디 · 아이템)
+    { id: "buzz",    name: "올리비아 버즈리움", jp: "バズリウムコーデ", emoji: "💫", tag: "스페셜 코디", c1: "#b98bff", c2: "#fff0fb" },
+    { id: "duo1",    name: "구미×올리비아", jp: "デュオコーデ", emoji: "🍭", tag: "듀오 코디",       c1: "#ffa66b", c2: "#eadfff" },
+    { id: "duo2",    name: "아오이×구미", jp: "デュオコーデ",   emoji: "🫧", tag: "듀오 코디",       c1: "#6bbcff", c2: "#ffe6d6" },
+    { id: "duo3",    name: "이노리×아오이", jp: "W主人公",      emoji: "🩷", tag: "더블 주인공",     c1: "#ff7ab6", c2: "#cfe8ff" },
+    { id: "prism",   name: "오네가이 프리즘", jp: "おねがいプリズム", emoji: "💎", tag: "보상 아이템", c1: "#7fd6ff", c2: "#f4e6ff" },
+    { id: "team",    name: "카나데대",   jp: "おねがいかなえ隊", emoji: "🎀", tag: "소원을 이루는 팀", c1: "#ff6fa8", c2: "#fff2d6" },
+    { id: "miracle", name: "미라클 카드", jp: "ミラクルカード", emoji: "🌈", tag: "레어 카드",      c1: "#ffd24a", c2: "#ffe0f1" },
+    { id: "sanrio",  name: "산리오 콜라보", jp: "サンリオコラボ", emoji: "🐰", tag: "콜라보 코디",  c1: "#ff9fc2", c2: "#fffbe0" },
+    { id: "town",    name: "오네가이 타운", jp: "おねがい町",   emoji: "🏡", tag: "무대",             c1: "#8fd37a", c2: "#e6f7ff" },
+  ];
+
+  const PLAYABLE = CARDS.slice(0, 15);
+  const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- 사운드 ----------
+  let actx = null, soundOn = true;
+  function ac() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+    if (actx && actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  function tone(freq, start, dur, type = "triangle", vol = 0.12) {
+    const a = soundOn && ac(); if (!a) return;
+    const t = a.currentTime + start;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    flip:  () => tone(880, 0, 0.09, "sine", 0.07),
+    match: () => { tone(1046, 0, 0.18); tone(1318, 0.09, 0.2); tone(1568, 0.18, 0.3); },
+    miss:  () => { tone(330, 0, 0.16, "square", 0.04); tone(247, 0.12, 0.22, "square", 0.04); },
+    win:   () => {
+      [523, 659, 784, 1046, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * 0.11, 0.3, "triangle", 0.13));
+      [1046, 1318, 1568, 2093].forEach((f, i) => tone(f, 1.0 + i * 0.05, 0.9, "sine", 0.08));
+    },
+  };
+  $("soundBtn").addEventListener("click", () => {
+    soundOn = !soundOn;
+    $("soundBtn").textContent = soundOn ? "🔊 소리 켜짐" : "🔇 소리 꺼짐";
+    $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+    if (soundOn) sfx.flip();
+  });
+
+  // ---------- 설정 화면 ----------
+  let chosen = ["inori", "aoi", "gumi", "olivia", "nana", "ema"];
+
+  $("castList").innerHTML = CARDS.map(c => `<span title="${c.jp}">${c.emoji} ${c.name}</span>`).join("");
+
+  function avatarStyle(c) { return `background:linear-gradient(145deg, ${c.c2}, ${c.c1})`; }
+
+  function renderRows() {
+    const n = clampCount(+$("playerCount").value);
+    $("playerCount").value = n;
+    $("minusBtn").disabled = n <= 2;
+    $("plusBtn").disabled = n >= 6;
+    const rows = [];
+    for (let i = 0; i < n; i++) {
+      const cur = byId[chosen[i]];
+      rows.push(`
+        <div class="player-row" data-i="${i}">
+          <span class="av" style="${avatarStyle(cur)}">${cur.emoji}</span>
+          <label for="p${i + 1}">플레이어 ${i + 1}</label>
+          <select id="p${i + 1}" data-i="${i}">
+            ${PLAYABLE.map(c => `<option value="${c.id}" ${c.id === cur.id ? "selected" : ""}>${c.emoji} ${c.name} (${c.jp})</option>`).join("")}
+          </select>
+        </div>`);
+    }
+    $("playerRows").innerHTML = rows.join("");
+    validate();
+  }
+  function clampCount(n) { return Math.min(6, Math.max(2, Number.isFinite(n) ? Math.round(n) : 2)); }
+  function validate() {
+    const n = clampCount(+$("playerCount").value);
+    const picks = chosen.slice(0, n);
+    const dups = new Set(picks.filter((id, i) => picks.indexOf(id) !== i));
+    document.querySelectorAll(".player-row").forEach(row => {
+      row.classList.toggle("dup", dups.has(picks[+row.dataset.i]));
+    });
+    $("setupErr").textContent = dups.size
+      ? `${[...dups].map(id => byId[id].name).join(", ")}을(를) 두 명 이상이 골랐어요. 서로 다른 캐릭터를 골라 주세요.`
+      : "";
+    $("startBtn").disabled = dups.size > 0;
+  }
+  $("playerRows").addEventListener("change", (e) => {
+    if (e.target.tagName !== "SELECT") return;
+    const i = +e.target.dataset.i;
+    chosen[i] = e.target.value;
+    const c = byId[chosen[i]];
+    const av = e.target.closest(".player-row").querySelector(".av");
+    av.textContent = c.emoji; av.setAttribute("style", avatarStyle(c));
+    validate();
+  });
+  $("playerCount").addEventListener("change", renderRows);
+  $("minusBtn").addEventListener("click", () => { $("playerCount").value = +$("playerCount").value - 1; renderRows(); });
+  $("plusBtn").addEventListener("click", () => {
+    const n = clampCount(+$("playerCount").value);
+    if (n >= 6) return;
+    // 새로 추가된 자리는 아직 아무도 안 고른 캐릭터로 채움
+    const used = new Set(chosen.slice(0, n));
+    if (used.has(chosen[n])) chosen[n] = PLAYABLE.find(c => !used.has(c.id)).id;
+    $("playerCount").value = n + 1; renderRows();
+  });
+
+  // ---------- 게임 ----------
+  let S = null;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+
+  function startGame(playerIds) {
+    S = {
+      players: playerIds.map(id => ({ id, score: 0, loot: [] })),
+      cur: 0,
+      deck: shuffle(CARDS.flatMap(c => [c.id, c.id])),
+      up: [],
+      taken: {},
+      lock: false,
+    };
+    $("setup").hidden = true;
+    $("game").hidden = false;
+    $("homeBtn").hidden = false;
+    $("win").hidden = true;
+    stopFx();
+    buildBoard();
+    renderScore();
+    renderTurn();
+    setMsg("");
+  }
+
+  function buildBoard() {
+    $("board").innerHTML = S.deck.map((id, i) => {
+      const c = byId[id];
+      return `<button class="card" type="button" data-i="${i}" aria-label="${i + 1}번 카드, 뒤집힘">
+        <span class="inner">
+          <span class="face back"></span>
+          <span class="face front" style="background:linear-gradient(160deg, ${c.c2} 0%, #fff 45%, ${c.c1} 140%)">
+            <span class="em">${c.emoji}</span>
+            <span class="nm">${c.name}</span>
+            <span class="tg">${c.tag}</span>
+          </span>
+        </span>
+      </button>`;
+    }).join("");
+  }
+
+  function cardEl(i) { return $("board").children[i]; }
+
+  function renderScore() {
+    $("scoreboard").innerHTML = S.players.map((p, i) => {
+      const c = byId[p.id];
+      return `<div class="player-chip ${i === S.cur ? "active" : ""}" data-i="${i}">
+        <span class="av" style="${avatarStyle(c)}">${c.emoji}</span>
+        <span class="meta">
+          <span class="nm">${c.name}${i === S.cur ? " 🎤" : ""}</span>
+          <span class="loot">${p.loot.map(id => byId[id].emoji).join("") || "아직 없어요"}</span>
+        </span>
+        <span class="sc">${p.score}<small>쌍</small></span>
+      </div>`;
+    }).join("");
+    const left = 24 - Object.keys(S.taken).length / 2;
+    $("left").textContent = `남은 짝 ${left} / 24`;
+  }
+
+  function renderTurn() {
+    const c = byId[S.players[S.cur].id];
+    const t = $("turn");
+    t.innerHTML = `<span>${c.emoji}</span><span><span class="who">${c.name}</span>의 차례예요!</span>`;
+    t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop");
+  }
+  function setMsg(s) { $("msg").textContent = s; }
+
+  $("board").addEventListener("click", (e) => {
+    const btn = e.target.closest(".card");
+    if (!btn || !S || S.lock) return;
+    const i = +btn.dataset.i;
+    if (S.taken[i] !== undefined || S.up.includes(i)) return;
+    ac();
+    btn.classList.add("up");
+    btn.setAttribute("aria-label", `${i + 1}번 카드, ${byId[S.deck[i]].name}`);
+    sfx.flip();
+    S.up.push(i);
+    if (S.up.length < 2) return;
+
+    S.lock = true;
+    const [a, b] = S.up;
+    const player = S.players[S.cur];
+    const pc = byId[player.id];
+    if (S.deck[a] === S.deck[b]) {
+      const got = byId[S.deck[a]];
+      cardEl(a).classList.add("match"); cardEl(b).classList.add("match");
+      sfx.match();
+      setMsg(`🎉 ${pc.name}, ‘${got.name}’ 카드 획득! 한 번 더 뒤집어요.`);
+      setTimeout(() => {
+        [a, b].forEach(k => {
+          const el = cardEl(k);
+          el.classList.remove("match", "up");
+          el.classList.add("taken");
+          el.disabled = true;
+          el.setAttribute("aria-label", `${k + 1}번 카드, ${got.name} — ${pc.name}이(가) 획득`);
+          el.insertAdjacentHTML("beforeend", `<span class="owner" style="${avatarStyle(pc)}">${pc.emoji}</span>`);
+          S.taken[k] = S.cur;
+        });
+        player.score++; player.loot.push(got.id);
+        S.up = []; S.lock = false;
+        renderScore();
+        const chip = $("scoreboard").children[S.cur];
+        chip.classList.add("bump");
+        if (Object.keys(S.taken).length === S.deck.length) finish();
+      }, 700);
+    } else {
+      cardEl(a).classList.add("miss"); cardEl(b).classList.add("miss");
+      sfx.miss();
+      setTimeout(() => {
+        [a, b].forEach(k => {
+          const el = cardEl(k);
+          el.classList.remove("up", "miss");
+          el.setAttribute("aria-label", `${k + 1}번 카드, 뒤집힘`);
+        });
+        S.up = []; S.lock = false;
+        S.cur = (S.cur + 1) % S.players.length;
+        const next = byId[S.players[S.cur].id];
+        setMsg(`아쉬워요! ${next.name}에게 차례가 넘어가요.`);
+        renderScore(); renderTurn();
+      }, 1100);
+    }
+  });
+
+  function finish() {
+    const ranked = S.players.map((p, i) => ({ ...p, i })).sort((x, y) => y.score - x.score);
+    const top = ranked[0].score;
+    const winners = ranked.filter(p => p.score === top);
+    const names = winners.map(p => byId[p.id].name);
+    $("winTitle").textContent = winners.length > 1 ? `${names.join(" & ")} 공동 우승!` : `${names[0]} 우승!`;
+    $("winSub").textContent = winners.length > 1
+      ? `${top}쌍으로 나란히 1위! 모두의 소원이 이루어졌어요 ✨`
+      : `24쌍 중 ${top}쌍을 모아 오늘의 톱 아이프리가 되었어요! 💖`;
+    let place = 0, prev = null;
+    $("rank").innerHTML = ranked.map((p, idx) => {
+      if (p.score !== prev) { place = idx + 1; prev = p.score; }
+      const c = byId[p.id];
+      return `<li class="${place === 1 ? "first" : ""}">
+        <span class="pl">${place === 1 ? "👑" : place + "위"}</span>
+        <span class="av" style="${avatarStyle(c)}">${c.emoji}</span>
+        <span>${c.name}</span>
+        <span class="pt">${p.score}쌍</span>
+      </li>`;
+    }).join("");
+    setTimeout(() => {
+      $("win").hidden = false;
+      $("againBtn").focus();
+      sfx.win();
+      celebrate(winners.map(p => byId[p.id]));
+    }, 450);
+  }
+
+  $("startBtn").addEventListener("click", () => {
+    ac();
+    const n = clampCount(+$("playerCount").value);
+    startGame(chosen.slice(0, n));
+  });
+  $("againBtn").addEventListener("click", () => startGame(S.players.map(p => p.id)));
+  $("newBtn").addEventListener("click", goHome);
+  $("homeBtn").addEventListener("click", goHome);
+  function goHome() {
+    $("win").hidden = true; stopFx();
+    $("game").hidden = true; $("setup").hidden = false; $("homeBtn").hidden = true;
+    renderRows();
+  }
+
+  // ---------- 축하 효과: 꽃가루 + 불꽃 ----------
+  const cv = $("fx"), cx = cv.getContext("2d");
+  let parts = [], raf = 0, fxUntil = 0, burstTimer = 0;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function resize() {
+    const d = window.devicePixelRatio || 1;
+    cv.width = innerWidth * d; cv.height = innerHeight * d;
+    cx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  addEventListener("resize", resize); resize();
+
+  function confetti(n, colors) {
+    for (let k = 0; k < n; k++) {
+      const fromLeft = k % 2 === 0;
+      parts.push({
+        kind: Math.random() < 0.25 ? "heart" : Math.random() < 0.4 ? "star" : "rect",
+        x: fromLeft ? -10 : innerWidth + 10,
+        y: innerHeight * (0.55 + Math.random() * 0.4),
+        vx: (fromLeft ? 1 : -1) * (6 + Math.random() * 9),
+        vy: -(10 + Math.random() * 10),
+        g: 0.28, drag: 0.985,
+        r: 5 + Math.random() * 7,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1, fade: 0.0025 + Math.random() * 0.003,
+      });
+    }
+  }
+  function burst(colors) {
+    const x = innerWidth * (0.15 + Math.random() * 0.7), y = innerHeight * (0.12 + Math.random() * 0.35);
+    const n = 46;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2, sp = 3 + Math.random() * 4.5;
+      parts.push({
+        kind: "spark", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        g: 0.06, drag: 0.975, r: 2 + Math.random() * 2, rot: 0, vr: 0,
+        color: colors[k % colors.length], life: 1, fade: 0.012 + Math.random() * 0.01,
+      });
+    }
+    tone(180 + Math.random() * 60, 0, 0.25, "sawtooth", 0.02);
+  }
+  function drawHeart(r) {
+    cx.beginPath();
+    cx.moveTo(0, r * 0.35);
+    cx.bezierCurveTo(-r, -r * 0.4, -r * 0.45, -r * 1.1, 0, -r * 0.45);
+    cx.bezierCurveTo(r * 0.45, -r * 1.1, r, -r * 0.4, 0, r * 0.35);
+    cx.fill();
+  }
+  function drawStar(r) {
+    cx.beginPath();
+    for (let k = 0; k < 10; k++) {
+      const rr = k % 2 ? r * 0.45 : r, a = (k / 10) * Math.PI * 2 - Math.PI / 2;
+      cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    cx.closePath(); cx.fill();
+  }
+  function tick() {
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+    for (const p of parts) {
+      p.vx *= p.drag; p.vy = p.vy * p.drag + p.g;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= p.fade;
+      cx.save();
+      cx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.4));
+      cx.translate(p.x, p.y); cx.rotate(p.rot);
+      cx.fillStyle = p.color;
+      if (p.kind === "rect") cx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+      else if (p.kind === "heart") drawHeart(p.r);
+      else if (p.kind === "star") drawStar(p.r);
+      else { cx.beginPath(); cx.arc(0, 0, p.r, 0, Math.PI * 2); cx.fill(); }
+      cx.restore();
+    }
+    if (parts.length || performance.now() < fxUntil) raf = requestAnimationFrame(tick);
+    else raf = 0;
+  }
+  function celebrate(winnerCards) {
+    const colors = ["#ff4f9a", "#2f9dff", "#ffb400", "#b36bff", "#ffffff", "#4cc38a"]
+      .concat(winnerCards.map(c => c.c1));
+    if (reduce) { confetti(40, colors); parts.forEach(p => { p.vx *= .3; p.vy = 0; p.y = Math.random() * innerHeight; }); tick(); return; }
+    fxUntil = performance.now() + 6000;
+    confetti(160, colors);
+    let shots = 0;
+    burstTimer = setInterval(() => {
+      burst(colors);
+      if (shots % 3 === 0) confetti(50, colors);
+      if (++shots > 12) { clearInterval(burstTimer); burstTimer = 0; }
+    }, 420);
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  function stopFx() {
+    if (burstTimer) clearInterval(burstTimer);
+    burstTimer = 0; parts = []; fxUntil = 0;
+    if (raf) cancelAnimationFrame(raf); raf = 0;
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+  }
+
+  renderRows();
+})();
+</script>
