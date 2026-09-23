@@ -71,6 +71,11 @@
   .player-row label { font-weight: 700; font-size: 13px; color: var(--ink-soft); }
   .player-row select { width: 100%; font: 600 15px var(--body); color: var(--ink); padding: 11px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); }
   .player-row.dup select { border-color: #d93a3a; }
+  .bgm-row { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: 16px; background: var(--ground-2); }
+  .bgm-name { font-size: 13px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+  .bgm-name::before { content: "🎵 "; }
+  .bgm-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bgm-actions .pill-btn { font-size: 12px; padding: 8px 11px; }
   .err { color: #c02a2a; font-size: 13px; font-weight: 600; min-height: 20px; margin: 10px 0 0; }
   .start-btn {
     margin-top: 8px; width: 100%; font: 400 22px/1 var(--display); color: #fff; border: 0; border-radius: 18px; padding: 18px; cursor: pointer;
@@ -201,6 +206,7 @@
   <header class="top">
     <h1 class="logo">쿠키런 킹덤 <span>메모리</span></h1>
     <div class="top-tools">
+      <button class="pill-btn" id="musicBtn" type="button" aria-pressed="true">🎵<span class="lbl"> 음악</span></button>
       <button class="pill-btn" id="soundBtn" type="button" aria-pressed="true">🔊</button>
       <button class="pill-btn" id="homeBtn" type="button" hidden aria-label="처음으로">🏠<span class="lbl"> 처음으로</span></button>
     </div>
@@ -221,6 +227,15 @@
         <span class="hint">2 ~ 6명</span>
       </div>
       <div class="player-rows" id="playerRows"></div>
+      <div class="bgm-row">
+        <span class="bgm-name" id="bgmName">기본 음악: 쿠키 왕국 행진곡</span>
+        <div class="bgm-actions">
+          <button class="pill-btn" id="bgmPreview" type="button">▶ 미리 듣기</button>
+          <label class="pill-btn" for="bgmFile">🎼 내 음악 올리기</label>
+          <input type="file" id="bgmFile" accept="audio/*" hidden>
+          <button class="pill-btn" id="bgmClear" type="button" hidden>기본 음악으로</button>
+        </div>
+      </div>
       <p class="err" id="setupErr" role="alert"></p>
       <button class="start-btn" id="startBtn" type="button">모험 시작! 🍪</button>
     </div>
@@ -329,41 +344,214 @@
                 : `<span class="fallback"><b>🍪</b>${c.name}</span>`;
   }
 
-  // ---------- 사운드 ----------
-  let actx = null, soundOn = true;
+  // ---------- 사운드: 효과음(합성) + 배경음악 ----------
+  // 효과음과 배경음악은 각자 켜고 끌 수 있고, 설정은 이 브라우저에 기억됨
+  let actx = null, sfxBus = null, bgmBus = null;
+  let soundOn = true, musicOn = true;
+  try { soundOn = localStorage.getItem("crk-sfx") !== "off"; musicOn = localStorage.getItem("crk-bgm") !== "off"; } catch (e) {}
   function ac() {
-    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+    if (!actx) {
+      try {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        sfxBus = actx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(actx.destination);
+        bgmBus = actx.createGain(); bgmBus.gain.value = 0; bgmBus.connect(actx.destination);
+      } catch (e) { actx = null; }
+    }
     if (actx && actx.state === "suspended") actx.resume();
     return actx;
   }
-  function tone(freq, start, dur, type = "triangle", vol = 0.12) {
-    const a = soundOn && ac(); if (!a) return;
+  // 한 음: 파형·음정 미끄러짐·음량 포락선
+  function tone(freq, start, dur, type = "triangle", vol = 0.12, glideTo = 0, bus) {
+    const a = ac(); if (!a) return;
+    if (!bus && !soundOn) return;
     const t = a.currentTime + start;
     const o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur * 0.9);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(a.destination);
+    o.connect(g).connect(bus || sfxBus);
     o.start(t); o.stop(t + dur + 0.05);
   }
+  let noiseBuf = null;
+  function noise(start, dur, vol, fromHz, toHz, bus, type = "bandpass") {
+    const a = ac(); if (!a) return;
+    if (!bus && !soundOn) return;
+    if (!noiseBuf) {
+      noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t = a.currentTime + start;
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = noiseBuf; f.type = type; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(fromHz, t);
+    if (toHz) f.frequency.exponentialRampToValueAtTime(toHz, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(bus || sfxBus);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  const bell = (f, s, v = 0.12, d = 0.5) => { tone(f, s, d, "sine", v); tone(f * 2, s, d * 0.6, "sine", v * 0.35); tone(f * 3.01, s, d * 0.3, "sine", v * 0.12); };
   const sfx = {
-    flip:  () => tone(760, 0, 0.1, "sine", 0.08),
-    match: () => { tone(988, 0, 0.16); tone(1318, 0.08, 0.2); tone(1760, 0.16, 0.32); },
-    miss:  () => { tone(300, 0, 0.16, "square", 0.04); tone(220, 0.12, 0.24, "square", 0.04); },
-    win:   () => {
+    tap:    () => { tone(520, 0, 0.07, "sine", 0.1, 820); noise(0, 0.03, 0.05, 3000); },           // 일반 버튼 '뽁'
+    up:     () => { tone(660, 0, 0.08, "sine", 0.1, 990); tone(990, 0.06, 0.08, "sine", 0.07); },  // 늘리기
+    down:   () => { tone(700, 0, 0.08, "sine", 0.1, 460); },                                        // 줄이기
+    pick:   (i = 0) => { const f = [523, 587, 659, 698, 784, 880][i % 6]; bell(f, 0, 0.11, 0.35); bell(f * 1.5, 0.07, 0.07, 0.3); }, // 쿠키 고르기
+    error:  () => { tone(260, 0, 0.12, "square", 0.05); tone(245, 0.13, 0.16, "square", 0.05); },
+    start:  () => {                                                                                 // 모험 시작 징글
+      [523, 659, 784, 1046].forEach((f, i) => bell(f, i * 0.08, 0.13, 0.4));
+      [1318, 1568, 2093].forEach((f, i) => tone(f, 0.36 + i * 0.05, 0.5, "sine", 0.06));
+      noise(0.3, 0.5, 0.05, 6000, 12000, null, "highpass");
+    },
+    flip:   () => { noise(0, 0.12, 0.12, 900, 4200); tone(880, 0.02, 0.07, "triangle", 0.07, 1320); }, // 카드 '휙'
+    match:  () => {                                                                                 // 짝! 반짝 차임
+      bell(1046, 0, 0.13, 0.5); bell(1318, 0.09, 0.12, 0.5); bell(1568, 0.18, 0.12, 0.7); bell(2093, 0.27, 0.08, 0.8);
+      noise(0.2, 0.45, 0.04, 7000, 12000, null, "highpass");
+    },
+    miss:   () => { tone(392, 0, 0.18, "triangle", 0.12, 330); tone(311, 0.16, 0.28, "triangle", 0.12, 233); }, // 뿌잉~
+    turn:   () => { tone(784, 0, 0.09, "sine", 0.06); tone(1046, 0.08, 0.12, "sine", 0.06); },
+    win:    () => {
       [523, 659, 784, 1046, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * 0.11, 0.3, "triangle", 0.13));
-      [1046, 1318, 1568, 2093].forEach((f, i) => tone(f, 1.0 + i * 0.05, 0.9, "sine", 0.08));
+      [1046, 1318, 1568, 2093].forEach((f, i) => bell(f, 1.0 + i * 0.06, 0.08, 1.2));
     },
   };
-  $("soundBtn").addEventListener("click", () => {
-    soundOn = !soundOn;
+
+  // 배경음악 1) 올린 음악 파일 — 이 브라우저(IndexedDB)에 저장
+  const bgmAudio = new Audio(); bgmAudio.loop = true; bgmAudio.volume = 0.45;
+  let customBgm = null;   // { name, url }
+  function idb() {
+    return new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open("crk-memory", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+  }
+  async function kv(mode, fn) {
+    try {
+      const db = await idb();
+      return await new Promise((res, rej) => {
+        const tx = db.transaction("kv", mode); const q = fn(tx.objectStore("kv"));
+        tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error);
+      });
+    } catch (e) { return undefined; }
+  }
+
+  // 배경음악 2) 기본 음악 — 이 게임을 위해 만든 경쾌한 행진곡(132 BPM, 16마디 반복)
+  const BPM = 132, STEP = 60 / BPM / 2;     // 8분음표 길이
+  const _ = 0;
+  const MELODY = [
+    72,_,76,79, 76,_,72,_,   69,_,72,76, 74,72,71,_,   72,_,77,76, 74,_,72,74,   76,_,74,_, 71,_,67,_,
+    72,_,76,79, 84,_,81,79,  77,_,76,77, 81,_,79,77,   76,74,72,74, 77,76,74,71, 72,_,_,67, 72,_,_,_,
+    81,_,79,77, 76,_,77,_,   79,_,77,76, 74,_,71,_,    76,_,74,72, 71,_,72,_,    69,_,_,72, 76,_,_,_,
+    77,_,81,_, 84,_,81,_,    83,_,79,_, 74,_,79,_,     84,_,79,76, 72,_,76,79,   77,_,74,_, 71,_,67,_,
+  ];
+  // 마디별 화음(근음, 3음, 5음)
+  const CHORDS = [
+    [48,52,55],[45,48,52],[41,45,48],[43,47,50], [48,52,55],[41,45,48],[50,53,57],[48,52,55],
+    [41,45,48],[43,47,50],[40,43,47],[45,48,52], [41,45,48],[43,47,50],[48,52,55],[43,47,53],
+  ];
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  let bgmTimer = 0, nextTime = 0, step = 0;
+  function playStep(i, t) {
+    const a = actx, when = t - a.currentTime;
+    const bar = Math.floor(i / 8) % 16, beat = i % 8;
+    const m = MELODY[i % MELODY.length];
+    if (m) { tone(hz(m), when, STEP * 1.8, "sine", 0.11, 0, bgmBus); tone(hz(m) * 2, when, STEP * 0.9, "sine", 0.025, 0, bgmBus); }
+    const ch = CHORDS[bar];
+    if (beat % 4 === 0) tone(hz(ch[0] - 12), when, STEP * 1.6, "triangle", 0.16, 0, bgmBus);        // 베이스 '쿵'
+    if (beat % 4 === 2) tone(hz(ch[2] - 12), when, STEP * 1.2, "triangle", 0.12, 0, bgmBus);        // 베이스 '짝'
+    if (beat % 2 === 1) ch.forEach(n => tone(hz(n + 12), when, STEP * 0.7, "square", 0.012, 0, bgmBus)); // 뒷박 화음
+    if (beat % 4 === 0) tone(110, when, 0.12, "sine", 0.18, 45, bgmBus);                             // 킥
+    if (beat % 2 === 1) noise(when, 0.04, 0.03, 8000, 0, bgmBus, "highpass");                        // 하이햇
+    if (beat === 2 || beat === 6) noise(when, 0.09, 0.05, 2200, 0, bgmBus);                           // 스네어
+  }
+  function synthStart() {
+    if (bgmTimer) return;
+    nextTime = actx.currentTime + 0.1; step = 0;
+    bgmTimer = setInterval(() => {
+      while (nextTime < actx.currentTime + 0.25) { playStep(step, nextTime); nextTime += STEP; step++; }
+    }, 60);
+  }
+  function synthStop() { clearInterval(bgmTimer); bgmTimer = 0; }
+
+  let bgmWanted = false;   // 게임 화면에서만 재생
+  function bgmSync() {
+    const a = ac(); if (!a) return;
+    const play = bgmWanted && musicOn;
+    if (customBgm) {
+      synthStop();
+      if (play) { bgmAudio.play().catch(() => {}); } else bgmAudio.pause();
+    } else {
+      bgmAudio.pause();
+      bgmBus.gain.cancelScheduledValues(a.currentTime);
+      bgmBus.gain.setTargetAtTime(play ? 0.55 : 0, a.currentTime, 0.15);
+      if (play) synthStart(); else setTimeout(() => { if (!(bgmWanted && musicOn)) synthStop(); }, 600);
+    }
+  }
+  // 우승 팡파르 동안 배경음악을 잠깐 줄임
+  function duckBgm(sec) {
+    if (!actx) return;
+    const t = actx.currentTime;
+    bgmBus.gain.setTargetAtTime(0.12, t, 0.08);
+    bgmBus.gain.setTargetAtTime(musicOn && bgmWanted ? 0.55 : 0, t + sec, 0.4);
+    bgmAudio.volume = 0.12; setTimeout(() => { bgmAudio.volume = 0.45; }, sec * 1000);
+  }
+
+  function syncSoundButtons() {
     $("soundBtn").textContent = soundOn ? "🔊" : "🔇";
     $("soundBtn").setAttribute("aria-pressed", String(soundOn));
-    $("soundBtn").setAttribute("aria-label", soundOn ? "소리 끄기" : "소리 켜기");
-    if (soundOn) sfx.flip();
+    $("soundBtn").setAttribute("aria-label", soundOn ? "효과음 끄기" : "효과음 켜기");
+    $("musicBtn").innerHTML = musicOn ? `🎵<span class="lbl"> 음악</span>` : `🎵<span class="lbl"> 음악 꺼짐</span>`;
+    $("musicBtn").setAttribute("aria-pressed", String(musicOn));
+    $("musicBtn").setAttribute("aria-label", musicOn ? "배경음악 끄기" : "배경음악 켜기");
+    $("bgmName").textContent = customBgm ? `내 음악: ${customBgm.name}` : "기본 음악: 쿠키 왕국 행진곡";
+    $("bgmClear").hidden = !customBgm;
+  }
+  $("soundBtn").addEventListener("click", () => {
+    soundOn = !soundOn; syncSoundButtons();
+    try { localStorage.setItem("crk-sfx", soundOn ? "on" : "off"); } catch (e) {}
+    sfx.tap();
   });
-  $("soundBtn").setAttribute("aria-label", "소리 끄기");
+  $("musicBtn").addEventListener("click", () => {
+    musicOn = !musicOn; syncSoundButtons(); sfx.tap();
+    try { localStorage.setItem("crk-bgm", musicOn ? "on" : "off"); } catch (e) {}
+    bgmSync();
+  });
+  $("bgmFile").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("audio/")) { sfx.error(); $("bgmName").textContent = "음악 파일(MP3, M4A, OGG 등)만 올릴 수 있어요."; return; }
+    if (customBgm) URL.revokeObjectURL(customBgm.url);
+    customBgm = { name: f.name.replace(/\.[^.]+$/, ""), url: URL.createObjectURL(f) };
+    bgmAudio.src = customBgm.url;
+    await kv("readwrite", st => st.put({ name: customBgm.name, blob: f }, "bgm"));
+    sfx.pick(2); syncSoundButtons(); bgmSync();
+  });
+  $("bgmClear").addEventListener("click", async () => {
+    if (customBgm) URL.revokeObjectURL(customBgm.url);
+    customBgm = null; bgmAudio.removeAttribute("src");
+    await kv("readwrite", st => st.delete("bgm"));
+    sfx.down(); syncSoundButtons(); bgmSync();
+  });
+  $("bgmPreview").addEventListener("click", () => {
+    sfx.tap();
+    bgmWanted = !bgmWanted;
+    $("bgmPreview").textContent = bgmWanted ? "⏸ 멈추기" : "▶ 미리 듣기";
+    if (bgmWanted && !musicOn) { musicOn = true; syncSoundButtons(); }
+    bgmSync();
+  });
+  (async () => {
+    const saved = await kv("readonly", st => st.get("bgm"));
+    if (saved && saved.blob) {
+      customBgm = { name: saved.name, url: URL.createObjectURL(saved.blob) };
+      bgmAudio.src = customBgm.url;
+    }
+    syncSoundButtons();
+  })();
+  syncSoundButtons();
 
   // ---------- 설정 화면 ----------
   let chosen = ["gingerbrave", "pure_vanilla", "hollyberry", "dark_cacao", "golden_cheese", "white_lily"];
@@ -405,12 +593,15 @@
     if (e.target.tagName !== "SELECT") return;
     chosen[+e.target.dataset.i] = e.target.value;
     renderRows();
+    const dup = document.querySelector(".player-row.dup");
+    dup ? sfx.error() : sfx.pick(+e.target.dataset.i);
   });
-  $("playerCount").addEventListener("change", renderRows);
-  $("minusBtn").addEventListener("click", () => { $("playerCount").value = +$("playerCount").value - 1; renderRows(); });
+  $("playerCount").addEventListener("change", () => { sfx.tap(); renderRows(); });
+  $("minusBtn").addEventListener("click", () => { sfx.down(); $("playerCount").value = +$("playerCount").value - 1; renderRows(); });
   $("plusBtn").addEventListener("click", () => {
     const n = clampCount(+$("playerCount").value);
     if (n >= 6) return;
+    sfx.up();
     const used = new Set(chosen.slice(0, n));
     if (used.has(chosen[n])) chosen[n] = COOKIES.find(c => !used.has(c.id)).id;
     $("playerCount").value = n + 1; renderRows();
@@ -432,6 +623,7 @@
       up: [], taken: {}, lock: false,
     };
     $("setup").hidden = true; $("game").hidden = false; $("homeBtn").hidden = false; $("win").hidden = true;
+    bgmWanted = true; bgmSync();
     stopFx();
     buildBoard(); renderScore(); renderTurn(); setMsg("");
     window.scrollTo(0, 0);
@@ -524,6 +716,7 @@
     S.up = []; S.lock = false;
     S.cur = (S.cur + 1) % S.players.length;
     setMsg(`아쉬워요! ${byId[S.players[S.cur].id].name}에게 차례가 넘어가요.`);
+    sfx.turn();
     renderScore(); renderTurn();
   }
 
@@ -555,16 +748,19 @@
     setTimeout(() => {
       $("win").hidden = false;
       $("againBtn").focus();
+      duckBgm(3.5);
       sfx.win();
       celebrate(winners.map(p => byId[p.id].color));
     }, 450);
   }
 
-  $("startBtn").addEventListener("click", () => { ac(); startGame(chosen.slice(0, clampCount(+$("playerCount").value))); });
-  $("againBtn").addEventListener("click", () => startGame(S.players.map(p => p.id)));
-  $("newBtn").addEventListener("click", goHome);
-  $("homeBtn").addEventListener("click", goHome);
+  $("startBtn").addEventListener("click", () => { ac(); sfx.start(); startGame(chosen.slice(0, clampCount(+$("playerCount").value))); });
+  $("againBtn").addEventListener("click", () => { sfx.start(); startGame(S.players.map(p => p.id)); });
+  $("newBtn").addEventListener("click", () => { sfx.tap(); goHome(); });
+  $("homeBtn").addEventListener("click", () => { sfx.tap(); goHome(); });
   function goHome() {
+    bgmWanted = false; bgmSync();
+    $("bgmPreview").textContent = "▶ 미리 듣기";
     $("win").hidden = true; stopFx();
     $("game").hidden = true; $("setup").hidden = false; $("homeBtn").hidden = true;
     renderRows();
