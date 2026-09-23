@@ -193,6 +193,70 @@
   .win-actions .start-btn { margin: 0; font-size: 18px; padding: 14px; }
   .win-actions .pill-btn { border-radius: 18px; font-size: 15px; }
 
+  /* ---------- 오프닝: 사회자 쿠키 + 플레이어 소개 + 카운트다운 ---------- */
+  .opening {
+    position: fixed; inset: 0; z-index: 35; overflow: hidden; cursor: pointer;
+    display: grid; grid-template-rows: 1fr auto; justify-items: center; align-items: end;
+    padding: 56px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    background: radial-gradient(circle at 50% 58%, #fff7e6 0 22%, #ffd48a 55%, #f59b45 100%);
+    animation: opIn .35s ease-out;
+  }
+  .opening.out { animation: opOut .45s ease-in forwards; }
+  @keyframes opIn { from { opacity: 0; } }
+  @keyframes opOut { to { opacity: 0; transform: scale(1.15); } }
+  .op-rays {
+    position: absolute; left: 50%; top: 58%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax;
+    background: repeating-conic-gradient(rgba(255,255,255,.34) 0 8deg, transparent 8deg 20deg);
+    animation: spin 14s linear infinite; pointer-events: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .op-side { position: absolute; bottom: 30%; width: min(34vw, 220px); pointer-events: none; filter: drop-shadow(0 6px 10px rgba(74,44,26,.25)); }
+  .op-side img { width: 100%; display: block; }
+  .op-side.l { left: -4%; animation: fromL .6s .15s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .op-side.r { right: -4%; animation: fromR .6s .25s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .op-side.tl { left: 4%; top: 9%; bottom: auto; width: min(24vw, 150px); animation: fromL .6s .35s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .op-side.tr { right: 4%; top: 9%; bottom: auto; width: min(24vw, 150px); animation: fromR .6s .45s cubic-bezier(.2,1.4,.4,1) backwards; }
+  @keyframes fromL { from { transform: translateX(-120%) rotate(-20deg); } }
+  @keyframes fromR { from { transform: translateX(120%) rotate(20deg); } }
+  .op-stage { position: relative; display: grid; justify-items: center; gap: 6px; z-index: 1; }
+  .op-bubble {
+    position: relative; max-width: min(88vw, 460px); min-height: 1.3em; padding: 14px 20px; border-radius: 24px;
+    background: #fff; color: var(--ink); font-family: var(--display); font-size: clamp(22px, 6.4vw, 36px); line-height: 1.25; text-align: center;
+    box-shadow: 0 6px 0 rgba(74,44,26,.18); border: 3px solid var(--ink); word-break: keep-all;
+    animation: pop .35s .45s cubic-bezier(.2,1.6,.4,1) backwards;
+  }
+  .op-bubble::after {
+    content: ""; position: absolute; left: 50%; bottom: -16px; width: 26px; height: 26px; margin-left: -13px;
+    background: #fff; border: 3px solid var(--ink); border-top: 0; border-left: 0; transform: rotate(45deg);
+  }
+  .op-bubble b { color: var(--jelly); font-weight: 400; }
+  .opening.counting .op-bubble { opacity: .2; transition: opacity .25s; }
+  .op-host { width: min(58vw, 330px); animation: hostIn .7s .1s cubic-bezier(.2,1.5,.4,1) backwards, hostBob 1.1s 1s ease-in-out infinite; }
+  .op-host img { width: 100%; display: block; filter: drop-shadow(0 10px 12px rgba(74,44,26,.3)); }
+  @keyframes hostIn { from { transform: translateY(90%) scale(.5); opacity: 0; } }
+  @keyframes hostBob { 50% { transform: translateY(-8px) rotate(-3deg); } }
+  .op-players { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 6px; margin-top: 14px; max-width: 100%; }
+  .op-player { display: grid; justify-items: center; gap: 3px; font-weight: 700; font-size: 12px; color: var(--ink); animation: pop .4s cubic-bezier(.2,1.6,.4,1) backwards; }
+  .op-player .av { width: 58px; height: 58px; border-width: 3px; box-shadow: 0 4px 0 rgba(74,44,26,.2); }
+  .op-player span { background: #fff; padding: 2px 8px; border-radius: 999px; max-width: 7.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .op-vs { font-family: var(--display); font-size: 22px; color: #fff; text-shadow: 0 2px 0 var(--jelly), 0 0 8px var(--jelly); animation: pop .3s backwards; }
+  .op-count {
+    position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 2;
+    font-family: var(--display); font-size: clamp(110px, 38vw, 220px); color: #fff; line-height: 1;
+    -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; text-shadow: 0 10px 0 rgba(74,44,26,.35);
+  }
+  .op-count span { animation: countPop .5s cubic-bezier(.2,1.6,.4,1); }
+  .op-count span.go { color: var(--gold); font-size: .62em; }
+  @keyframes countPop { 0% { transform: scale(2.4); opacity: 0; } 60% { transform: scale(.92); opacity: 1; } }
+  .op-skip {
+    position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 3;
+    font: 700 13px/1 var(--body); color: var(--ink); background: rgba(255,255,255,.85); border: 2px solid var(--ink);
+    border-radius: 999px; padding: 8px 12px; cursor: pointer;
+  }
+  /* 오프닝이 끝나면 카드가 한 장씩 깔림 */
+  .board.deal .card { animation: deal .45s cubic-bezier(.2,1.4,.4,1) backwards; }
+  @keyframes deal { from { transform: translateY(-60px) rotate(-25deg) scale(.3); opacity: 0; } }
+
   @media (max-width: 760px) { .setup { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 520px) {
     .wrap { padding-block: 10px 20px; }
@@ -279,6 +343,21 @@
       <button class="start-btn" id="againBtn" type="button">한 판 더! 🍪</button>
     </div>
   </div>
+</div>
+
+<div class="opening" id="opening" hidden>
+  <div class="op-rays"></div>
+  <div class="op-side tl" id="opTL"></div>
+  <div class="op-side tr" id="opTR"></div>
+  <div class="op-side l" id="opL"></div>
+  <div class="op-side r" id="opR"></div>
+  <button class="op-skip" id="opSkip" type="button">건너뛰기 ›</button>
+  <div class="op-stage">
+    <div class="op-bubble" id="opBubble" aria-live="polite"></div>
+    <div class="op-host" id="opHost"></div>
+  </div>
+  <div class="op-players" id="opPlayers"></div>
+  <div class="op-count" id="opCount" aria-live="assertive"></div>
 </div>
 
 <canvas id="fx" aria-hidden="true"></canvas>
@@ -410,6 +489,15 @@
       noise(0.2, 0.45, 0.04, 7000, 12000, null, "highpass");
     },
     miss:   () => { tone(392, 0, 0.18, "triangle", 0.12, 330); tone(311, 0.16, 0.28, "triangle", 0.12, 233); }, // 뿌잉~
+    drumroll: () => { for (let i = 0; i < 14; i++) noise(i * 0.035, 0.05, 0.05 + i * 0.004, 1800, 0); tone(98, 0.5, 0.35, "sine", 0.2, 50); },
+    blip:   (i = 0) => tone([784, 880, 988, 880][i % 4], 0, 0.05, "square", 0.025),                  // 말풍선 타자
+    count:  () => { tone(880, 0, 0.16, "square", 0.06); tone(880, 0, 0.2, "sine", 0.12); },
+    go:     () => {
+      [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, i * 0.05, 0.5, "triangle", 0.12));
+      bell(2093, 0.25, 0.08, 0.9); noise(0.05, 0.6, 0.06, 5000, 12000, null, "highpass");
+      tone(80, 0, 0.3, "sine", 0.25, 40);
+    },
+    deal:   () => { for (let i = 0; i < 8; i++) noise(i * 0.09, 0.06, 0.06, 1500 + i * 300, 4000); },
     turn:   () => { tone(784, 0, 0.09, "sine", 0.06); tone(1046, 0.08, 0.12, "sine", 0.06); },
     win:    () => {
       [523, 659, 784, 1046, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * 0.11, 0.3, "triangle", 0.13));
@@ -623,10 +711,88 @@
       up: [], taken: {}, lock: false,
     };
     $("setup").hidden = true; $("game").hidden = false; $("homeBtn").hidden = false; $("win").hidden = true;
-    bgmWanted = true; bgmSync();
     stopFx();
     buildBoard(); renderScore(); renderTurn(); setMsg("");
     window.scrollTo(0, 0);
+    S.lock = true;
+    playOpening(S.players.map(p => byId[p.id]), () => {
+      S.lock = false;
+      bgmWanted = true; bgmSync();
+      const board = $("board");
+      [...board.children].forEach((el, i) => { el.style.animationDelay = `${i * 0.03}s`; });
+      board.classList.remove("deal"); void board.offsetWidth; board.classList.add("deal");
+      sfx.deal();
+    });
+  }
+
+  // ---------- 오프닝 ----------
+  // 사회자 용감한 쿠키 등장 → "자, 그럼 이제 게임을 시작합니다!" → 플레이어 소개 → 3·2·1 → START
+  let opTimers = [], opDone = null;
+  const LINE = "자, 그럼 이제 게임을 시작합니다!";
+  function img(c) { return c.ok ? `<img src="${c.img}" alt="">` : ""; }
+  function playOpening(players, done) {
+    const op = $("opening");
+    const at = (ms, fn) => opTimers.push(setTimeout(fn, ms));
+    opDone = done;
+    // 주변 인기 쿠키 4명(플레이어가 고른 쿠키와 사회자는 빼고 무작위)
+    const star = ["pure_vanilla", "hollyberry", "dark_cacao", "golden_cheese", "white_lily", "shadow_milk", "sea_fairy", "moonlight", "frost_queen", "mystic_flour", "eternal_sugar", "burning_spice"]
+      .filter(id => id !== "gingerbrave" && !players.some(p => p.id === id));
+    const side = shuffle(star).slice(0, 4).map(id => byId[id]);
+    ["opL", "opR", "opTL", "opTR"].forEach((el, i) => { $(el).innerHTML = side[i] ? img(side[i]) : ""; });
+    $("opHost").innerHTML = img(byId.gingerbrave);
+    $("opBubble").innerHTML = "";
+    $("opPlayers").innerHTML = "";
+    $("opCount").innerHTML = "";
+    op.classList.remove("out", "counting");
+    op.hidden = false;
+
+    sfx.drumroll();
+    // 말풍선: 한 글자씩
+    [...LINE].forEach((ch, i) => at(520 + i * 42, () => {
+      const shown = LINE.slice(0, i + 1);
+      $("opBubble").innerHTML = shown.length === LINE.length ? LINE.replace("게임을 시작합니다!", "<b>게임을 시작합니다!</b>") : shown;
+      if (ch.trim()) sfx.blip(i);
+    }));
+    at(560, () => speak(LINE));
+    // 플레이어 소개
+    const t0 = 520 + LINE.length * 42 + 200;
+    players.forEach((c, i) => at(t0 + i * 170, () => {
+      const box = $("opPlayers");
+      if (i > 0) box.insertAdjacentHTML("beforeend", `<span class="op-vs">VS</span>`);
+      box.insertAdjacentHTML("beforeend", `<div class="op-player">${avatar(c)}<span>${c.name}</span></div>`);
+      sfx.pick(i);
+    }));
+    // 카운트다운
+    const t1 = t0 + players.length * 170 + 350;
+    ["3", "2", "1"].forEach((n, i) => at(t1 + i * 520, () => {
+      op.classList.add("counting");
+      $("opCount").innerHTML = `<span>${n}</span>`;
+      sfx.count();
+    }));
+    at(t1 + 1560, () => { $("opCount").innerHTML = `<span class="go">START!</span>`; sfx.go(); });
+    at(t1 + 2150, finishOpening);
+  }
+  function finishOpening() {
+    opTimers.forEach(clearTimeout); opTimers = [];
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const op = $("opening");
+    if (op.hidden) return;
+    op.classList.add("out");
+    setTimeout(() => { op.hidden = true; op.classList.remove("out"); }, 450);
+    const d = opDone; opDone = null;
+    if (d) d();
+  }
+  $("opening").addEventListener("click", () => { if (opDone) { sfx.tap(); finishOpening(); } });
+  // 브라우저 음성으로 사회자 대사 읽기(효과음이 켜져 있을 때만, 지원하는 기기에서)
+  function speak(text) {
+    if (!soundOn) return;
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR"; u.pitch = 1.7; u.rate = 1.12; u.volume = 1;
+      const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("ko"));
+      if (v) u.voice = v;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {}
   }
 
   function buildBoard() {
@@ -759,6 +925,7 @@
   $("newBtn").addEventListener("click", () => { sfx.tap(); goHome(); });
   $("homeBtn").addEventListener("click", () => { sfx.tap(); goHome(); });
   function goHome() {
+    opDone = null; finishOpening();
     bgmWanted = false; bgmSync();
     $("bgmPreview").textContent = "▶ 미리 듣기";
     $("win").hidden = true; stopFx();
