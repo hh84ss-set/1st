@@ -173,6 +173,40 @@
     background: var(--ground-2); color: var(--ink);
   }
 
+  /* ---------- 카드 이미지 ---------- */
+  .deck-panel { grid-column: 1 / -1; display: grid; gap: 14px; }
+  .deck-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .deck-head .lead { margin: 0; max-width: 62ch; }
+  .deck-count { font-family: var(--display); font-size: 20px; color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .deck-count strong { font-weight: 400; font-size: 40px; color: var(--pink); }
+  .deck-count.full strong { color: #1f9d63; }
+  .meter { height: 8px; border-radius: 99px; background: var(--ground-2); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--pink), #b36bff, var(--sky)); transition: width .3s; }
+  .drop {
+    position: relative; display: grid; place-items: center; gap: 4px; text-align: center;
+    padding: 22px 16px; border: 2.5px dashed #e7a9c8; border-radius: 18px; background: var(--ground);
+    cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .drop:hover, .drop.over { background: var(--pink-soft); border-color: var(--pink); }
+  .drop:focus-within { outline: 3px solid var(--sky); outline-offset: 2px; }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .drop-big { font-family: var(--display); font-size: 18px; }
+  .deck-note { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-soft); min-height: 18px; }
+  .deck-note.ok { color: #1f9d63; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+  .thumb { position: relative; aspect-ratio: 3 / 4; max-width: 100%; border-radius: 10px; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 0 var(--line); background: var(--ground-2); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb button {
+    position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%;
+    border: 0; background: rgba(59,36,71,.75); color: #fff; font: 700 13px/1 var(--body); cursor: pointer;
+  }
+  .thumb .badge { position: absolute; left: 3px; bottom: 3px; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 6px; background: rgba(255,255,255,.9); }
+  .deck-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .haul { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 0 0 16px; }
+  .haul img { width: 34px; height: 45px; object-fit: cover; border-radius: 5px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(59,36,71,.25); animation: dealIn .5s backwards; }
+  .haul span { font-size: 26px; }
+  @keyframes dealIn { from { transform: translateY(14px) rotate(-10deg); opacity: 0; } }
+
   /* ---------- 게임 화면 ---------- */
   .game { margin-top: 16px; display: grid; gap: 12px; }
   .scoreboard { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -193,7 +227,9 @@
   .player-chip .meta { min-width: 0; flex: 1; }
   .player-chip .nm, .player-chip .loot { display: block; }
   .player-chip .nm { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .player-chip .loot { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 16px; }
+  .player-chip .loot { display: flex; gap: 2px; align-items: center; height: 22px; overflow: hidden; }
+  .player-chip .loot img { width: 16px; height: 21px; object-fit: cover; border-radius: 3px; border: 1px solid #fff; box-shadow: 0 1px 2px rgba(59,36,71,.25); flex: none; }
+  .player-chip .loot .none { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 16px; }
   .player-chip .sc {
     display: inline-block; font-family: var(--display); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums;
     color: var(--ink);
@@ -282,6 +318,8 @@
     font-size: clamp(7px, .95vw, 10px); font-weight: 700; color: rgba(59,36,71,.65); line-height: 1.1;
     word-break: keep-all;
   }
+  .card .front.photo { padding: 0; background: #fff; }
+  .card .front.photo img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; user-select: none; }
   .card.match .front { animation: glow .65s ease-in-out; }
   @keyframes glow {
     50% { box-shadow: 0 0 0 4px var(--gold), 0 0 22px var(--gold); transform: rotateY(180deg) scale(1.08); }
@@ -373,6 +411,27 @@
 
   <!-- 설정 화면 -->
   <section class="setup" id="setup">
+    <div class="panel deck-panel">
+      <div class="deck-head">
+        <div>
+          <h2>카드 이미지</h2>
+          <p class="lead">아이프리 게임기에서 뽑은 카드의 사진이나 이미지를 올려 주세요. 서로 다른 그림이 24장 있으면 48장 모두 실제 카드로 짝을 맞춰요.</p>
+        </div>
+        <div class="deck-count" id="deckCount"><strong id="imgCount">0</strong> / 24장</div>
+      </div>
+      <div class="meter" aria-hidden="true"><i id="meterBar"></i></div>
+      <label class="drop" id="drop" for="fileIn">
+        <input type="file" id="fileIn" accept="image/*" multiple>
+        <span class="drop-big">📸 카드 이미지를 여기로 끌어 놓거나, 눌러서 고르세요</span>
+        <span class="hint">여러 장을 한 번에 골라도 되고, 복사한 이미지는 붙여넣기(Ctrl+V)도 돼요 · 이미지는 이 브라우저에만 저장돼요</span>
+      </label>
+      <p class="deck-note" id="deckNote" aria-live="polite"></p>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="deck-actions">
+        <button class="pill-btn" id="clearImgs" type="button" hidden>올린 이미지 모두 지우기</button>
+      </div>
+    </div>
+
     <div class="panel">
       <h2>누가 무대에 오를까요?</h2>
       <p class="lead">플레이어 수를 정하고, 각자 함께할 아이프리 캐릭터를 골라 주세요.</p>
@@ -395,11 +454,10 @@
       <p class="lead">8 × 6, 모두 48장 · 24쌍의 카드가 뒤집힌 채 시작해요.</p>
       <ul class="rules">
         <li><b>1</b><span>내 차례에 카드 두 장을 차례로 눌러 뒤집어요.</span></li>
-        <li><b>2</b><span>같은 카드면 그 짝은 <strong>내 것</strong>! 한 번 더 뒤집을 수 있어요.</span></li>
-        <li><b>3</b><span>다른 카드면 다시 덮이고 <strong>다음 플레이어</strong> 차례로 넘어가요.</span></li>
+        <li><b>2</b><span>같은 그림의 카드면 그 짝은 <strong>내 것</strong>! 한 번 더 뒤집을 수 있어요.</span></li>
+        <li><b>3</b><span>다른 그림이면 다시 덮이고 <strong>다음 플레이어</strong> 차례로 넘어가요.</span></li>
         <li><b>4</b><span>모든 짝을 찾으면 끝. 가장 많은 짝을 모은 플레이어가 우승이에요.</span></li>
       </ul>
-      <div class="cast" id="castList" aria-label="카드에 등장하는 캐릭터"></div>
     </div>
   </section>
 
@@ -421,6 +479,7 @@
     <p class="congrats">CONGRATULATIONS!</p>
     <h2 id="winTitle"></h2>
     <p class="sub" id="winSub"></p>
+    <div class="haul" id="haul" aria-label="우승자가 모은 카드"></div>
     <ol class="rank" id="rank"></ol>
     <div class="win-actions">
       <button class="pill-btn" id="newBtn" type="button">캐릭터 다시 고르기</button>
@@ -503,7 +562,6 @@
   // ---------- 설정 화면 ----------
   let chosen = ["inori", "aoi", "gumi", "olivia", "nana", "ema"];
 
-  $("castList").innerHTML = CARDS.map(c => `<span title="${c.jp}">${c.emoji} ${c.name}</span>`).join("");
 
   function avatarStyle(c) { return `background:linear-gradient(145deg, ${c.c2}, ${c.c1})`; }
 
@@ -568,11 +626,178 @@
     return a;
   }
 
+  // ---------- 카드 이미지: 올린 이미지(IndexedDB) + cards/ 폴더(manifest.json) ----------
+  const PAIRS = 24;
+  let images = [];   // { id, key, name, url, from: "upload" | "repo" }
+  const DB_NAME = "aipri-memory", STORE = "cards";
+
+  function openDb() {
+    return new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open(DB_NAME, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: "id" });
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+  }
+  async function dbRun(mode, fn) {
+    try {
+      const db = await openDb();
+      return await new Promise((res, rej) => {
+        const tx = db.transaction(STORE, mode);
+        const q = fn(tx.objectStore(STORE));
+        tx.oncomplete = () => res(q && q.result);
+        tx.onerror = () => rej(tx.error);
+      });
+    } catch (e) { return undefined; }
+  }
+
+  function cleanName(file) {
+    return file.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "아이프리 카드";
+  }
+  function loadImg(url) {
+    return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; });
+  }
+  // 큰 사진은 카드 크기에 맞게 줄여서 저장 (속도·용량)
+  async function shrink(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const im = await loadImg(url);
+      const k = Math.min(1, 560 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      return await new Promise(res => c.toBlob(b => res(b || file), "image/webp", 0.88));
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function newId() {
+    try { return crypto.randomUUID(); } catch (e) { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+  }
+
+  async function addFiles(fileList) {
+    const files = [...fileList].filter(f => f.type && f.type.startsWith("image/"));
+    if (!files.length) { deckNote("이미지 파일(PNG, JPG, WEBP 등)만 올릴 수 있어요.", false); return; }
+    deckNote(`${files.length}장 불러오는 중…`, false);
+    let added = 0, skipped = 0;
+    for (const f of files) {
+      const key = `${f.name}:${f.size}`;
+      if (images.some(im => im.key === key)) { skipped++; continue; }
+      let blob;
+      try { blob = await shrink(f); } catch (e) { skipped++; continue; }
+      const rec = { id: newId(), key, name: cleanName(f.name), blob, order: Date.now() + added };
+      await dbRun("readwrite", st => st.put(rec));
+      images.push({ id: rec.id, key, name: rec.name, url: URL.createObjectURL(blob), from: "upload" });
+      added++;
+    }
+    renderThumbs(added ? `${added}장을 추가했어요.` + (skipped ? ` (이미 있거나 읽을 수 없는 ${skipped}장은 건너뛰었어요)` : "") : "새로 추가된 이미지가 없어요. 이미 올린 파일인지 확인해 주세요.");
+  }
+
+  async function removeImage(id) {
+    const im = images.find(x => x.id === id);
+    if (!im || im.from !== "upload") return;
+    images = images.filter(x => x.id !== id);
+    URL.revokeObjectURL(im.url);
+    await dbRun("readwrite", st => st.delete(id));
+    renderThumbs("");
+  }
+
+  function deckNote(text, ok) {
+    $("deckNote").textContent = text;
+    $("deckNote").classList.toggle("ok", !!ok);
+  }
+
+  function renderThumbs(note) {
+    const n = images.length;
+    $("imgCount").textContent = n;
+    $("deckCount").classList.toggle("full", n >= PAIRS);
+    $("meterBar").style.width = Math.min(100, (n / PAIRS) * 100) + "%";
+    $("thumbs").innerHTML = images.map(im => `
+      <div class="thumb" title="${esc(im.name)}">
+        <img src="${im.url}" alt="${esc(im.name)}" loading="lazy">
+        ${im.from === "upload"
+          ? `<button type="button" data-del="${im.id}" aria-label="${esc(im.name)} 이미지 빼기">×</button>`
+          : `<span class="badge">기본</span>`}
+      </div>`).join("");
+    $("clearImgs").hidden = !images.some(im => im.from === "upload");
+    const status = n >= PAIRS
+      ? (n > PAIRS ? `준비 완료! ${n}장 중 24장을 판마다 무작위로 골라요.` : "준비 완료! 24쌍 모두 실제 카드로 플레이해요.")
+      : n === 0
+        ? "아직 올린 이미지가 없어요. 이대로 시작하면 기본 그림 카드로 플레이해요."
+        : `${PAIRS - n}장 더 올리면 모두 실제 카드가 돼요. 모자란 ${PAIRS - n}쌍은 기본 그림 카드로 채워요.`;
+    deckNote(note ? `${note} ${status}` : status, n >= PAIRS);
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch])); }
+
+  $("fileIn").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, () => drop.classList.remove("over")));
+  drop.addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer.files); });
+  document.addEventListener("paste", (e) => {
+    if ($("setup").hidden) return;
+    const files = [...(e.clipboardData?.files || [])];
+    if (files.length) { e.preventDefault(); addFiles(files); }
+  });
+  $("thumbs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-del]");
+    if (b) removeImage(b.dataset.del);
+  });
+  let clearArmed = 0;
+  $("clearImgs").addEventListener("click", async () => {
+    const btn = $("clearImgs");
+    if (!clearArmed) {
+      btn.textContent = "정말 지울까요? 한 번 더 누르세요";
+      clearArmed = setTimeout(() => { clearArmed = 0; btn.textContent = "올린 이미지 모두 지우기"; }, 3000);
+      return;
+    }
+    clearTimeout(clearArmed); clearArmed = 0;
+    btn.textContent = "올린 이미지 모두 지우기";
+    images.filter(im => im.from === "upload").forEach(im => URL.revokeObjectURL(im.url));
+    images = images.filter(im => im.from !== "upload");
+    await dbRun("readwrite", st => st.clear());
+    renderThumbs("올린 이미지를 모두 지웠어요.");
+  });
+
+  async function loadImages() {
+    // 1) 저장소의 cards/ 폴더 (manifest.json에 적힌 이미지)
+    try {
+      const r = await fetch("cards/manifest.json", { cache: "no-cache" });
+      if (r.ok) {
+        const m = await r.json();
+        (m.cards || []).forEach((c, i) => {
+          if (!c || !c.file) return;
+          images.push({ id: "repo-" + i, key: "repo:" + c.file, name: c.name || cleanName(c.file), url: "cards/" + c.file, from: "repo" });
+        });
+      }
+    } catch (e) { /* 폴더가 없으면 건너뜀 */ }
+    // 2) 이 브라우저에 올려 둔 이미지
+    const saved = (await dbRun("readonly", st => st.getAll())) || [];
+    saved.sort((a, b) => a.order - b.order).forEach(rec => {
+      images.push({ id: rec.id, key: rec.key, name: rec.name, url: URL.createObjectURL(rec.blob), from: "upload" });
+    });
+    renderThumbs("");
+  }
+
+  // 이번 판에 쓸 24가지 그림: 이미지 우선, 모자라면 기본 그림 카드
+  function pickFaces() {
+    const photos = shuffle(images.slice()).slice(0, PAIRS)
+      .map(im => ({ key: "img:" + im.id, kind: "img", name: im.name, url: im.url }));
+    const fill = shuffle(CARDS.slice()).slice(0, PAIRS - photos.length)
+      .map(c => ({ ...c, key: "emo:" + c.id, kind: "emo" }));
+    return photos.concat(fill);
+  }
+  function lootHtml(f) {
+    return f.kind === "img" ? `<img src="${f.url}" alt="">` : `<span>${f.emoji}</span>`;
+  }
+
   function startGame(playerIds) {
+    const faces = pickFaces();
     S = {
       players: playerIds.map(id => ({ id, score: 0, loot: [] })),
       cur: 0,
-      deck: shuffle(CARDS.flatMap(c => [c.id, c.id])),
+      faces: Object.fromEntries(faces.map(f => [f.key, f])),
+      deck: shuffle(faces.flatMap(f => [f.key, f.key])),
       up: [],
       taken: {},
       lock: false,
@@ -589,21 +814,23 @@
   }
 
   function buildBoard() {
-    $("board").innerHTML = S.deck.map((id, i) => {
-      const c = byId[id];
-      return `<button class="card" type="button" data-i="${i}" aria-label="${i + 1}번 카드, 뒤집힘">
-        <span class="inner">
-          <span class="face back"></span>
-          <span class="face front" style="background:linear-gradient(160deg, ${c.c2} 0%, #fff 45%, ${c.c1} 140%)">
+    $("board").innerHTML = S.deck.map((key, i) => {
+      const c = S.faces[key];
+      const front = c.kind === "img"
+        ? `<span class="face front photo"><img src="${c.url}" alt="" draggable="false"></span>`
+        : `<span class="face front" style="background:linear-gradient(160deg, ${c.c2} 0%, #fff 45%, ${c.c1} 140%)">
             <span class="em">${c.emoji}</span>
             <span class="nm">${c.name}</span>
             <span class="tg">${c.tag}</span>
-          </span>
+          </span>`;
+      return `<button class="card" type="button" data-i="${i}" aria-label="${i + 1}번 카드, 뒤집힘">
+        <span class="inner">
+          <span class="face back"></span>
+          ${front}
         </span>
       </button>`;
     }).join("");
   }
-
   function cardEl(i) { return $("board").children[i]; }
 
   function renderScore() {
@@ -613,7 +840,7 @@
         <span class="av" style="${avatarStyle(c)}">${c.emoji}</span>
         <span class="meta">
           <span class="nm">${c.name}${i === S.cur ? " 🎤" : ""}</span>
-          <span class="loot">${p.loot.map(id => byId[id].emoji).join("") || "아직 없어요"}</span>
+          <span class="loot">${p.loot.map(k => lootHtml(S.faces[k])).join("") || `<span class="none">아직 없어요</span>`}</span>
         </span>
         <span class="sc">${p.score}<small>쌍</small></span>
       </div>`;
@@ -637,7 +864,7 @@
     if (S.taken[i] !== undefined || S.up.includes(i)) return;
     ac();
     btn.classList.add("up");
-    btn.setAttribute("aria-label", `${i + 1}번 카드, ${byId[S.deck[i]].name}`);
+    btn.setAttribute("aria-label", `${i + 1}번 카드, ${S.faces[S.deck[i]].name}`);
     sfx.flip();
     S.up.push(i);
     if (S.up.length < 2) return;
@@ -647,10 +874,12 @@
     const player = S.players[S.cur];
     const pc = byId[player.id];
     if (S.deck[a] === S.deck[b]) {
-      const got = byId[S.deck[a]];
+      const got = S.faces[S.deck[a]];
       cardEl(a).classList.add("match"); cardEl(b).classList.add("match");
       sfx.match();
-      setMsg(`🎉 ${pc.name}, ‘${got.name}’ 카드 획득! 한 번 더 뒤집어요.`);
+      setMsg(got.kind === "img"
+        ? `🎉 ${pc.name}, 같은 카드 발견! 짝을 획득하고 한 번 더 뒤집어요.`
+        : `🎉 ${pc.name}, ‘${got.name}’ 카드 획득! 한 번 더 뒤집어요.`);
       setTimeout(() => {
         [a, b].forEach(k => {
           const el = cardEl(k);
@@ -661,7 +890,7 @@
           el.insertAdjacentHTML("beforeend", `<span class="owner" style="${avatarStyle(pc)}">${pc.emoji}</span>`);
           S.taken[k] = S.cur;
         });
-        player.score++; player.loot.push(got.id);
+        player.score++; player.loot.push(got.key);
         S.up = []; S.lock = false;
         renderScore();
         const chip = $("scoreboard").children[S.cur];
@@ -695,6 +924,9 @@
     $("winSub").textContent = winners.length > 1
       ? `${top}쌍으로 나란히 1위! 모두의 소원이 이루어졌어요 ✨`
       : `24쌍 중 ${top}쌍을 모아 오늘의 톱 아이프리가 되었어요! 💖`;
+    $("haul").innerHTML = winners.length === 1
+      ? winners[0].loot.map((k, n) => lootHtml(S.faces[k]).replace("<img ", `<img style="animation-delay:${0.5 + n * 0.06}s" `)).join("")
+      : "";
     let place = 0, prev = null;
     $("rank").innerHTML = ranked.map((p, idx) => {
       if (p.score !== prev) { place = idx + 1; prev = p.score; }
@@ -826,5 +1058,6 @@
   }
 
   renderRows();
+  loadImages();
 })();
 </script>
