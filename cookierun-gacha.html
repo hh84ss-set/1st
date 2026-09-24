@@ -214,6 +214,96 @@ body {
 .rarity-badge.has-img .badge-img { height: 30px; width: auto; filter: drop-shadow(0 2px 0 #4a2511); }
 .rarity-badge.has-img span { font-size: 13px; color: #4a2511; text-shadow: none; }
 
+/* ---------- 도감 완성 엔딩 ---------- */
+#ending {
+  position: absolute; inset: 0; z-index: 80; overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #5a2a8a 0%, #24103e 55%, #0d0618 100%);
+  color: #fff;
+}
+#ending canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.end-rays {
+  position: absolute; left: 50%; top: 22%; width: 1000px; height: 1000px; margin: -500px 0 0 -500px;
+  background: repeating-conic-gradient(rgba(255,215,90,.22) 0 6deg, transparent 6deg 15deg);
+  -webkit-mask: radial-gradient(circle, #000 5%, transparent 55%); mask: radial-gradient(circle, #000 5%, transparent 55%);
+  animation: spin 18s linear infinite; opacity: 0; transition: opacity 1.5s;
+}
+#ending.go .end-rays { opacity: 1; }
+.end-stage {
+  position: absolute; inset: 0; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 26px 16px 40px; gap: 10px;
+}
+.end-cookie, .end-stage { overscroll-behavior: contain; }
+.end-stage > * { flex-shrink: 0; }
+.end-crown { font-size: 64px; filter: drop-shadow(0 0 18px #ffd23f); transform: translateY(-160px); }
+#ending.go .end-crown { animation: crownDrop 1s .2s cubic-bezier(.3,1.5,.5,1) forwards; }
+@keyframes crownDrop { to { transform: none; } }
+.end-title { display: flex; flex-direction: column; align-items: center; line-height: 1; transform: scale(0); }
+#ending.go .end-title { animation: popIn .8s .9s cubic-bezier(.3,1.6,.5,1) forwards; }
+.end-title span { font-size: 26px; color: #ffe7a3; letter-spacing: 4px; }
+.end-title b {
+  font-size: 72px; color: #ffd23f; -webkit-text-stroke: 3px #6b3408; paint-order: stroke fill;
+  text-shadow: 0 -2px 0 #fff3a0, 0 6px 0 #6b3408, 0 0 30px rgba(255,210,63,.8);
+  animation: shimmer 2.4s ease-in-out infinite;
+}
+@keyframes shimmer { 50% { text-shadow: 0 -2px 0 #fff3a0, 0 6px 0 #6b3408, 0 0 60px rgba(255,240,150,1); } }
+.end-count { font-size: 22px; color: #ffe7a3; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .6s; }
+.end-count b { font-size: 34px; color: #fff; }
+#ending.go .end-count { opacity: 1; transition-delay: 1.4s; }
+.end-wall {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px; width: 100%; max-width: 440px;
+}
+.end-cookie {
+  --rc: #fff;
+  aspect-ratio: 1; border-radius: 12px;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc) 70%, #fff), color-mix(in srgb, var(--rc) 35%, #1a0f2e));
+  border: 2px solid var(--rc); box-shadow: 0 0 12px var(--rc);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  opacity: 0; transform: scale(.2) rotate(-20deg);
+}
+.end-cookie.in { animation: cookieIn .45s cubic-bezier(.3,1.6,.5,1) forwards; }
+@keyframes cookieIn { to { opacity: 1; transform: none; } }
+.end-cookie img, .end-cookie svg { width: 100%; height: 100%; object-fit: contain; }
+.end-gnome { display: flex; align-items: flex-end; gap: 8px; opacity: 0; transform: translateY(30px); transition: all .7s; }
+.end-gnome.in { opacity: 1; transform: none; }
+.end-gnome img, .end-gnome svg { width: 90px; }
+.end-gnome .bubble {
+  background: #fff; color: #4a2511; border: 3px solid #6b3408; border-radius: 16px;
+  padding: 8px 12px; font-size: 16px; line-height: 1.35; max-width: 250px;
+}
+.end-msg { font-size: 17px; line-height: 1.6; text-align: center; color: #ffe7a3; max-width: 400px; min-height: 1em; text-wrap: balance; }
+.cert {
+  position: relative; width: 100%; max-width: 400px;
+  background: linear-gradient(#fff9e6, #ffeec4); color: #4a2511;
+  border: 6px double #b8860b; border-radius: 16px;
+  padding: 28px 18px 18px; text-align: center;
+  box-shadow: 0 0 0 4px #6b3408, 0 12px 40px rgba(0,0,0,.5);
+  opacity: 0; transform: translateY(40px) scale(.9); transition: all .8s cubic-bezier(.3,1.4,.5,1);
+}
+.cert.in { opacity: 1; transform: none; }
+.cert-ribbon {
+  position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(#ff8fbf, #e0457d); color: #fff; border: 3px solid #6b3408;
+  padding: 3px 18px; font-size: 16px; letter-spacing: 3px; white-space: nowrap;
+}
+.cert h3 { font-size: 24px; color: #8a4b22; margin-bottom: 8px; }
+.cert-body { font-size: 14px; line-height: 1.7; }
+.cert-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.cert-stats div { background: rgba(184,134,11,.12); border-radius: 10px; padding: 6px; }
+.cert-stats dt { font-size: 12px; color: #8a4b22; }
+.cert-stats dd { font-size: 19px; font-variant-numeric: tabular-nums; }
+.cert-seal {
+  position: absolute; right: 10px; bottom: -18px; width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(#ff6b6b, #b3122a); border: 3px solid #6b3408;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  transform: rotate(-12deg) scale(0); transition: transform .5s .6s cubic-bezier(.3,1.8,.5,1);
+}
+.cert.in .cert-seal { transform: rotate(-12deg) scale(1); }
+.end-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 18px; opacity: 0; pointer-events: none; transition: opacity .6s; }
+.end-actions.in { opacity: 1; pointer-events: auto; }
+.end-skip { position: absolute; top: 14px; right: 14px; z-index: 3; }
+
 /* ---------- 환영 전환 ---------- */
 #welcome { justify-content: center; background: radial-gradient(circle, #fff6c9 0%, #ffcf5a 55%, #e0791c 100%); }
 #welcome .rays {
@@ -688,6 +778,32 @@ body {
     <button class="btn small brown" style="margin-top:12px" id="infoClose">닫기</button>
   </div>
 
+  <!-- 도감 완성 엔딩 -->
+  <div id="ending" hidden>
+    <canvas id="fireworks"></canvas>
+    <div class="end-rays"></div>
+    <div class="end-stage" id="endStage">
+      <div class="end-crown">👑</div>
+      <div class="end-title"><span>쿠키 도감</span><b>완성!</b></div>
+      <div class="end-count"><b id="endCount">0</b> / <span id="endTotal">51</span></div>
+      <div class="end-wall" id="endWall"></div>
+      <div class="end-gnome" id="endGnome"></div>
+      <div class="end-msg" id="endMsg"></div>
+      <div class="cert" id="cert">
+        <div class="cert-ribbon">명예 증서</div>
+        <h3>쿠키 왕국 전설의 수집가</h3>
+        <p class="cert-body">위 수집가는 수많은 오븐의 열기와 기다림 끝에<br>쿠키 왕국의 <b>모든 쿠키 51종</b>을 한자리에 모았기에<br>이 증서를 드립니다.</p>
+        <dl class="cert-stats" id="certStats"></dl>
+        <div class="cert-seal">🍪</div>
+      </div>
+      <div class="end-actions" id="endActions">
+        <button class="btn orange" id="endContinue">계속 뽑기</button>
+        <button class="btn brown" id="endRestart">처음부터 새로 도전</button>
+      </div>
+    </div>
+    <button class="btn small brown end-skip" id="endSkip">건너뛰기 ▶▶</button>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 
@@ -704,7 +820,7 @@ const CONFIG = {
   USE_OFFICIAL_ART: true,
 };
 // 공식 이미지·음악 경로 (local: 같은 폴더의 img/, remote: 쿠키런 킹덤 위키 원본)
-const ASSETS = /*ASSETS*/{"cookie_gingerbrave":{"local":"img/cookie_gingerbrave.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c1/Brave-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105095720"},"cookie_strawberry":{"local":"img/cookie_strawberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a6/Strawberry-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105092710"},"cookie_wizard":{"local":"img/cookie_wizard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/27/Wizard-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105092726"},"cookie_angel":{"local":"img/cookie_angel.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e4/Angel_cookie.png/revision/latest/scale-to-width-down/420?cb=20211105085612"},"cookie_muscle":{"local":"img/cookie_muscle.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/36/Muscle_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105094532"},"cookie_ninja":{"local":"img/cookie_ninja.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Ninja_cookie.png/revision/latest/scale-to-width-down/420?cb=20211105094057"},"cookie_knight":{"local":"img/cookie_knight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/30/Knight_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105091707"},"cookie_beet":{"local":"img/cookie_beet.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/da/Beet_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105094439"},"cookie_cherry":{"local":"img/cookie_cherry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0f/Cherry_cookie.png/revision/latest/scale-to-width-down/420?cb=20211101004814"},"cookie_blackberry":{"local":"img/cookie_blackberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7a/Blackberry_cookie.png/revision/latest/scale-to-width-down/420?cb=20211105095439"},"cookie_rye":{"local":"img/cookie_rye.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/73/Rye_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190522"},"cookie_snowsugar":{"local":"img/cookie_snowsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/41/Snow_sugar_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190532"},"cookie_custard":{"local":"img/cookie_custard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6f/Custard-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105092826"},"cookie_carrot":{"local":"img/cookie_carrot.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9e/Carrot_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105094451"},"cookie_espresso":{"local":"img/cookie_espresso.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a6/Espresso_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105095012"},"cookie_madeleine":{"local":"img/cookie_madeleine.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4b/Madeleine_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105084335"},"cookie_darkchoco":{"local":"img/cookie_darkchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/29/Dark_choco_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105092817"},"cookie_licorice":{"local":"img/cookie_licorice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a7/Licorice_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105094109"},"cookie_pomegranate":{"local":"img/cookie_pomegranate.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7c/Pomegranate_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190527"},"cookie_latte":{"local":"img/cookie_latte.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/38/Latte_illustration.png/revision/latest/scale-to-width-down/420?cb=20211101002806"},"cookie_vampire":{"local":"img/cookie_vampire.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Vampire_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190518"},"cookie_herb":{"local":"img/cookie_herb.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/85/Herb_illustration.png/revision/latest/scale-to-width-down/420?cb=20211030171728"},"cookie_mintchoco":{"local":"img/cookie_mintchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/67/Mint_choco_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190528"},"cookie_cherryblossom":{"local":"img/cookie_cherryblossom.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7d/Cherry_blossom_illustration.png/revision/latest/scale-to-width-down/420?cb=20220420145137"},"cookie_chilipepper":{"local":"img/cookie_chilipepper.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/84/Chili_pepper_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105092837"},"cookie_clottedcream":{"local":"img/cookie_clottedcream.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/35/Clotted_cream_illustration.png/revision/latest/scale-to-width-down/420?cb=20220510060440"},"cookie_burntcheese":{"local":"img/cookie_burntcheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a9/Burnt_cheese_illustration.png/revision/latest/scale-to-width-down/420?cb=20230927065301"},"cookie_elderfaerie":{"local":"img/cookie_elderfaerie.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/ae/Elder_faerie_illustration.png/revision/latest/scale-to-width-down/420?cb=20240306170826"},"cookie_seafairy":{"local":"img/cookie_seafairy.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f9/Sea_fairy_illustration.png/revision/latest/scale-to-width-down/420?cb=20211030184800"},"cookie_frostqueen":{"local":"img/cookie_frostqueen.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/25/Frost_queen_illustration.png/revision/latest/scale-to-width-down/420?cb=20240708221229"},"cookie_moonlight":{"local":"img/cookie_moonlight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/2d/Moonlight_illustration.png/revision/latest/scale-to-width-down/420?cb=20230123182242"},"cookie_windarcher":{"local":"img/cookie_windarcher.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/1e/Wind_archer_illustration_effects.png/revision/latest/scale-to-width-down/420?cb=20240906125757"},"cookie_firespirit":{"local":"img/cookie_firespirit.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/8a/Fire_spirit_illustration.png/revision/latest/scale-to-width-down/420?cb=20250409012119"},"cookie_stardust":{"local":"img/cookie_stardust.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a8/Stardust_illustration.png/revision/latest/scale-to-width-down/420?cb=20230313213329"},"cookie_pitayadragon":{"local":"img/cookie_pitayadragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/60/Pitaya_dragon_illustration.png/revision/latest/scale-to-width-down/420?cb=20230519211430"},"cookie_purevanilla":{"local":"img/cookie_purevanilla.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7a/Pure_vanilla_illustration.png/revision/latest/scale-to-width-down/420?cb=20231122054121"},"cookie_hollyberry":{"local":"img/cookie_hollyberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/cd/Hollyberry_illustration.png/revision/latest/scale-to-width-down/420?cb=20240708174520"},"cookie_darkcacao":{"local":"img/cookie_darkcacao.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d6/Dark_cacao_illustration.png/revision/latest/scale-to-width-down/420?cb=20220225203358"},"cookie_goldencheese":{"local":"img/cookie_goldencheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fd/Golden_cheese_illustration.png/revision/latest/scale-to-width-down/420?cb=20241104211023"},"cookie_whitelily":{"local":"img/cookie_whitelily.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/19/White_lily_illustration.png/revision/latest/scale-to-width-down/420?cb=20240119190251"},"cookie_shadowmilk":{"local":"img/cookie_shadowmilk.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d4/Shadow_milk_illustration.png/revision/latest/scale-to-width-down/420?cb=20250117144004"},"cookie_eternalsugar":{"local":"img/cookie_eternalsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/99/Eternal_sugar_illustration.png/revision/latest/scale-to-width-down/420?cb=20250507010134"},"cookie_mysticflour":{"local":"img/cookie_mysticflour.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0d/Mystic_flour_illustration.png/revision/latest/scale-to-width-down/420?cb=20241113165741"},"cookie_burningspice":{"local":"img/cookie_burningspice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/25/Burning_spice_illustration.png/revision/latest/scale-to-width-down/420?cb=20241113170232"},"cookie_silentsalt":{"local":"img/cookie_silentsalt.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f7/Silent_salt_illustration.png/revision/latest/scale-to-width-down/420?cb=20251012003000"},"cookie_ananasdragon":{"local":"img/cookie_ananasdragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7f/Ananas_dragon_illustration.png/revision/latest/scale-to-width-down/420?cb=20260703033007"},"cookie_blackpearl":{"local":"img/cookie_blackpearl.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fb/Black_pearl_illustration.png/revision/latest/scale-to-width-down/420?cb=20240708224950"},"cookie_stormbringer":{"local":"img/cookie_stormbringer.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b9/Stormbringer_illustration.png/revision/latest/scale-to-width-down/420?cb=20240427012739"},"cookie_millennialtree":{"local":"img/cookie_millennialtree.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/27/Millennial_tree_illustration.png/revision/latest/scale-to-width-down/420?cb=20260226020440"},"cookie_crimsoncoral":{"local":"img/cookie_crimsoncoral.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4c/Crimson_coral_illustration.png/revision/latest/scale-to-width-down/420?cb=20230830141547"},"cookie_camellia":{"local":"img/cookie_camellia.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/87/Camellia_illustration.png/revision/latest/scale-to-width-down/420?cb=20241120160954"},"soul_gingerbrave":{"local":"img/soul_gingerbrave.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Soulstone_gingerbrave.png/revision/latest/scale-to-width-down/160?cb=20241214020407"},"soul_strawberry":{"local":"img/soul_strawberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/22/Soulstone_strawberry.png/revision/latest/scale-to-width-down/160?cb=20241214020752"},"soul_wizard":{"local":"img/soul_wizard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/72/Soulstone_wizard.png/revision/latest/scale-to-width-down/160?cb=20241214022025"},"soul_angel":{"local":"img/soul_angel.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Soulstone_angel.png/revision/latest/scale-to-width-down/160?cb=20210515000533"},"soul_muscle":{"local":"img/soul_muscle.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/67/Soulstone_muscle.png/revision/latest/scale-to-width-down/160?cb=20241214020941"},"soul_ninja":{"local":"img/soul_ninja.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/97/Soulstone_ninja.png/revision/latest/scale-to-width-down/160?cb=20210515000550"},"soul_knight":{"local":"img/soul_knight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/44/Soulstone_knight.png/revision/latest/scale-to-width-down/160?cb=20210515000933"},"soul_beet":{"local":"img/soul_beet.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/76/Soulstone_beet.png/revision/latest/scale-to-width-down/160?cb=20210515000539"},"soul_cherry":{"local":"img/soul_cherry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5e/Soulstone_cherry.png/revision/latest/scale-to-width-down/160?cb=20210515000909"},"soul_blackberry":{"local":"img/soul_blackberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c8/Soulstone_blackberry.png/revision/latest/scale-to-width-down/160?cb=20241214022158"},"soul_rye":{"local":"img/soul_rye.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6b/Soulstone_rye.png/revision/latest/scale-to-width-down/160?cb=20210515001452"},"soul_snowsugar":{"local":"img/soul_snowsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d4/Soulstone_snow_sugar.png/revision/latest/scale-to-width-down/160?cb=20210515001457"},"soul_custard":{"local":"img/soul_custard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/ca/Soulstone_custard_iii.png/revision/latest/scale-to-width-down/160?cb=20241214025739"},"soul_carrot":{"local":"img/soul_carrot.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/30/Soulstone_carrot.png/revision/latest/scale-to-width-down/160?cb=20210515000903"},"soul_espresso":{"local":"img/soul_espresso.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b6/Soulstone_espresso.png/revision/latest/scale-to-width-down/160?cb=20210515001340"},"soul_madeleine":{"local":"img/soul_madeleine.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6f/Soulstone_madeleine.png/revision/latest/scale-to-width-down/160?cb=20210515001409"},"soul_darkchoco":{"local":"img/soul_darkchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ec/Soulstone_dark_choco.png/revision/latest/scale-to-width-down/160?cb=20241214023535"},"soul_licorice":{"local":"img/soul_licorice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/59/Soulstone_licorice.png/revision/latest/scale-to-width-down/160?cb=20210515001402"},"soul_pomegranate":{"local":"img/soul_pomegranate.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9d/Soulstone_pomegranate.png/revision/latest/scale-to-width-down/160?cb=20210515001431"},"soul_latte":{"local":"img/soul_latte.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/8a/Soulstone_latte.png/revision/latest/scale-to-width-down/160?cb=20210515001356"},"soul_vampire":{"local":"img/soul_vampire.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/97/Soulstone_vampire.png/revision/latest/scale-to-width-down/160?cb=20210515001517"},"soul_herb":{"local":"img/soul_herb.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/51/Soulstone_herb.png/revision/latest/scale-to-width-down/160?cb=20210515001345"},"soul_mintchoco":{"local":"img/soul_mintchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/29/Soulstone_mint_choco.png/revision/latest/scale-to-width-down/160?cb=20210515001420"},"soul_cherryblossom":{"local":"img/soul_cherryblossom.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/10/Soulstone_cherry_blossom.png/revision/latest/scale-to-width-down/160?cb=20220418133626"},"soul_chilipepper":{"local":"img/soul_chilipepper.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5a/Soulstone_chili_pepper.png/revision/latest/scale-to-width-down/160?cb=20210515001315"},"soul_clottedcream":{"local":"img/soul_clottedcream.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9b/Soulstone_clottedcream.png/revision/latest/scale-to-width-down/160?cb=20220503101701"},"soul_burntcheese":{"local":"img/soul_burntcheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a0/Soulstone_burnt_cheese.png/revision/latest?cb=20230926191536"},"soul_elderfaerie":{"local":"img/soul_elderfaerie.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/76/Soulstone_elder_faerie.png/revision/latest?cb=20240229012258"},"soul_seafairy":{"local":"img/soul_seafairy.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fc/Soulstone_sea_fairy.png/revision/latest/scale-to-width-down/160?cb=20220113211150"},"soul_frostqueen":{"local":"img/soul_frostqueen.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fd/Soulstone_frost_queen.png/revision/latest/scale-to-width-down/160?cb=20211120235110"},"soul_moonlight":{"local":"img/soul_moonlight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ed/Soulstone_moonlight.png/revision/latest/scale-to-width-down/160?cb=20230119031403"},"soul_windarcher":{"local":"img/soul_windarcher.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ef/Soulstone_wind_archer.png/revision/latest?cb=20240903231518"},"soul_firespirit":{"local":"img/soul_firespirit.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0c/Soulstone_fire_spirit.png/revision/latest?cb=20250409011015"},"soul_stardust":{"local":"img/soul_stardust.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/65/Soulstone_stardust.png/revision/latest/scale-to-width-down/160?cb=20230309101346"},"soul_pitayadragon":{"local":"img/soul_pitayadragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d7/Soulstone_pitaya_dragon.png/revision/latest?cb=20230519161400"},"soul_purevanilla":{"local":"img/soul_purevanilla.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/3d/Soulstone_pure_vanilla.png/revision/latest/scale-to-width-down/160?cb=20211128061030"},"soul_hollyberry":{"local":"img/soul_hollyberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7c/Soulstone_hollyberry.png/revision/latest/scale-to-width-down/160?cb=20211128061126"},"soul_darkcacao":{"local":"img/soul_darkcacao.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a8/Soulstone_dark_cacao.png/revision/latest/scale-to-width-down/160?cb=20220224095538"},"soul_goldencheese":{"local":"img/soul_goldencheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ed/Soulstone_golden_cheese.png/revision/latest?cb=20230926191541"},"soul_whitelily":{"local":"img/soul_whitelily.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/92/Soulstone_white_lily.png/revision/latest?cb=20240119051118"},"soul_shadowmilk":{"local":"img/soul_shadowmilk.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/39/Soulstone_shadow_milk.png/revision/latest?cb=20250115020912"},"soul_eternalsugar":{"local":"img/soul_eternalsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/49/Soulstone_eternal_sugar.png/revision/latest?cb=20250507011817"},"soul_mysticflour":{"local":"img/soul_mysticflour.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/60/Soulstone_mystic_flour.png/revision/latest?cb=20240522002203"},"soul_burningspice":{"local":"img/soul_burningspice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Soulstone_burning_spice.png/revision/latest?cb=20241002012921"},"soul_silentsalt":{"local":"img/soul_silentsalt.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/2c/Soulstone_silent_salt.png/revision/latest?cb=20250924012908"},"soul_ananasdragon":{"local":"img/soul_ananasdragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/99/Soulstone_ananas_dragon.png/revision/latest?cb=20260703043601"},"soul_blackpearl":{"local":"img/soul_blackpearl.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/1e/Soulstone_black_pearl.png/revision/latest/scale-to-width-down/160?cb=20220906100759"},"soul_stormbringer":{"local":"img/soul_stormbringer.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c2/Soulstone_stormbringer.png/revision/latest?cb=20240424211644"},"soul_millennialtree":{"local":"img/soul_millennialtree.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9b/Soulstone_millennial_tree.png/revision/latest?cb=20251217025009"},"soul_crimsoncoral":{"local":"img/soul_crimsoncoral.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/3d/Soulstone_crimson_coral.png/revision/latest?cb=20230830140933"},"soul_camellia":{"local":"img/soul_camellia.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f4/Soulstone_camellia.png/revision/latest/scale-to-width-down/160?cb=20241118182527"},"badge_common":{"local":"img/badge_common.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5f/Common.png/revision/latest?cb=20231120013910"},"badge_rare":{"local":"img/badge_rare.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9f/Rare.png/revision/latest?cb=20231120014002"},"badge_epic":{"local":"img/badge_epic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/26/Epic.png/revision/latest?cb=20231120014036"},"badge_superepic":{"local":"img/badge_superepic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Super_Epic.png/revision/latest?cb=20231120014124"},"badge_legendary":{"local":"img/badge_legendary.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Legendary.png/revision/latest?cb=20231120014312"},"badge_dragon":{"local":"img/badge_dragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c7/Dragon.png/revision/latest?cb=20231120014340"},"badge_ancient":{"local":"img/badge_ancient.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9b/Ancient.png/revision/latest?cb=20231120014236"},"badge_beast":{"local":"img/badge_beast.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/17/Beast.png/revision/latest?cb=20250408213524"},"reveal_epic":{"local":"img/reveal_epic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/25/Epic_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_superepic":{"local":"img/reveal_superepic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0c/Super_epic_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_legendary":{"local":"img/reveal_legendary.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4f/Legendary_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_dragon":{"local":"img/reveal_dragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b0/Dragon_cookie_gacha_reveal.png/revision/latest?cb=20230608132026"},"reveal_ancient":{"local":"img/reveal_ancient.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d2/Ancient_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_beast":{"local":"img/reveal_beast.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fc/Beast_cookie_gacha_reveal.png/revision/latest?cb=20241013144709"},"gacha_bg":{"local":"img/gacha_bg.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6a/Cookie_gacha_bg.png/revision/latest?cb=20220517233743"},"gacha_header":{"local":"img/gacha_header.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6f/Cookie_gacha_header.png/revision/latest?cb=20221111185842"},"gnome":{"local":"img/gnome.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9a/Sugar_gnome_happy.png/revision/latest?cb=20250326183119"},"bgm_dreams":{"local":"img/bgm_dreams.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/59/BGM_World_1_-_Land_of_Little_Big_Dreams.ogg/revision/latest?cb=20221127203002"},"bgm_strolling":{"local":"img/bgm_strolling.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/42/BGM_Strolling_Through_the_Kingdom.ogg/revision/latest?cb=20230315200300"},"bgm_squirrel":{"local":"img/bgm_squirrel.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/32/BGM_Squirrel_Shop.ogg/revision/latest?cb=20240729013109"}};
+const ASSETS = /*ASSETS*/{"cookie_gingerbrave":{"local":"img/cookie_gingerbrave.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c1/Brave-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105095720"},"cookie_strawberry":{"local":"img/cookie_strawberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a6/Strawberry-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105092710"},"cookie_wizard":{"local":"img/cookie_wizard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/27/Wizard-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105092726"},"cookie_angel":{"local":"img/cookie_angel.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e4/Angel_cookie.png/revision/latest/scale-to-width-down/420?cb=20211105085612"},"cookie_muscle":{"local":"img/cookie_muscle.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/36/Muscle_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105094532"},"cookie_ninja":{"local":"img/cookie_ninja.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Ninja_cookie.png/revision/latest/scale-to-width-down/420?cb=20211105094057"},"cookie_knight":{"local":"img/cookie_knight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/30/Knight_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105091707"},"cookie_beet":{"local":"img/cookie_beet.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/da/Beet_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105094439"},"cookie_cherry":{"local":"img/cookie_cherry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0f/Cherry_cookie.png/revision/latest/scale-to-width-down/420?cb=20211101004814"},"cookie_blackberry":{"local":"img/cookie_blackberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7a/Blackberry_cookie.png/revision/latest/scale-to-width-down/420?cb=20211105095439"},"cookie_rye":{"local":"img/cookie_rye.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/73/Rye_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190522"},"cookie_snowsugar":{"local":"img/cookie_snowsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/41/Snow_sugar_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190532"},"cookie_custard":{"local":"img/cookie_custard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6f/Custard-cookie.png/revision/latest/scale-to-width-down/420?cb=20211105092826"},"cookie_carrot":{"local":"img/cookie_carrot.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9e/Carrot_cookie.webp/revision/latest/scale-to-width-down/420?cb=20211105094451"},"cookie_espresso":{"local":"img/cookie_espresso.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a6/Espresso_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105095012"},"cookie_madeleine":{"local":"img/cookie_madeleine.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4b/Madeleine_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105084335"},"cookie_darkchoco":{"local":"img/cookie_darkchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/29/Dark_choco_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105092817"},"cookie_licorice":{"local":"img/cookie_licorice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a7/Licorice_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105094109"},"cookie_pomegranate":{"local":"img/cookie_pomegranate.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7c/Pomegranate_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190527"},"cookie_latte":{"local":"img/cookie_latte.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/38/Latte_illustration.png/revision/latest/scale-to-width-down/420?cb=20211101002806"},"cookie_vampire":{"local":"img/cookie_vampire.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Vampire_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190518"},"cookie_herb":{"local":"img/cookie_herb.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/85/Herb_illustration.png/revision/latest/scale-to-width-down/420?cb=20211030171728"},"cookie_mintchoco":{"local":"img/cookie_mintchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/67/Mint_choco_illustration.png/revision/latest/scale-to-width-down/420?cb=20231123190528"},"cookie_cherryblossom":{"local":"img/cookie_cherryblossom.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7d/Cherry_blossom_illustration.png/revision/latest/scale-to-width-down/420?cb=20220420145137"},"cookie_chilipepper":{"local":"img/cookie_chilipepper.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/84/Chili_pepper_illustration.png/revision/latest/scale-to-width-down/420?cb=20211105092837"},"cookie_clottedcream":{"local":"img/cookie_clottedcream.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/35/Clotted_cream_illustration.png/revision/latest/scale-to-width-down/420?cb=20220510060440"},"cookie_burntcheese":{"local":"img/cookie_burntcheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a9/Burnt_cheese_illustration.png/revision/latest/scale-to-width-down/420?cb=20230927065301"},"cookie_elderfaerie":{"local":"img/cookie_elderfaerie.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/ae/Elder_faerie_illustration.png/revision/latest/scale-to-width-down/420?cb=20240306170826"},"cookie_seafairy":{"local":"img/cookie_seafairy.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f9/Sea_fairy_illustration.png/revision/latest/scale-to-width-down/420?cb=20211030184800"},"cookie_frostqueen":{"local":"img/cookie_frostqueen.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/25/Frost_queen_illustration.png/revision/latest/scale-to-width-down/420?cb=20240708221229"},"cookie_moonlight":{"local":"img/cookie_moonlight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/2d/Moonlight_illustration.png/revision/latest/scale-to-width-down/420?cb=20230123182242"},"cookie_windarcher":{"local":"img/cookie_windarcher.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/1e/Wind_archer_illustration_effects.png/revision/latest/scale-to-width-down/420?cb=20240906125757"},"cookie_firespirit":{"local":"img/cookie_firespirit.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/8a/Fire_spirit_illustration.png/revision/latest/scale-to-width-down/420?cb=20250409012119"},"cookie_stardust":{"local":"img/cookie_stardust.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a8/Stardust_illustration.png/revision/latest/scale-to-width-down/420?cb=20230313213329"},"cookie_pitayadragon":{"local":"img/cookie_pitayadragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/60/Pitaya_dragon_illustration.png/revision/latest/scale-to-width-down/420?cb=20230519211430"},"cookie_purevanilla":{"local":"img/cookie_purevanilla.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7a/Pure_vanilla_illustration.png/revision/latest/scale-to-width-down/420?cb=20231122054121"},"cookie_hollyberry":{"local":"img/cookie_hollyberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/cd/Hollyberry_illustration.png/revision/latest/scale-to-width-down/420?cb=20240708174520"},"cookie_darkcacao":{"local":"img/cookie_darkcacao.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d6/Dark_cacao_illustration.png/revision/latest/scale-to-width-down/420?cb=20220225203358"},"cookie_goldencheese":{"local":"img/cookie_goldencheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fd/Golden_cheese_illustration.png/revision/latest/scale-to-width-down/420?cb=20241104211023"},"cookie_whitelily":{"local":"img/cookie_whitelily.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/19/White_lily_illustration.png/revision/latest/scale-to-width-down/420?cb=20240119190251"},"cookie_shadowmilk":{"local":"img/cookie_shadowmilk.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d4/Shadow_milk_illustration.png/revision/latest/scale-to-width-down/420?cb=20250117144004"},"cookie_eternalsugar":{"local":"img/cookie_eternalsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/99/Eternal_sugar_illustration.png/revision/latest/scale-to-width-down/420?cb=20250507010134"},"cookie_mysticflour":{"local":"img/cookie_mysticflour.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0d/Mystic_flour_illustration.png/revision/latest/scale-to-width-down/420?cb=20241113165741"},"cookie_burningspice":{"local":"img/cookie_burningspice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/25/Burning_spice_illustration.png/revision/latest/scale-to-width-down/420?cb=20241113170232"},"cookie_silentsalt":{"local":"img/cookie_silentsalt.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f7/Silent_salt_illustration.png/revision/latest/scale-to-width-down/420?cb=20251012003000"},"cookie_ananasdragon":{"local":"img/cookie_ananasdragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7f/Ananas_dragon_illustration.png/revision/latest/scale-to-width-down/420?cb=20260703033007"},"cookie_blackpearl":{"local":"img/cookie_blackpearl.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fb/Black_pearl_illustration.png/revision/latest/scale-to-width-down/420?cb=20240708224950"},"cookie_stormbringer":{"local":"img/cookie_stormbringer.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b9/Stormbringer_illustration.png/revision/latest/scale-to-width-down/420?cb=20240427012739"},"cookie_millennialtree":{"local":"img/cookie_millennialtree.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/27/Millennial_tree_illustration.png/revision/latest/scale-to-width-down/420?cb=20260226020440"},"cookie_crimsoncoral":{"local":"img/cookie_crimsoncoral.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4c/Crimson_coral_illustration.png/revision/latest/scale-to-width-down/420?cb=20230830141547"},"cookie_camellia":{"local":"img/cookie_camellia.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/87/Camellia_illustration.png/revision/latest/scale-to-width-down/420?cb=20241120160954"},"soul_gingerbrave":{"local":"img/soul_gingerbrave.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Soulstone_gingerbrave.png/revision/latest/scale-to-width-down/160?cb=20241214020407"},"soul_strawberry":{"local":"img/soul_strawberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/22/Soulstone_strawberry.png/revision/latest/scale-to-width-down/160?cb=20241214020752"},"soul_wizard":{"local":"img/soul_wizard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/72/Soulstone_wizard.png/revision/latest/scale-to-width-down/160?cb=20241214022025"},"soul_angel":{"local":"img/soul_angel.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Soulstone_angel.png/revision/latest/scale-to-width-down/160?cb=20210515000533"},"soul_muscle":{"local":"img/soul_muscle.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/67/Soulstone_muscle.png/revision/latest/scale-to-width-down/160?cb=20241214020941"},"soul_ninja":{"local":"img/soul_ninja.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/97/Soulstone_ninja.png/revision/latest/scale-to-width-down/160?cb=20210515000550"},"soul_knight":{"local":"img/soul_knight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/44/Soulstone_knight.png/revision/latest/scale-to-width-down/160?cb=20210515000933"},"soul_beet":{"local":"img/soul_beet.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/76/Soulstone_beet.png/revision/latest/scale-to-width-down/160?cb=20210515000539"},"soul_cherry":{"local":"img/soul_cherry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5e/Soulstone_cherry.png/revision/latest/scale-to-width-down/160?cb=20210515000909"},"soul_blackberry":{"local":"img/soul_blackberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c8/Soulstone_blackberry.png/revision/latest/scale-to-width-down/160?cb=20241214022158"},"soul_rye":{"local":"img/soul_rye.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6b/Soulstone_rye.png/revision/latest/scale-to-width-down/160?cb=20210515001452"},"soul_snowsugar":{"local":"img/soul_snowsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d4/Soulstone_snow_sugar.png/revision/latest/scale-to-width-down/160?cb=20210515001457"},"soul_custard":{"local":"img/soul_custard.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/ca/Soulstone_custard_iii.png/revision/latest/scale-to-width-down/160?cb=20241214025739"},"soul_carrot":{"local":"img/soul_carrot.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/30/Soulstone_carrot.png/revision/latest/scale-to-width-down/160?cb=20210515000903"},"soul_espresso":{"local":"img/soul_espresso.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b6/Soulstone_espresso.png/revision/latest/scale-to-width-down/160?cb=20210515001340"},"soul_madeleine":{"local":"img/soul_madeleine.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6f/Soulstone_madeleine.png/revision/latest/scale-to-width-down/160?cb=20210515001409"},"soul_darkchoco":{"local":"img/soul_darkchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ec/Soulstone_dark_choco.png/revision/latest/scale-to-width-down/160?cb=20241214023535"},"soul_licorice":{"local":"img/soul_licorice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/59/Soulstone_licorice.png/revision/latest/scale-to-width-down/160?cb=20210515001402"},"soul_pomegranate":{"local":"img/soul_pomegranate.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9d/Soulstone_pomegranate.png/revision/latest/scale-to-width-down/160?cb=20210515001431"},"soul_latte":{"local":"img/soul_latte.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/8a/Soulstone_latte.png/revision/latest/scale-to-width-down/160?cb=20210515001356"},"soul_vampire":{"local":"img/soul_vampire.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/97/Soulstone_vampire.png/revision/latest/scale-to-width-down/160?cb=20210515001517"},"soul_herb":{"local":"img/soul_herb.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/51/Soulstone_herb.png/revision/latest/scale-to-width-down/160?cb=20210515001345"},"soul_mintchoco":{"local":"img/soul_mintchoco.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/29/Soulstone_mint_choco.png/revision/latest/scale-to-width-down/160?cb=20210515001420"},"soul_cherryblossom":{"local":"img/soul_cherryblossom.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/10/Soulstone_cherry_blossom.png/revision/latest/scale-to-width-down/160?cb=20220418133626"},"soul_chilipepper":{"local":"img/soul_chilipepper.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5a/Soulstone_chili_pepper.png/revision/latest/scale-to-width-down/160?cb=20210515001315"},"soul_clottedcream":{"local":"img/soul_clottedcream.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9b/Soulstone_clottedcream.png/revision/latest/scale-to-width-down/160?cb=20220503101701"},"soul_burntcheese":{"local":"img/soul_burntcheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a0/Soulstone_burnt_cheese.png/revision/latest?cb=20230926191536"},"soul_elderfaerie":{"local":"img/soul_elderfaerie.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/76/Soulstone_elder_faerie.png/revision/latest?cb=20240229012258"},"soul_seafairy":{"local":"img/soul_seafairy.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fc/Soulstone_sea_fairy.png/revision/latest/scale-to-width-down/160?cb=20220113211150"},"soul_frostqueen":{"local":"img/soul_frostqueen.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fd/Soulstone_frost_queen.png/revision/latest/scale-to-width-down/160?cb=20211120235110"},"soul_moonlight":{"local":"img/soul_moonlight.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ed/Soulstone_moonlight.png/revision/latest/scale-to-width-down/160?cb=20230119031403"},"soul_windarcher":{"local":"img/soul_windarcher.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ef/Soulstone_wind_archer.png/revision/latest?cb=20240903231518"},"soul_firespirit":{"local":"img/soul_firespirit.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0c/Soulstone_fire_spirit.png/revision/latest?cb=20250409011015"},"soul_stardust":{"local":"img/soul_stardust.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/65/Soulstone_stardust.png/revision/latest/scale-to-width-down/160?cb=20230309101346"},"soul_pitayadragon":{"local":"img/soul_pitayadragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d7/Soulstone_pitaya_dragon.png/revision/latest?cb=20230519161400"},"soul_purevanilla":{"local":"img/soul_purevanilla.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/3d/Soulstone_pure_vanilla.png/revision/latest/scale-to-width-down/160?cb=20211128061030"},"soul_hollyberry":{"local":"img/soul_hollyberry.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7c/Soulstone_hollyberry.png/revision/latest/scale-to-width-down/160?cb=20211128061126"},"soul_darkcacao":{"local":"img/soul_darkcacao.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a8/Soulstone_dark_cacao.png/revision/latest/scale-to-width-down/160?cb=20220224095538"},"soul_goldencheese":{"local":"img/soul_goldencheese.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/ed/Soulstone_golden_cheese.png/revision/latest?cb=20230926191541"},"soul_whitelily":{"local":"img/soul_whitelily.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/92/Soulstone_white_lily.png/revision/latest?cb=20240119051118"},"soul_shadowmilk":{"local":"img/soul_shadowmilk.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/39/Soulstone_shadow_milk.png/revision/latest?cb=20250115020912"},"soul_eternalsugar":{"local":"img/soul_eternalsugar.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/49/Soulstone_eternal_sugar.png/revision/latest?cb=20250507011817"},"soul_mysticflour":{"local":"img/soul_mysticflour.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/60/Soulstone_mystic_flour.png/revision/latest?cb=20240522002203"},"soul_burningspice":{"local":"img/soul_burningspice.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Soulstone_burning_spice.png/revision/latest?cb=20241002012921"},"soul_silentsalt":{"local":"img/soul_silentsalt.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/2c/Soulstone_silent_salt.png/revision/latest?cb=20250924012908"},"soul_ananasdragon":{"local":"img/soul_ananasdragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/99/Soulstone_ananas_dragon.png/revision/latest?cb=20260703043601"},"soul_blackpearl":{"local":"img/soul_blackpearl.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/1e/Soulstone_black_pearl.png/revision/latest/scale-to-width-down/160?cb=20220906100759"},"soul_stormbringer":{"local":"img/soul_stormbringer.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c2/Soulstone_stormbringer.png/revision/latest?cb=20240424211644"},"soul_millennialtree":{"local":"img/soul_millennialtree.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9b/Soulstone_millennial_tree.png/revision/latest?cb=20251217025009"},"soul_crimsoncoral":{"local":"img/soul_crimsoncoral.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/3d/Soulstone_crimson_coral.png/revision/latest?cb=20230830140933"},"soul_camellia":{"local":"img/soul_camellia.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f4/Soulstone_camellia.png/revision/latest/scale-to-width-down/160?cb=20241118182527"},"badge_common":{"local":"img/badge_common.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5f/Common.png/revision/latest?cb=20231120013910"},"badge_rare":{"local":"img/badge_rare.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9f/Rare.png/revision/latest?cb=20231120014002"},"badge_epic":{"local":"img/badge_epic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/26/Epic.png/revision/latest?cb=20231120014036"},"badge_superepic":{"local":"img/badge_superepic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Super_Epic.png/revision/latest?cb=20231120014124"},"badge_legendary":{"local":"img/badge_legendary.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e2/Legendary.png/revision/latest?cb=20231120014312"},"badge_dragon":{"local":"img/badge_dragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c7/Dragon.png/revision/latest?cb=20231120014340"},"badge_ancient":{"local":"img/badge_ancient.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9b/Ancient.png/revision/latest?cb=20231120014236"},"badge_beast":{"local":"img/badge_beast.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/17/Beast.png/revision/latest?cb=20250408213524"},"reveal_epic":{"local":"img/reveal_epic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/25/Epic_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_superepic":{"local":"img/reveal_superepic.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/0c/Super_epic_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_legendary":{"local":"img/reveal_legendary.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4f/Legendary_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_dragon":{"local":"img/reveal_dragon.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b0/Dragon_cookie_gacha_reveal.png/revision/latest?cb=20230608132026"},"reveal_ancient":{"local":"img/reveal_ancient.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d2/Ancient_cookie_gacha_reveal.png/revision/latest?cb=20221109024121"},"reveal_beast":{"local":"img/reveal_beast.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/fc/Beast_cookie_gacha_reveal.png/revision/latest?cb=20241013144709"},"gacha_bg":{"local":"img/gacha_bg.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6a/Cookie_gacha_bg.png/revision/latest?cb=20220517233743"},"gacha_header":{"local":"img/gacha_header.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6f/Cookie_gacha_header.png/revision/latest?cb=20221111185842"},"gnome":{"local":"img/gnome.webp","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9a/Sugar_gnome_happy.png/revision/latest?cb=20250326183119"},"bgm_dreams":{"local":"img/bgm_dreams.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/59/BGM_World_1_-_Land_of_Little_Big_Dreams.ogg/revision/latest?cb=20221127203002"},"bgm_strolling":{"local":"img/bgm_strolling.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/42/BGM_Strolling_Through_the_Kingdom.ogg/revision/latest?cb=20230315200300"},"bgm_squirrel":{"local":"img/bgm_squirrel.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/32/BGM_Squirrel_Shop.ogg/revision/latest?cb=20240729013109"},"voice_gingerbrave":{"local":"img/voice_gingerbrave.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/42/Cookie0001_first_01.ogg/revision/latest?cb=20230528205936"},"voice_strawberry":{"local":"img/voice_strawberry.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/8e/Cookie0002_first_01.ogg/revision/latest?cb=20230530012436"},"voice_wizard":{"local":"img/voice_wizard.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/57/Cookie0025_first_01.ogg/revision/latest?cb=20230531000933"},"voice_angel":{"local":"img/voice_angel.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/6/6a/Cookie0012_first_01.ogg/revision/latest?cb=20230529020503"},"voice_muscle":{"local":"img/voice_muscle.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/dd/Cookie0015_first_01.ogg/revision/latest?cb=20230529184041"},"voice_ninja":{"local":"img/voice_ninja.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/18/Cookie0007_first_01.ogg/revision/latest?cb=20230529191303"},"voice_beet":{"local":"img/voice_beet.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/70/Cookie0133_first_01.ogg/revision/latest?cb=20230529023552"},"voice_cherry":{"local":"img/voice_cherry.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/40/Cookie0028_first_01.ogg/revision/latest?cb=20230911213039"},"voice_blackberry":{"local":"img/voice_blackberry.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e9/Cookie0042_first_01.ogg/revision/latest?cb=20230606012901"},"voice_snowsugar":{"local":"img/voice_snowsugar.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/8d/Cookie0030_first_01.ogg/revision/latest?cb=20250708004219"},"voice_custard":{"local":"img/voice_custard.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/2d/Cookie0514_first_01.ogg/revision/latest?cb=20250707222324"},"voice_carrot":{"local":"img/voice_carrot.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/55/Cookie0132_first_01.ogg/revision/latest?cb=20230606015437"},"voice_espresso":{"local":"img/voice_espresso.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/4/4b/Cookie0513_first_01.ogg/revision/latest?cb=20230519213633"},"voice_darkchoco":{"local":"img/voice_darkchoco.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/bf/Cookie0103_first_01.ogg/revision/latest?cb=20240628193349"},"voice_pomegranate":{"local":"img/voice_pomegranate.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/3a/Cookie0126_first_01.ogg/revision/latest?cb=20250707224820"},"voice_latte":{"local":"img/voice_latte.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/23/Cookie0516_first_01.ogg/revision/latest?cb=20250714004607"},"voice_vampire":{"local":"img/voice_vampire.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/51/Cookie0035_first_01.ogg/revision/latest?cb=20230531233055"},"voice_herb":{"local":"img/voice_herb.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d6/Cookie0063_first_01.ogg/revision/latest?cb=20251111212440"},"voice_mintchoco":{"local":"img/voice_mintchoco.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/d/d7/Cookie0046_first_01.ogg/revision/latest?cb=20250714002203"},"voice_burntcheese":{"local":"img/voice_burntcheese.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e5/Cookie0587_first_01.ogg/revision/latest?cb=20230926134710"},"voice_elderfaerie":{"local":"img/voice_elderfaerie.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/b1/Cookie0596_first_01.ogg/revision/latest?cb=20240308200119"},"voice_seafairy":{"local":"img/voice_seafairy.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/0/06/Cookie0065_first_01.ogg/revision/latest?cb=20230519203409"},"voice_moonlight":{"local":"img/voice_moonlight.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/35/Cookie0049_first_01.ogg/revision/latest?cb=20230520170247"},"voice_windarcher":{"local":"img/voice_windarcher.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/c/c7/Cookie0070_first_01.ogg/revision/latest?cb=20240904061127"},"voice_firespirit":{"local":"img/voice_firespirit.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/75/Cookie0041_first_01.ogg/revision/latest?cb=20250409060845"},"voice_stardust":{"local":"img/voice_stardust.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/2/2e/Cookie0574_first_01.ogg/revision/latest?cb=20230910170808"},"voice_pitayadragon":{"local":"img/voice_pitayadragon.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f6/Cookie0138_first_01.ogg/revision/latest?cb=20230930233329"},"voice_purevanilla":{"local":"img/voice_purevanilla.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/b/bc/Cookie0506_first_01.ogg/revision/latest?cb=20250208050018"},"voice_hollyberry":{"local":"img/voice_hollyberry.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/91/Cookie0510_first_01.ogg/revision/latest?cb=20250208050031"},"voice_darkcacao":{"local":"img/voice_darkcacao.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/88/Cookie0508_first_01.ogg/revision/latest?cb=20240608220906"},"voice_goldencheese":{"local":"img/voice_goldencheese.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/3/3b/Cookie0507_first_01.ogg/revision/latest?cb=20230926134616"},"voice_whitelily":{"local":"img/voice_whitelily.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e1/Cookie0509_first_01.ogg/revision/latest?cb=20240119020809"},"voice_shadowmilk":{"local":"img/voice_shadowmilk.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/f/f5/Cookie0605_first_01.ogg/revision/latest?cb=20250115050713"},"voice_eternalsugar":{"local":"img/voice_eternalsugar.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/e/e1/Cookie0603_first_01.ogg/revision/latest?cb=20250507045518"},"voice_mysticflour":{"local":"img/voice_mysticflour.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7c/Cookie0601_first_01.ogg/revision/latest?cb=20240522061209"},"voice_burningspice":{"local":"img/voice_burningspice.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/a/a8/Cookie0602_first_01.ogg/revision/latest?cb=20241002163538"},"voice_silentsalt":{"local":"img/voice_silentsalt.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/8/89/Cookie0604_first_01.ogg/revision/latest?cb=20250924032701"},"voice_blackpearl":{"local":"img/voice_blackpearl.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/5/5c/Cookie0568_first_01.ogg/revision/latest?cb=20230617031021"},"voice_stormbringer":{"local":"img/voice_stormbringer.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/9f/Cookie0600_first_01.ogg/revision/latest?cb=20240531022217"},"voice_crimsoncoral":{"local":"img/voice_crimsoncoral.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/7/7c/Cookie0582_first_01.ogg/revision/latest?cb=20230830164141"},"voice_camellia":{"local":"img/voice_camellia.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/1a/Cookie0624_first_01.ogg/revision/latest?cb=20241120060150"},"jingle_welcome":{"local":"img/jingle_welcome.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/9/99/BGM_Welcome_to_Cookie_Run_Kingdom%21.ogg/revision/latest?cb=20230315200301"},"bgm_ending":{"local":"img/bgm_ending.mp3","remote":"https://static.wikia.nocookie.net/cookierunkingdom/images/1/12/BGM_Hall_of_Ancient_Heroes.ogg/revision/latest?cb=20240728190157"}};
 
 /* =========================================================
    등급 & 확률
@@ -816,17 +932,18 @@ const state = {
   muted: store.get('muted', false),
   mode: store.get('mode', 'focus'),
   track: store.get('track', 0) % 3,
+  stats: store.get('stats', { pulls: 0, crystals: 0, since: Date.now(), completedAt: 0 }),
 };
 function save() {
   store.set('crystals', state.crystals); store.set('pity', state.pity);
-  store.set('owned', state.owned); store.set('souls', state.souls); store.set('muted', state.muted); store.set('mode', state.mode); store.set('track', state.track);
+  store.set('owned', state.owned); store.set('souls', state.souls); store.set('muted', state.muted); store.set('mode', state.mode); store.set('track', state.track); store.set('stats', state.stats);
 }
 
 /* =========================================================
    사운드 (Web Audio 합성 — 외부 음원 없이 동작)
    ========================================================= */
 const Sound = (() => {
-  let ctx, master, bgmTimer, bgmOn = false, bgmAudio;
+  let ctx, master, bgmTimer, bgmOn = false, bgmAudio, endAudio;
   const N = n => 440 * Math.pow(2, (n - 69) / 12);
   function init() {
     if (ctx) return;
@@ -853,10 +970,36 @@ const Sound = (() => {
   };
   const api = {
     unlock() { init(); if (ctx.state === 'suspended') ctx.resume(); },
+    // 공식 음원 1회 재생. 재생 중엔 BGM 볼륨을 낮춤. 성공 여부를 Promise로 돌려줌
+    clip(key, vol = 1, duck = true) {
+      if (!CONFIG.USE_OFFICIAL_ART || !ASSETS[key] || state.muted) return Promise.resolve(false);
+      const a = assetAudio(key); a.volume = vol;
+      if (duck && bgmAudio) bgmAudio.volume = .12;
+      const restore = () => { if (duck && bgmAudio) bgmAudio.volume = .4; };
+      a.addEventListener('ended', restore); a.addEventListener('error', restore);
+      return a.play().then(() => a, () => { restore(); return false; });
+    },
+    voiceFor(id) { return api.clip('voice_' + id, 1); },
+    ending(on) {
+      api.endingOn = on;
+      if (!on) { if (endAudio) endAudio.pause(); return; }
+      api.bgm(false);
+      if (CONFIG.USE_OFFICIAL_ART && ASSETS.bgm_ending) {
+        endAudio = endAudio || assetAudio('bgm_ending');
+        endAudio.loop = true; endAudio.volume = .6; endAudio.muted = state.muted; endAudio.currentTime = 0;
+        endAudio.play().catch(() => api.fanfare());
+      } else api.fanfare();
+    },
+    fanfare() {
+      if (!ctx) return;
+      seq([60, 64, 67, 72, null, 67, 72, 76, 79, null, 84, null, 84, 86, 88], .14, 'square', .12);
+      seq([48, null, 55, null, 52, null, 55, null, 60, null, 60, null, 60, 62, 64], .14, 'triangle', .2);
+    },
     setMuted(m) {
       if (!ctx) return;
       master.gain.setTargetAtTime(m ? 0 : .5, ctx.currentTime, .05);
       if (bgmAudio) bgmAudio.muted = m;
+      if (endAudio) endAudio.muted = m;
     },
     click() { if (!ctx) return; seq([84, 91], .05, 'square', .12); },
     welcome() {
@@ -893,6 +1036,7 @@ const Sound = (() => {
     },
     bgm(on) {
       if (!ctx) return;
+      if (on && api.endingOn) return;  // 엔딩 음악이 나오는 동안은 BGM을 켜지 않음
       if (CONFIG.USE_OFFICIAL_ART && !api.synthOnly) {
         const key = TRACKS[state.track].key;
         if (bgmAudio && bgmAudio.dataset.key !== key) { bgmAudio.pause(); bgmAudio = null; }
@@ -1199,11 +1343,14 @@ function confetti(host, n = 40) {
 $('#startBtn').addEventListener('click', async () => {
   Sound.unlock(); Sound.click();
   show('welcome');
-  Sound.welcome();
+  const jingle = await Sound.clip('jingle_welcome', .9, false);
+  if (!jingle) Sound.welcome();
   confetti($('#welcome'), 50);
   await wait(2600);
   show('gacha');
-  Sound.bgm(true);
+  // 공식 환영 징글이 끝난 뒤 배경 음악 시작
+  if (jingle && !jingle.ended) jingle.addEventListener('ended', () => Sound.bgm(true), { once: true });
+  else Sound.bgm(true);
 });
 $('#homeBtn').addEventListener('click', () => { Sound.click(); Sound.bgm(false); show('title'); });
 $('#refillBtn').addEventListener('click', () => {
@@ -1224,6 +1371,7 @@ async function doPull(n) {
   busy = true;
   Sound.unlock(); Sound.click();
   state.crystals -= cost;
+  state.stats.pulls += n; state.stats.crystals += cost;
   const results = drawMany(n);
   state.lastResults = results;
   save(); refreshHud();
@@ -1302,6 +1450,7 @@ async function playSequence(results) {
     card.classList.add('flipped');
     await wait(250);
     Sound.reveal(it.r);
+    if (it.type === 'cookie') setTimeout(() => Sound.voiceFor(it.cookie.id), R.rank >= 3 ? 900 : 350);
     if (R.rank >= 3) {
       const fl = $('#flash');
       fl.style.background = it.r === 'beast' ? '#1a0033' : R.hex;
@@ -1336,6 +1485,10 @@ function showResults(results) {
   const best = results.reduce((a, b) => RARITIES[b.r].rank > RARITIES[a.r].rank ? b : a);
   $('#summary').innerHTML = `쿠키 ${cookies}개 · 영혼석 ${results.length - cookies}개 · 최고 등급 <b style="color:${RARITIES[best.r].hex}">${RARITIES[best.r].label}</b><br>카드를 누르면 한 장씩 크게 볼 수 있어요`;
   show('result');
+  if (isComplete() && !state.stats.completedAt) {
+    state.stats.completedAt = Date.now(); save();
+    setTimeout(playEnding, 900);
+  }
 }
 $('#grid').addEventListener('click', e => {
   const m = e.target.closest('.mini'); if (!m) return;
@@ -1411,18 +1564,161 @@ $('#trackChip').addEventListener('click', () => {
 });
 $('#bookBtn').addEventListener('click', () => {
   Sound.click();
-  const owned = Object.keys(state.owned).length;
+  const owned = COOKIES.filter(c => state.owned[c.id]).length;
   const rows = Object.entries(RARITIES).map(([r, v]) =>
     `<div style="margin-top:6px"><b style="color:${v.hex === '#fff1a8' ? '#c9a000' : v.hex}">${v.label}</b><br>` +
     BY_RARITY[r].map(c => `${state.owned[c.id] ? '🍪' : '⬜'} ${c.name.replace(' 쿠키', '')}${state.souls[c.id] ? ` <small>(💠${state.souls[c.id]})</small>` : ''}`).join(' · ') + '</div>').join('');
   openInfo(`<h3>📖 쿠키 도감 (${owned}/${COOKIES.length})</h3><div class="cookies-list">${rows}</div>
-    <p class="note" style="text-align:center"><button class="btn small brown" id="resetBtn">기록 초기화</button></p>`);
+    <p class="note" style="text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      ${isComplete() ? '<button class="btn small orange" id="replayEnding">🏆 엔딩 다시 보기</button>' : ''}
+      <button class="btn small brown" id="resetBtn">기록 초기화</button></p>`);
+  if ($('#replayEnding')) $('#replayEnding').onclick = () => { $('#infoModal').classList.remove('show'); playEnding(); };
   $('#resetBtn').onclick = e => {
     // 두 번 눌러 확인 (임베드 환경에서 confirm() 이 막혀 있음)
     if (!e.target.dataset.armed) { e.target.dataset.armed = '1'; e.target.textContent = '한 번 더 누르면 초기화'; return; }
-    Object.assign(state, { crystals: CONFIG.START_CRYSTALS, pity: 0, owned: {}, souls: {} });
+    Object.assign(state, { crystals: CONFIG.START_CRYSTALS, pity: 0, owned: {}, souls: {}, stats: { pulls: 0, crystals: 0, since: Date.now(), completedAt: 0 } });
     save(); refreshHud(); $('#infoModal').classList.remove('show'); toast('기록을 초기화했어요');
   };
+});
+
+/* =========================================================
+   도감 완성 엔딩
+   ========================================================= */
+function isComplete() { return COOKIES.every(c => state.owned[c.id]); }
+
+const Fireworks = (() => {
+  let raf, parts = [], cv, cx, last = 0;
+  const colors = ['#ffd23f', '#ff5a9a', '#4fb0ff', '#3ff0d0', '#d45cff', '#fff', '#ff7a1f'];
+  function burst(x, y) {
+    const col = colors[Math.floor(Math.random() * colors.length)], n = 60;
+    for (let i = 0; i < n; i++) {
+      const a = Math.PI * 2 * i / n, v = 2 + Math.random() * 3.5;
+      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, col });
+    }
+  }
+  function frame(t) {
+    const w = cv.width, h = cv.height;
+    cx.globalCompositeOperation = 'destination-out'; cx.fillStyle = 'rgba(0,0,0,.22)'; cx.fillRect(0, 0, w, h);
+    cx.globalCompositeOperation = 'lighter';
+    if (t - last > 520) { last = t; burst(w * (.15 + Math.random() * .7), h * (.1 + Math.random() * .35)); }
+    parts = parts.filter(p => p.life > 0);
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.vy += .05; p.vx *= .985; p.life -= .012;
+      cx.globalAlpha = Math.max(p.life, 0); cx.fillStyle = p.col;
+      cx.beginPath(); cx.arc(p.x, p.y, 2.2, 0, 7); cx.fill();
+    }
+    cx.globalAlpha = 1;
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() {
+      cv = $('#fireworks'); cx = cv.getContext('2d');
+      cv.width = cv.clientWidth; cv.height = cv.clientHeight;
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+    },
+    stop() { cancelAnimationFrame(raf); parts = []; if (cx) cx.clearRect(0, 0, cv.width, cv.height); },
+  };
+})();
+
+let endingRun = 0;
+async function playEnding() {
+  const run = ++endingRun, alive = () => run === endingRun;
+  const el = $('#ending');
+  $('#viewer').classList.remove('show');
+  el.hidden = false; el.classList.remove('go'); void el.offsetWidth;
+  $('#endStage').scrollTop = 0;
+  ['#endGnome', '#cert', '#endActions'].forEach(s => $(s).classList.remove('in'));
+  $('#endMsg').textContent = '';
+  $('#endTotal').textContent = COOKIES.length;
+  $('#endCount').textContent = '0';
+  Sound.unlock(); Sound.ending(true);
+  el.classList.add('go');
+  Fireworks.start();
+
+  // 등급이 낮은 쿠키부터 비스트까지 한 명씩 입장
+  const order = [...COOKIES].sort((a, b) => RARITIES[a.r].rank - RARITIES[b.r].rank);
+  $('#endWall').innerHTML = order.map(c =>
+    `<div class="end-cookie" style="--rc:${RARITIES[c.r].hex}" title="${c.name}">${assetImg('cookie_' + c.id, c.name, '', cookieSVG(c))}</div>`).join('');
+  await wait(1600);
+  const tiles = [...document.querySelectorAll('.end-cookie')];
+  for (let i = 0; i < tiles.length && alive(); i++) {
+    tiles[i].classList.add('in');
+    $('#endCount').textContent = i + 1;
+    if (i % 3 === 0) Sound.click();
+    await wait(i > tiles.length - 8 ? 260 : 90);
+  }
+  if (!alive()) return;
+  confetti(el, 80);
+
+  // 설탕노움의 축하 인사
+  $('#endGnome').innerHTML = gnomeHTML();
+  $('#endGnome').classList.add('in');
+  await wait(1400);
+
+  // 노고를 기리는 메시지 (타자 효과)
+  const msg = endingMessage();
+  for (let i = 1; i <= msg.length && alive(); i++) { $('#endMsg').textContent = msg.slice(0, i); await wait(28); }
+  if (!alive()) return;
+  await wait(500);
+
+  // 명예 증서
+  renderCert();
+  $('#cert').classList.add('in');
+  scrollToCert(true);
+  await wait(1400);
+  $('#endActions').classList.add('in');
+}
+function endingMessage() {
+  const s = state.stats;
+  return `${s.pulls.toLocaleString()}번 오븐 문을 열고, 💎${s.crystals.toLocaleString()}개의 크리스탈을 쏟아부은 끝에 드디어 해냈습니다. 수없이 나온 영혼석과 중복 쿠키에도 포기하지 않은 당신의 끈기가 왕국을 완성했어요. 정말 수고 많으셨습니다!`;
+}
+function gnomeHTML() {
+  const g = assetImg('gnome', '설탕노움', '', '') || '<span style="font-size:60px">🎉</span>';
+  return `${g}<div class="bubble">해냈어요! 쿠키 왕국의 모든 쿠키가 당신 곁에 모였어요!</div>`;
+}
+function renderCert() {
+  const s = state.stats, end = s.completedAt || Date.now();
+  const days = Math.max(1, Math.ceil((end - s.since) / 864e5));
+  const count = r => BY_RARITY[r].length, d = new Date(end);
+  $('#certStats').innerHTML = [
+    ['총 뽑기', s.pulls.toLocaleString() + '회'],
+    ['사용한 크리스탈', '💎 ' + s.crystals.toLocaleString()],
+    ['수집한 쿠키', `${COOKIES.length}종 전부`],
+    ['걸린 기간', days + '일'],
+    ['에인션트 · 비스트', `${count('ancient')} · ${count('beast')}종`],
+    ['완성한 날', `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`],
+  ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+function scrollToCert(smooth) {
+  // #game 까지 밀리지 않도록 엔딩 패널만 스크롤
+  const st = $('#endStage'), c = $('#cert');
+  st.scrollTo({ top: c.offsetTop - st.clientHeight / 2 + c.offsetHeight / 2, behavior: smooth ? 'smooth' : 'auto' });
+}
+function closeEnding() {
+  endingRun++;
+  Fireworks.stop(); Sound.ending(false);
+  $('#ending').hidden = true;
+  Sound.bgm(true);
+}
+$('#endSkip').addEventListener('click', () => {
+  // 진행 중인 연출을 멈추고 마지막 화면(증서)을 바로 표시
+  endingRun++;
+  document.querySelectorAll('.end-cookie').forEach(t => t.classList.add('in'));
+  $('#endCount').textContent = COOKIES.length;
+  $('#endGnome').innerHTML = gnomeHTML(); $('#endGnome').classList.add('in');
+  $('#endMsg').textContent = endingMessage();
+  renderCert();
+  $('#cert').classList.add('in'); $('#endActions').classList.add('in');
+  scrollToCert(false);
+});
+$('#endContinue').addEventListener('click', () => { Sound.click(); closeEnding(); show('gacha'); refreshHud(); });
+$('#endRestart').addEventListener('click', e => {
+  if (!e.target.dataset.armed) { e.target.dataset.armed = '1'; e.target.textContent = '한 번 더 누르면 기록 초기화'; return; }
+  e.target.dataset.armed = ''; e.target.textContent = '처음부터 새로 도전';
+  Object.assign(state, { crystals: CONFIG.START_CRYSTALS, pity: 0, owned: {}, souls: {}, stats: { pulls: 0, crystals: 0, since: Date.now(), completedAt: 0 } });
+  save(); refreshHud(); closeEnding(); Sound.bgm(false); show('title');
+  toast('새로운 도전을 시작합니다!');
 });
 
 /* 초기화 */
