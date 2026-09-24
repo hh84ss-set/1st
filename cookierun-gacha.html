@@ -111,35 +111,73 @@ body {
 }
 
 /* ---------- 타이틀 화면 ---------- */
-#title { justify-content: flex-end; padding-bottom: 60px; }
-#title .bg-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.logo {
-  position: absolute; top: 10%;
-  text-align: center;
-  animation: bob 3s ease-in-out infinite;
+#title { justify-content: flex-end; padding-bottom: 34px; background: linear-gradient(#58b8ff 0%, #9fdcff 45%, #ffe9b8 75%); }
+#title .sunrays {
+  position: absolute; left: 50%; top: 34%; width: 900px; height: 900px; margin: -450px 0 0 -450px;
+  background: repeating-conic-gradient(rgba(255,255,255,.28) 0 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 10%, transparent 60%);
+          mask: radial-gradient(circle, #000 10%, transparent 60%);
+  animation: spin 40s linear infinite;
 }
+#title .bg-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#title .cloud { animation: drift 26s linear infinite alternate; }
+@keyframes drift { to { transform: translateX(60px); } }
+#title .sparkle { position: absolute; color: #fff; font-size: 18px; text-shadow: 0 0 8px #fff7b0; animation: twinkle 2.4s ease-in-out infinite; pointer-events: none; }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(90deg); } }
+.logo {
+  position: absolute; top: 3%;
+  display: flex; flex-direction: column; align-items: center;
+  animation: bob 3.2s ease-in-out infinite;
+  z-index: 2;
+}
+.logo .crown { width: 84px; margin-bottom: 2px; filter: drop-shadow(0 4px 0 #6b3408); }
 .logo .l1 {
   font-family: 'Do Hyeon', sans-serif;
-  font-size: 30px; color: #fff;
-  -webkit-text-stroke: 2px #6b3408;
-  letter-spacing: 1px;
+  font-size: 15px; color: #fff; letter-spacing: 3px;
+  background: #6b3408; border-radius: 10px; padding: 1px 10px; margin-bottom: 4px;
 }
 .logo .l2 {
-  font-size: 58px; line-height: 1;
-  color: var(--gold);
+  font-size: 64px; line-height: 1;
+  color: #ffd23f;
   -webkit-text-stroke: 3px #6b3408;
-  text-shadow: 0 6px 0 #6b3408, 0 10px 18px rgba(0,0,0,.35);
+  paint-order: stroke fill;
+  text-shadow: 0 -2px 0 #fff3a0, 0 6px 0 #6b3408, 0 10px 16px rgba(0,0,0,.3);
 }
-.logo .l3 {
-  margin-top: 10px;
-  display: inline-block;
-  background: #fff; border: 3px solid #6b3408; border-radius: 30px;
-  padding: 4px 18px; font-size: 20px;
+.logo .ribbon {
+  position: relative; margin-top: 6px;
+  background: linear-gradient(#ff8fbf, #ff5a9a);
+  color: #fff; font-size: 20px; letter-spacing: 2px;
+  padding: 5px 26px;
+  border: 3px solid #6b3408;
+  text-shadow: 0 2px 0 #b3265a;
+  box-shadow: 0 4px 0 #6b3408;
 }
+.logo .ribbon::before, .logo .ribbon::after {
+  content: ''; position: absolute; top: 8px; width: 22px; height: 100%;
+  background: #e0457d; border: 3px solid #6b3408; z-index: -1;
+}
+.logo .ribbon::before { left: -18px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 40% 50%); }
+.logo .ribbon::after { right: -18px; clip-path: polygon(0 0, 100% 0, 60% 50%, 100% 100%, 0 100%); }
 @keyframes bob { 50% { transform: translateY(-8px); } }
-#title .start-btn { font-size: 26px; padding: 16px 38px; z-index: 2; animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 50% { transform: scale(1.06); } }
-#title .notice { margin-top: 14px; font-size: 13px; color: #6b3408; z-index: 2; opacity: .8; text-align: center; padding: 0 20px; }
+.lineup {
+  position: absolute; bottom: 150px; left: 0; right: 0;
+  display: flex; justify-content: center; align-items: flex-end;
+  z-index: 2; pointer-events: none;
+}
+.lineup .ck { width: 76px; margin: 0 -6px; animation: hop 1.6s ease-in-out infinite; filter: drop-shadow(0 6px 4px rgba(60,30,0,.35)); }
+.lineup .ck.big { width: 104px; z-index: 2; }
+.lineup .ck svg { width: 100%; display: block; }
+@keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.start-frame {
+  z-index: 3;
+  padding: 8px; border-radius: 26px;
+  background: linear-gradient(#ffe38a, #d9901a);
+  border: 3px solid #6b3408;
+  box-shadow: 0 6px 0 #6b3408, 0 0 24px rgba(255,220,120,.8);
+}
+#title .start-btn { font-size: 26px; padding: 14px 34px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.05); } }
+#title .notice { margin-top: 12px; font-size: 12px; color: #6b3408; z-index: 3; text-align: center; padding: 0 20px; background: rgba(255,247,224,.75); border-radius: 10px; }
 
 /* ---------- 환영 전환 ---------- */
 #welcome { justify-content: center; background: radial-gradient(circle, #fff6c9 0%, #ffcf5a 55%, #e0791c 100%); }
@@ -400,54 +438,82 @@ body {
 
   <!-- ================= 1. 타이틀 ================= -->
   <section class="screen active" id="title">
-    <svg class="bg-svg" viewBox="0 0 480 860" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <div class="sunrays"></div>
+    <svg class="bg-svg" viewBox="0 0 480 860" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
       <defs>
-        <linearGradient id="castleG" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fff9ec"/><stop offset="1" stop-color="#f3d7a6"/>
-        </linearGradient>
-        <linearGradient id="roofG" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#ff7aa8"/><stop offset="1" stop-color="#e0457d"/>
-        </linearGradient>
+        <linearGradient id="wallG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf5"/><stop offset="1" stop-color="#f6ddb0"/></linearGradient>
+        <linearGradient id="pinkG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9cc6"/><stop offset="1" stop-color="#e0457d"/></linearGradient>
+        <linearGradient id="blueG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd8ff"/><stop offset="1" stop-color="#3f8fe0"/></linearGradient>
+        <linearGradient id="goldG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#e0a000"/></linearGradient>
+        <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6e86a"/><stop offset="1" stop-color="#58b035"/></linearGradient>
       </defs>
       <!-- 구름 -->
-      <g fill="#fff" opacity=".9">
-        <ellipse cx="80" cy="140" rx="60" ry="22"/><ellipse cx="115" cy="125" rx="40" ry="24"/>
-        <ellipse cx="390" cy="220" rx="70" ry="22"/><ellipse cx="360" cy="205" rx="40" ry="22"/>
+      <g class="cloud" fill="#fff">
+        <g opacity=".95"><ellipse cx="70" cy="300" rx="70" ry="24"/><ellipse cx="100" cy="282" rx="42" ry="28"/><ellipse cx="50" cy="288" rx="30" ry="20"/></g>
+        <g opacity=".85"><ellipse cx="400" cy="340" rx="80" ry="24"/><ellipse cx="380" cy="322" rx="44" ry="26"/><ellipse cx="430" cy="326" rx="30" ry="18"/></g>
+      </g>
+      <!-- 먼 산 -->
+      <path d="M0 520 L70 440 L130 500 L200 420 L270 490 L340 430 L420 500 L480 460 V600 H0Z" fill="#b8e0f0" opacity=".8"/>
+      <!-- 성 -->
+      <g transform="translate(240 612) scale(.8)" stroke="#8a4b22" stroke-width="4" stroke-linejoin="round">
+        <!-- 뒤 탑 -->
+        <rect x="-175" y="-190" width="54" height="190" fill="url(#wallG)"/>
+        <rect x="121" y="-190" width="54" height="190" fill="url(#wallG)"/>
+        <path d="M-182 -190 Q-148 -260 -114 -190Z" fill="url(#blueG)"/>
+        <path d="M114 -190 Q148 -260 182 -190Z" fill="url(#blueG)"/>
+        <!-- 본관 -->
+        <rect x="-125" y="-165" width="250" height="165" fill="url(#wallG)"/>
+        <rect x="-70" y="-250" width="140" height="100" fill="url(#wallG)"/>
+        <rect x="-38" y="-320" width="76" height="80" fill="url(#wallG)"/>
+        <!-- 지붕 -->
+        <path d="M-82 -250 Q0 -300 82 -250Z" fill="url(#pinkG)"/>
+        <path d="M-48 -320 Q0 -420 48 -320Z" fill="url(#goldG)"/>
+        <path d="M-135 -165 H135 L118 -185 H-118Z" fill="url(#pinkG)"/>
+        <!-- 깃발 -->
+        <path d="M0 -412 V-450" fill="none"/><path d="M0 -450 l30 9 -30 9Z" fill="#ff5a6e"/>
+        <path d="M-148 -250 V-280" fill="none"/><path d="M-148 -280 l22 7 -22 7Z" fill="#ffcf3f"/>
+        <path d="M148 -250 V-280" fill="none"/><path d="M148 -280 l22 7 -22 7Z" fill="#ffcf3f"/>
+        <!-- 창문 -->
+        <path d="M-14 -270 v-18 a14 14 0 0 1 28 0 v18Z" fill="#6ec6ff"/>
+        <circle cx="0" cy="-200" r="22" fill="url(#goldG)"/><circle cx="0" cy="-200" r="10" fill="#ff5a9a"/>
+        <path d="M-160 -130 v-22 a12 12 0 0 1 24 0 v22Z" fill="#6ec6ff"/>
+        <path d="M136 -130 v-22 a12 12 0 0 1 24 0 v22Z" fill="#6ec6ff"/>
+        <path d="M-100 -95 v-24 a12 12 0 0 1 24 0 v24Z M76 -95 v-24 a12 12 0 0 1 24 0 v24Z" fill="#6ec6ff"/>
+        <!-- 문 -->
+        <path d="M-38 0 v-70 a38 38 0 0 1 76 0 v70Z" fill="#8a4b22"/>
+        <path d="M-26 0 v-66 a26 26 0 0 1 52 0 v66Z" fill="#b8641e"/>
+        <!-- 아이싱 -->
+        <path d="M-125 -150 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0 q12 14 25 0" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+        <path d="M-70 -236 q10 12 20 0 q10 12 20 0 q10 12 20 0 q10 12 20 0 q10 12 20 0 q10 12 20 0 q10 12 20 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
       </g>
       <!-- 언덕 -->
-      <path d="M0 640 Q120 560 240 610 T480 590 V860 H0Z" fill="#8fd96b"/>
-      <path d="M0 700 Q140 640 260 690 T480 670 V860 H0Z" fill="#6cc24a"/>
-      <!-- 쿠키 성 -->
-      <g transform="translate(240 600)">
-        <rect x="-110" y="-150" width="220" height="150" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
-        <rect x="-150" y="-200" width="60" height="200" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
-        <rect x="90" y="-200" width="60" height="200" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
-        <rect x="-40" y="-260" width="80" height="120" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
-        <path d="M-160 -200 L-120 -270 L-80 -200Z" fill="url(#roofG)" stroke="#8a4b22" stroke-width="4"/>
-        <path d="M80 -200 L120 -270 L160 -200Z" fill="url(#roofG)" stroke="#8a4b22" stroke-width="4"/>
-        <path d="M-52 -260 L0 -350 L52 -260Z" fill="url(#roofG)" stroke="#8a4b22" stroke-width="4"/>
-        <path d="M0 -350 v-30 l24 8 -24 8" fill="#ffcf3f" stroke="#8a4b22" stroke-width="3"/>
-        <path d="M-30 0 v-60 a30 30 0 0 1 60 0 v60Z" fill="#8a4b22"/>
-        <circle cx="0" cy="-200" r="16" fill="#ffcf3f" stroke="#8a4b22" stroke-width="3"/>
-        <circle cx="-120" cy="-140" r="10" fill="#6ec6ff" stroke="#8a4b22" stroke-width="3"/>
-        <circle cx="120" cy="-140" r="10" fill="#6ec6ff" stroke="#8a4b22" stroke-width="3"/>
-        <!-- 아이싱 -->
-        <path d="M-110 -150 q13 14 27 0 q14 14 27 0 q14 14 28 0 q13 14 28 0 q14 14 27 0 q14 14 27 0 q14 14 28 0 q13 14 28 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+      <path d="M0 610 Q120 560 240 600 T480 585 V860 H0Z" fill="url(#grassG)" stroke="#3f8a22" stroke-width="3"/>
+      <path d="M200 860 Q220 700 240 600 Q260 700 280 860Z" fill="#f6ddb0" opacity=".9"/>
+      <!-- 젤리 덤불 & 사탕 나무 -->
+      <g stroke="#8a4b22" stroke-width="3">
+        <g transform="translate(45 640)"><rect x="-5" y="-6" width="10" height="46" fill="#fff"/><path d="M-5 4 l10 -6 M-5 18 l10 -6 M-5 32 l10 -6" stroke="#ff5a6e" stroke-width="3"/><circle r="32" cy="-30" fill="#ff8ab8"/><circle r="12" cx="-10" cy="-40" fill="#fff" opacity=".5" stroke="none"/></g>
+        <g transform="translate(440 630)"><rect x="-5" y="-6" width="10" height="46" fill="#fff"/><path d="M-5 4 l10 -6 M-5 18 l10 -6 M-5 32 l10 -6" stroke="#3f9a18" stroke-width="3"/><circle r="34" cy="-32" fill="#9be07a"/><circle r="12" cx="-10" cy="-44" fill="#fff" opacity=".5" stroke="none"/></g>
+        <ellipse cx="120" cy="650" rx="30" ry="16" fill="#ffd23f"/><ellipse cx="360" cy="648" rx="30" ry="16" fill="#8fc8ff"/>
+        <ellipse cx="150" cy="660" rx="20" ry="12" fill="#ff8ab8"/><ellipse cx="330" cy="662" rx="20" ry="12" fill="#b58cff"/>
       </g>
-      <!-- 사탕 나무 -->
-      <g transform="translate(60 660)"><rect x="-5" y="-10" width="10" height="50" fill="#fff" stroke="#8a4b22" stroke-width="3"/><circle r="30" cy="-30" fill="#ff8ab8" stroke="#8a4b22" stroke-width="3"/></g>
-      <g transform="translate(420 650)"><rect x="-5" y="-10" width="10" height="50" fill="#fff" stroke="#8a4b22" stroke-width="3"/><circle r="30" cy="-30" fill="#9be07a" stroke="#8a4b22" stroke-width="3"/></g>
     </svg>
 
-    <div class="topbar"><div class="currency">💎 <span class="crystalCount">0</span></div></div>
+    <div class="topbar" style="position:absolute;top:0"><div class="currency">💎 <span class="crystalCount">0</span></div></div>
 
     <div class="logo">
+      <svg class="crown" viewBox="0 0 120 70" aria-hidden="true">
+        <path d="M10 62 L4 14 L34 36 L60 4 L86 36 L116 14 L110 62Z" fill="url(#goldG)" stroke="#6b3408" stroke-width="5" stroke-linejoin="round"/>
+        <circle cx="60" cy="42" r="8" fill="#ff5a9a" stroke="#6b3408" stroke-width="3"/>
+        <circle cx="30" cy="48" r="5" fill="#6ec6ff" stroke="#6b3408" stroke-width="2"/><circle cx="90" cy="48" r="5" fill="#6ec6ff" stroke="#6b3408" stroke-width="2"/>
+      </svg>
       <div class="l1">FAN-MADE</div>
       <div class="l2">쿠키 뽑기</div>
-      <div class="l3">🍪 오븐 시뮬레이터</div>
+      <div class="ribbon">KINGDOM GACHA</div>
     </div>
 
-    <button class="btn start-btn" id="startBtn">쿠키 뽑기 시작하기</button>
+    <div class="lineup" id="lineup"></div>
+
+    <div class="start-frame"><button class="btn start-btn" id="startBtn">쿠키 뽑기 시작하기</button></div>
     <div class="notice">쿠키런: 킹덤 팬메이드 시뮬레이터 · 데브시스터즈와 무관하며 실제 재화가 사용되지 않습니다</div>
   </section>
 
@@ -596,17 +662,17 @@ const CONFIG = {
 /* =========================================================
    등급 & 확률
    - 2025.01 공식 확률 개편 기준 합산치(레전더리/드래곤/에인션트 ≈ 4.30%,
-     슈퍼에픽 ≈ 2.40%)에 맞춰 쿠키/영혼석 비율을 배분한 근사값
+     슈퍼에픽 ≈ 2.40%)는 유지하고, 결과의 약 76%가 쿠키·24%가 영혼석이 되도록 배분한 근사값
    ========================================================= */
 const RARITIES = {
-  common:    { label: '커먼',     color: 'var(--r-common)',    hex: '#b9a58d', rank: 0, cookie: 5.00, soul: 32.70, ss: [1, 3] },
-  rare:      { label: '레어',     color: 'var(--r-rare)',      hex: '#4fb0ff', rank: 1, cookie: 3.50, soul: 28.00, ss: [1, 3] },
-  epic:      { label: '에픽',     color: 'var(--r-epic)',      hex: '#d45cff', rank: 2, cookie: 2.40, soul: 21.50, ss: [1, 3] },
-  superepic: { label: '슈퍼에픽', color: 'var(--r-superepic)', hex: '#ff4f6d', rank: 3, cookie: 0.36, soul: 2.04,  ss: [1, 2] },
-  legendary: { label: '레전더리', color: 'var(--r-legendary)', hex: '#3ff0d0', rank: 4, cookie: 0.35, soul: 1.80,  ss: [1, 2] },
-  dragon:    { label: '드래곤',   color: 'var(--r-dragon)',    hex: '#ff3b1f', rank: 4, cookie: 0.10, soul: 0.50,  ss: [1, 2] },
-  ancient:   { label: '에인션트', color: 'var(--r-ancient)',   hex: '#ffe066', rank: 5, cookie: 0.30, soul: 1.20,  ss: [1, 2] },
-  beast:     { label: '비스트',   color: 'var(--r-beast)',     hex: '#8b2cff', rank: 6, cookie: 0.15, soul: 0.10,  ss: [1, 1] },
+  common:    { label: '커먼',     color: 'var(--r-common)',    hex: '#b9a58d', rank: 0, cookie: 29.00, soul: 9.00, ss: [1, 3] },
+  rare:      { label: '레어',     color: 'var(--r-rare)',      hex: '#4fb0ff', rank: 1, cookie: 24.00, soul: 7.00, ss: [1, 3] },
+  epic:      { label: '에픽',     color: 'var(--r-epic)',      hex: '#d45cff', rank: 2, cookie: 17.70, soul: 6.00, ss: [1, 3] },
+  superepic: { label: '슈퍼에픽', color: 'var(--r-superepic)', hex: '#ff4f6d', rank: 3, cookie: 1.60,  soul: 0.80, ss: [1, 2] },
+  legendary: { label: '레전더리', color: 'var(--r-legendary)', hex: '#3ff0d0', rank: 4, cookie: 1.50,  soul: 0.80, ss: [1, 2] },
+  dragon:    { label: '드래곤',   color: 'var(--r-dragon)',    hex: '#ff3b1f', rank: 4, cookie: 0.40,  soul: 0.20, ss: [1, 2] },
+  ancient:   { label: '에인션트', color: 'var(--r-ancient)',   hex: '#ffe066', rank: 5, cookie: 1.00,  soul: 0.40, ss: [1, 2] },
+  beast:     { label: '비스트',   color: 'var(--r-beast)',     hex: '#8b2cff', rank: 6, cookie: 0.50,  soul: 0.10, ss: [1, 1] },
 };
 const DUP_SOULSTONES = { common: 20, rare: 20, epic: 20, superepic: 20, legendary: 20, dragon: 20, ancient: 20, beast: 20 };
 
@@ -799,14 +865,14 @@ function accessorySVG(c) {
     case 'wizardhat':  return `<path d="M50 48 L100 -20 L150 48Z" fill="${h}" ${s}/><circle cx="100" cy="18" r="6" fill="${a}"/><circle cx="118" cy="36" r="4" fill="${a}"/>`;
     case 'halo':       return `<ellipse cx="100" cy="8" rx="34" ry="9" fill="none" stroke="${a === '#ffffff' ? '#ffd76b' : a}" stroke-width="6"/>`;
     case 'band':       return `<rect x="55" y="38" width="90" height="12" rx="4" fill="${a}" ${s}/>`;
-    case 'mask':       return `<rect x="52" y="54" width="96" height="16" rx="6" fill="${h}" ${s}/><path d="M146 58 l18 -8 -4 16Z" fill="${a}"/>`;
+    case 'mask':       return `<rect x="44" y="52" width="112" height="14" rx="6" fill="${h}" ${s}/><path d="M154 56 l20 -10 -4 18Z" fill="${a}"/>`;
     case 'helmet':     return `<path d="M52 60 Q52 10 100 10 Q148 10 148 60 H130 V44 H70 V60Z" fill="${h}" ${s}/><path d="M100 10 V-10 q16 4 20 18" fill="none" stroke="${a}" stroke-width="7" stroke-linecap="round"/>`;
     case 'leaf':       return `<path d="M100 22 Q86 -6 100 -16 Q118 -2 100 22Z" fill="${a === '#ffffff' ? '#6fd13a' : a}" ${s}/>`;
     case 'cherry':     return `<path d="M100 18 Q110 -6 128 -10" fill="none" stroke="${a}" stroke-width="5"/><circle cx="130" cy="0" r="12" fill="${h}" ${s}/>`;
     case 'cowboy':     return `<ellipse cx="100" cy="38" rx="66" ry="12" fill="${h}" ${s}/><path d="M70 38 Q70 0 100 0 Q130 0 130 38Z" fill="${h}" ${s}/><rect x="70" y="26" width="60" height="8" fill="${a}"/>`;
     case 'snow':       return `<g stroke="${h}" stroke-width="5" stroke-linecap="round"><path d="M140 10 v26 M127 23 h26 M131 14 l18 18 M149 14 l-18 18"/></g>`;
     case 'crown':      return `<path d="M64 36 L70 2 L86 22 L100 -4 L114 22 L130 2 L136 36Z" fill="${a}" ${s}/><circle cx="100" cy="24" r="6" fill="#e8413c" stroke="#4a2511" stroke-width="2"/>`;
-    case 'glasses':    return `<g fill="rgba(255,255,255,.5)" ${s}><circle cx="82" cy="72" r="13"/><circle cx="118" cy="72" r="13"/></g><path d="M95 72 h10" stroke="#4a2511" stroke-width="4"/>`;
+    case 'glasses':    return `<g fill="rgba(255,255,255,.5)" ${s}><circle cx="78" cy="92" r="16"/><circle cx="122" cy="92" r="16"/></g><path d="M94 92 h12" stroke="#4a2511" stroke-width="4"/>`;
     case 'horns':      return `<path d="M62 36 Q40 10 52 -8 Q62 16 78 26Z" fill="${a}" ${s}/><path d="M138 36 Q160 10 148 -8 Q138 16 122 26Z" fill="${a}" ${s}/>`;
     case 'dragonhorns':return `<path d="M64 34 Q46 0 70 -16 Q70 12 82 24Z" fill="${a}" ${s}/><path d="M136 34 Q154 0 130 -16 Q130 12 118 24Z" fill="${a}" ${s}/><path d="M44 60 l-16 -6 10 18Z M156 60 l16 -6 -10 18Z" fill="${h}" ${s}/>`;
     case 'hood':       return `<path d="M44 90 Q40 0 100 0 Q160 0 156 90 Q150 40 100 36 Q50 40 44 90Z" fill="${h}" ${s}/><circle cx="100" cy="30" r="5" fill="${a}"/>`;
@@ -822,26 +888,70 @@ function accessorySVG(c) {
     default: return '';
   }
 }
+// 머리 모양 (쿠키별 특징)
+const HAIR = {
+  gingerbrave: 'none', strawberry: 'bob', wizard: 'short', angel: 'bob', muscle: 'short', ninja: 'short', knight: 'short', beet: 'long',
+  cherry: 'twin', blackberry: 'long', rye: 'long', snowsugar: 'bob', custard: 'bob', carrot: 'short',
+  espresso: 'short', madeleine: 'spiky', darkchoco: 'spiky', licorice: 'long', pomegranate: 'long', latte: 'long', vampire: 'spiky',
+  herb: 'bob', mintchoco: 'short', cherryblossom: 'twin', chilipepper: 'spiky',
+  clottedcream: 'long', burntcheese: 'spiky', elderfaerie: 'long',
+  seafairy: 'long', frostqueen: 'long', moonlight: 'long', windarcher: 'long', firespirit: 'spiky', stardust: 'long',
+  pitayadragon: 'long', redvelvet: 'spiky',
+  purevanilla: 'bob', hollyberry: 'long', darkcacao: 'long', goldencheese: 'long', whitelily: 'long',
+  shadowmilk: 'spiky', eternalsugar: 'long', mysticflour: 'long', burningspice: 'spiky', silentsalt: 'short',
+};
+// 눈동자 색 (지정 없으면 초콜릿색)
+const EYES = {
+  purevanilla: '#3fa7d6', hollyberry: '#d6203a', darkcacao: '#b3122a', goldencheese: '#e0a000', whitelily: '#6fb86f',
+  shadowmilk: '#3f7fff', eternalsugar: '#ff5aa8', mysticflour: '#c9a000', burningspice: '#ff5a1f', silentsalt: '#7a8a9a',
+  seafairy: '#2f8fd8', frostqueen: '#4fb0ff', moonlight: '#7a5acd', windarcher: '#3f9a18', firespirit: '#ff5a1f', stardust: '#e0a000',
+  pitayadragon: '#ff3f9a', redvelvet: '#d6203a', elderfaerie: '#3f9a18', clottedcream: '#c98a1a', burntcheese: '#ff7a1f',
+  mintchoco: '#2fb88a', licorice: '#2fb8a8', vampire: '#d6203a', cherryblossom: '#ff6fa0', strawberry: '#d6203a',
+};
+const isLight = hex => { const n = parseInt(hex.slice(1), 16); return ((n >> 16) * .3 + ((n >> 8) & 255) * .59 + (n & 255) * .11) > 215; };
+
+function hairSVG(style, col) {
+  const s = `fill="${col}" stroke="#4a2511" stroke-width="5" stroke-linejoin="round"`;
+  const bangs = `<path d="M40 86 Q38 18 100 16 Q162 18 160 86 Q148 58 128 60 Q118 40 104 58 Q92 38 78 60 Q56 56 40 86Z" ${s}/>`;
+  switch (style) {
+    case 'none':  return { back: '', front: '' };
+    case 'short': return { back: '', front: `<path d="M38 92 Q34 16 100 14 Q166 16 162 92 Q152 56 124 58 Q110 44 98 58 Q80 44 70 60 Q50 62 38 92Z" ${s}/>` };
+    case 'bob':   return { back: `<path d="M34 128 Q24 20 100 16 Q176 20 166 128 Q150 136 138 124 L62 124 Q50 136 34 128Z" ${s}/>`, front: bangs };
+    case 'long':  return { back: `<path d="M36 100 Q26 16 100 14 Q174 16 164 100 L172 186 Q150 176 140 150 L60 150 Q50 176 28 186Z" ${s}/>`, front: bangs };
+    case 'twin':  return { back: `<ellipse cx="30" cy="112" rx="20" ry="40" ${s}/><ellipse cx="170" cy="112" rx="20" ry="40" ${s}/>`, front: bangs };
+    case 'spiky': return { back: '', front: `<path d="M38 90 L30 44 L56 50 L58 12 L84 34 L100 2 L116 34 L142 12 L144 50 L170 44 L162 90 Q148 60 126 62 Q114 44 100 60 Q86 44 74 62 Q52 60 38 90Z" ${s}/>` };
+  }
+  return { back: '', front: bangs };
+}
 function cookieSVG(c) {
-  const hair = `<path d="M54 76 Q48 22 100 20 Q152 22 146 76 Q140 46 100 44 Q60 46 54 76Z" fill="${c.h}" stroke="#4a2511" stroke-width="4"/>`;
+  const hair = hairSVG(HAIR[c.id] || 'short', c.h);
+  const iris = EYES[c.id] || '#5a2d10';
+  const outfit = isLight(c.a) ? (isLight(c.h) ? '#8fc8ff' : c.h) : c.a;
   const behind = ['wings', 'cape', 'hood'].includes(c.acc) ? accessorySVG(c) : '';
   const front = ['wings', 'cape', 'hood'].includes(c.acc) ? '' : accessorySVG(c);
+  const eye = x => `<ellipse cx="${x}" cy="92" rx="11" ry="14" fill="#2a1406"/>
+    <ellipse cx="${x}" cy="95" rx="8.5" ry="10.5" fill="${iris}"/>
+    <ellipse cx="${x}" cy="98" rx="5" ry="6" fill="#1a0a02" opacity=".55"/>
+    <circle cx="${x - 3.5}" cy="87" r="4" fill="#fff"/><circle cx="${x + 4}" cy="99" r="2" fill="#fff"/>`;
   return `<svg viewBox="0 -30 200 250" xmlns="http://www.w3.org/2000/svg">
     ${behind}
-    <!-- 몸 (진저브레드 실루엣) -->
-    <path d="M100 18 C60 18 48 50 50 80 C50 98 58 108 70 112 L40 130 C22 140 30 166 50 158 L68 150 L60 196 C56 216 84 220 88 200 L100 170 L112 200 C116 220 144 216 140 196 L132 150 L150 158 C170 166 178 140 160 130 L130 112 C142 108 150 98 150 80 C152 50 140 18 100 18Z"
-      fill="${c.b}" stroke="#4a2511" stroke-width="5" stroke-linejoin="round"/>
-    ${hair}
-    <!-- 아이싱 -->
-    <path d="M44 138 q6 -8 12 0 M144 138 q6 -8 12 0 M74 196 q6 -8 12 0 M114 196 q6 -8 12 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
-    <!-- 단추 -->
-    <circle cx="100" cy="130" r="6" fill="${c.a}" stroke="#4a2511" stroke-width="3"/>
-    <circle cx="100" cy="150" r="6" fill="${c.a}" stroke="#4a2511" stroke-width="3"/>
-    <!-- 얼굴 -->
-    <ellipse cx="84" cy="74" rx="6" ry="8" fill="#2a1406"/><ellipse cx="116" cy="74" rx="6" ry="8" fill="#2a1406"/>
-    <circle cx="86" cy="71" r="2.2" fill="#fff"/><circle cx="118" cy="71" r="2.2" fill="#fff"/>
-    <ellipse cx="72" cy="88" rx="7" ry="4" fill="#ff8a8a" opacity=".6"/><ellipse cx="128" cy="88" rx="7" ry="4" fill="#ff8a8a" opacity=".6"/>
-    <path d="M90 92 Q100 102 110 92" fill="none" stroke="#2a1406" stroke-width="4" stroke-linecap="round"/>
+    ${hair.back}
+    <!-- 몸 -->
+    <g stroke="#4a2511" stroke-width="5" stroke-linejoin="round">
+      <path d="M78 160 L72 196 Q70 210 84 210 Q94 210 94 198 L98 176Z" fill="${c.b}"/>
+      <path d="M122 160 L128 196 Q130 210 116 210 Q106 210 106 198 L102 176Z" fill="${c.b}"/>
+      <path d="M70 142 Q52 150 48 168 Q46 178 56 178 Q64 176 70 164Z" fill="${c.b}"/>
+      <path d="M130 142 Q148 150 152 168 Q154 178 144 178 Q136 176 130 164Z" fill="${c.b}"/>
+      <path d="M64 176 Q64 132 100 130 Q136 132 136 176 Q100 186 64 176Z" fill="${outfit}"/>
+    </g>
+    <path d="M86 140 L100 150 L114 140" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+    <!-- 머리 -->
+    <ellipse cx="100" cy="84" rx="62" ry="58" fill="${c.b}" stroke="#4a2511" stroke-width="5"/>
+    <ellipse cx="80" cy="46" rx="18" ry="8" fill="#fff" opacity=".35"/>
+    ${eye(78)}${eye(122)}
+    <ellipse cx="60" cy="112" rx="10" ry="6" fill="#ff7a7a" opacity=".55"/><ellipse cx="140" cy="112" rx="10" ry="6" fill="#ff7a7a" opacity=".55"/>
+    <path d="M92 114 Q100 122 108 114" fill="#c0392b" stroke="#2a1406" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${hair.front}
     ${front}
   </svg>`;
 }
@@ -1172,7 +1282,7 @@ $('#rateBtn').addEventListener('click', () => {
   openInfo(`<h3>📜 확률 정보</h3>
     <table><tr><th>등급</th><th>쿠키</th><th>영혼석</th><th>수록</th></tr>${rows}</table>
     <div class="cookies-list">${list}</div>
-    <p class="note">· 2025년 1월 공식 확률 개편 후 합산치(레전더리·드래곤·에인션트 약 4.30%, 슈퍼에픽 약 2.40%)를 기준으로 쿠키/영혼석 비율을 나눈 <b>시뮬레이터용 근사값</b>입니다.<br>
+    <p class="note">· 2025년 1월 공식 확률 개편 후 합산치(레전더리·드래곤·에인션트 약 4.30%, 슈퍼에픽 약 2.40%)는 유지하고, 뽑기 결과의 약 76%는 쿠키·24%는 영혼석이 나오도록 조정한 <b>시뮬레이터용 근사값</b>입니다.<br>
     · 10회 뽑기 시 쿠키 1개 이상 확정 · 100회 내 에픽 이상 쿠키 확정(천장)<br>
     · 이미 보유한 쿠키가 나오면 해당 쿠키 영혼석 20개로 전환됩니다.</p>`);
 });
@@ -1193,6 +1303,18 @@ $('#bookBtn').addEventListener('click', () => {
 });
 
 /* 초기화 */
+(function buildTitle() {
+  const ids = ['strawberry', 'purevanilla', 'gingerbrave', 'hollyberry', 'shadowmilk'];
+  $('#lineup').innerHTML = ids.map((id, i) =>
+    `<div class="ck ${id === 'gingerbrave' ? 'big' : ''}" style="animation-delay:${i * .18}s">${cookieSVG(COOKIES.find(c => c.id === id))}</div>`).join('');
+  const t = $('#title');
+  [[12, 22], [82, 18], [20, 46], [88, 44], [50, 36], [70, 60], [10, 62]].forEach(([x, y], i) => {
+    const sp = document.createElement('div');
+    sp.className = 'sparkle'; sp.textContent = '✦';
+    sp.style.left = x + '%'; sp.style.top = y + '%'; sp.style.animationDelay = i * .35 + 's';
+    t.appendChild(sp);
+  });
+})();
 $('#soundBtn').textContent = state.muted ? '🔇' : '🔊';
 refreshHud();
 </script>
