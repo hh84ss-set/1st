@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>쿠키 뽑기 시뮬레이터</title>
+<title>쿠키 오븐 뽑기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&display=swap" rel="stylesheet">
 <style>
@@ -36,7 +31,7 @@
   --r-beast: #8b2cff;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100%; overflow: hidden; background: #2a1406; }
 body {
   font-family: 'Jua', 'Do Hyeon', system-ui, sans-serif;
   color: var(--text);
@@ -399,8 +394,6 @@ body {
   *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; }
 }
 </style>
-</head>
-<body>
 <div id="game">
 
   <button class="icon-btn" id="soundBtn" style="right:12px" title="사운드 켜기/끄기">🔊</button>
@@ -449,13 +442,13 @@ body {
     <div class="topbar"><div class="currency">💎 <span class="crystalCount">0</span></div></div>
 
     <div class="logo">
-      <div class="l1">COOKIE RUN</div>
-      <div class="l2">KINGDOM</div>
-      <div class="l3">🍪 쿠키 뽑기 시뮬레이터</div>
+      <div class="l1">FAN-MADE</div>
+      <div class="l2">쿠키 뽑기</div>
+      <div class="l3">🍪 오븐 시뮬레이터</div>
     </div>
 
     <button class="btn start-btn" id="startBtn">쿠키 뽑기 시작하기</button>
-    <div class="notice">팬메이드 시뮬레이터 · 실제 게임과 무관하며 실제 재화가 사용되지 않습니다</div>
+    <div class="notice">쿠키런: 킹덤 팬메이드 시뮬레이터 · 데브시스터즈와 무관하며 실제 재화가 사용되지 않습니다</div>
   </section>
 
   <!-- ================= 2. 환영 연출 ================= -->
@@ -1191,8 +1184,9 @@ $('#bookBtn').addEventListener('click', () => {
     BY_RARITY[r].map(c => `${state.owned[c.id] ? '🍪' : '⬜'} ${c.name.replace(' 쿠키', '')}${state.souls[c.id] ? ` <small>(💠${state.souls[c.id]})</small>` : ''}`).join(' · ') + '</div>').join('');
   openInfo(`<h3>📖 쿠키 도감 (${owned}/${COOKIES.length})</h3><div class="cookies-list">${rows}</div>
     <p class="note" style="text-align:center"><button class="btn small brown" id="resetBtn">기록 초기화</button></p>`);
-  $('#resetBtn').onclick = () => {
-    if (!confirm('보유 쿠키·영혼석·크리스탈 기록을 초기화할까요?')) return;
+  $('#resetBtn').onclick = e => {
+    // 두 번 눌러 확인 (임베드 환경에서 confirm() 이 막혀 있음)
+    if (!e.target.dataset.armed) { e.target.dataset.armed = '1'; e.target.textContent = '한 번 더 누르면 초기화'; return; }
     Object.assign(state, { crystals: CONFIG.START_CRYSTALS, pity: 0, owned: {}, souls: {} });
     save(); refreshHud(); $('#infoModal').classList.remove('show'); toast('기록을 초기화했어요');
   };
@@ -1202,5 +1196,3 @@ $('#bookBtn').addEventListener('click', () => {
 $('#soundBtn').textContent = state.muted ? '🔇' : '🔊';
 refreshHud();
 </script>
-</body>
-</html>
