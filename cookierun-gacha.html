@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>쿠키 뽑기 시뮬레이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&display=swap" rel="stylesheet">
+<style>
+/*
+  쿠키런: 킹덤 팬메이드 쿠키 뽑기 시뮬레이터
+  - 쿠키 이름/등급/뽑기 구조는 공식 게임·위키 정보를 참고
+  - 이미지·사운드는 저작권 문제로 SVG·Web Audio로 직접 제작 (CONFIG.USE_LOCAL_ASSETS 로 교체 가능)
+*/
+:root {
+  --sky-top: #6ec6ff;
+  --sky-bottom: #fff3c4;
+  --wood: #8a4b22;
+  --wood-dark: #5b2d10;
+  --cream: #fff7e0;
+  --gold: #ffcf3f;
+  --gold-dark: #d9901a;
+  --text: #4a2511;
+  --btn-green: #6fd13a;
+  --btn-green-dark: #3f9a18;
+  --btn-orange: #ffae2b;
+  --btn-orange-dark: #d8770b;
+
+  --r-common: #b9a58d;
+  --r-rare: #4fb0ff;
+  --r-epic: #d45cff;
+  --r-superepic: #ff4f6d;
+  --r-legendary: #3ff0d0;
+  --r-dragon: #ff3b1f;
+  --r-ancient: #fff1a8;
+  --r-beast: #8b2cff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Jua', 'Do Hyeon', system-ui, sans-serif;
+  color: var(--text);
+  background: #2a1406;
+  user-select: none;
+}
+#game {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  background: linear-gradient(var(--sky-top), var(--sky-bottom));
+}
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s ease;
+}
+.screen.active { opacity: 1; pointer-events: auto; }
+
+/* ---------- 공용 버튼 ---------- */
+.btn {
+  font-family: inherit;
+  font-size: 20px;
+  color: #fff;
+  border: 3px solid #4a2511;
+  border-radius: 18px;
+  padding: 12px 22px;
+  cursor: pointer;
+  text-shadow: 0 2px 0 rgba(0,0,0,.35);
+  box-shadow: 0 5px 0 #4a2511;
+  transition: transform .08s, box-shadow .08s;
+  background: linear-gradient(#8ff05a, var(--btn-green) 50%, var(--btn-green-dark));
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #4a2511; }
+.btn.orange { background: linear-gradient(#ffd070, var(--btn-orange) 50%, var(--btn-orange-dark)); }
+.btn.brown  { background: linear-gradient(#b8764a, var(--wood) 50%, var(--wood-dark)); }
+.btn.small  { font-size: 15px; padding: 7px 12px; border-radius: 12px; box-shadow: 0 3px 0 #4a2511; }
+.btn:disabled { filter: grayscale(.9) brightness(.8); cursor: not-allowed; }
+
+.icon-btn {
+  position: absolute; top: 12px;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 3px solid #4a2511;
+  background: var(--cream);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 0 3px 0 #4a2511;
+}
+
+/* ---------- 상단 재화 바 ---------- */
+.topbar {
+  width: 100%;
+  display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+  padding: 12px 64px 0 12px;
+  z-index: 5;
+}
+.currency {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(40,20,5,.75);
+  color: #fff;
+  border-radius: 20px;
+  padding: 4px 12px 4px 6px;
+  font-size: 17px;
+  border: 2px solid #ffe7a3;
+}
+.currency .plus {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--btn-green); border: 2px solid #fff;
+  color: #fff; font-size: 14px; line-height: 16px; text-align: center;
+  cursor: pointer; margin-left: 4px;
+}
+
+/* ---------- 타이틀 화면 ---------- */
+#title { justify-content: flex-end; padding-bottom: 60px; }
+#title .bg-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.logo {
+  position: absolute; top: 10%;
+  text-align: center;
+  animation: bob 3s ease-in-out infinite;
+}
+.logo .l1 {
+  font-family: 'Do Hyeon', sans-serif;
+  font-size: 30px; color: #fff;
+  -webkit-text-stroke: 2px #6b3408;
+  letter-spacing: 1px;
+}
+.logo .l2 {
+  font-size: 58px; line-height: 1;
+  color: var(--gold);
+  -webkit-text-stroke: 3px #6b3408;
+  text-shadow: 0 6px 0 #6b3408, 0 10px 18px rgba(0,0,0,.35);
+}
+.logo .l3 {
+  margin-top: 10px;
+  display: inline-block;
+  background: #fff; border: 3px solid #6b3408; border-radius: 30px;
+  padding: 4px 18px; font-size: 20px;
+}
+@keyframes bob { 50% { transform: translateY(-8px); } }
+#title .start-btn { font-size: 26px; padding: 16px 38px; z-index: 2; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.06); } }
+#title .notice { margin-top: 14px; font-size: 13px; color: #6b3408; z-index: 2; opacity: .8; text-align: center; padding: 0 20px; }
+
+/* ---------- 환영 전환 ---------- */
+#welcome { justify-content: center; background: radial-gradient(circle, #fff6c9 0%, #ffcf5a 55%, #e0791c 100%); }
+#welcome .rays {
+  position: absolute; width: 200%; height: 200%; left: -50%; top: -50%;
+  background: repeating-conic-gradient(rgba(255,255,255,.35) 0 10deg, transparent 10deg 20deg);
+  animation: spin 12s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#welcome .gnome { width: 170px; z-index: 2; transform: scale(0); }
+#welcome.active .gnome { animation: popIn .6s .2s cubic-bezier(.3,1.6,.5,1) forwards; }
+.speech {
+  z-index: 2;
+  margin-top: 12px;
+  background: #fff; border: 4px solid #6b3408; border-radius: 22px;
+  padding: 16px 24px; font-size: 26px; text-align: center;
+  position: relative; transform: scale(0);
+}
+.speech::before {
+  content: ''; position: absolute; top: -18px; left: 50%; margin-left: -12px;
+  border: 12px solid transparent; border-bottom: 14px solid #6b3408; border-top: 0;
+}
+#welcome.active .speech { animation: popIn .5s .7s cubic-bezier(.3,1.6,.5,1) forwards; }
+.speech b { color: #e0561c; }
+@keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+.confetti { position: absolute; top: -20px; width: 10px; height: 16px; z-index: 3; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+/* ---------- 뽑기 화면 ---------- */
+#gacha { background: linear-gradient(#3b1d0c, #6b3a1a 45%, #9b5a2a); }
+#gacha .wall {
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 38px, rgba(0,0,0,.18) 38px 41px),
+    repeating-linear-gradient(90deg, transparent 0 78px, rgba(0,0,0,.12) 78px 81px);
+  opacity: .6;
+}
+.banner {
+  margin-top: 8px; z-index: 2;
+  width: 92%;
+  background: linear-gradient(135deg, #ffe38a, #ffb347);
+  border: 4px solid #6b3408; border-radius: 18px;
+  padding: 8px 12px; text-align: center;
+  box-shadow: 0 5px 0 #4a2511;
+}
+.banner h2 { font-size: 24px; color: #6b3408; }
+.banner p { font-size: 14px; color: #8a4b22; }
+.oven-wrap { position: relative; z-index: 2; margin-top: 10px; width: 300px; height: 320px; }
+.oven-wrap svg { width: 100%; height: 100%; overflow: visible; }
+.oven-wrap.shake { animation: shake .12s linear infinite; }
+@keyframes shake {
+  0% { transform: translate(0,0) rotate(0); }
+  25% { transform: translate(-3px,1px) rotate(-1deg); }
+  50% { transform: translate(2px,-2px) rotate(1deg); }
+  75% { transform: translate(-1px,2px) rotate(0); }
+}
+#ovenGlow { transition: fill .3s, opacity .3s; }
+#ovenDoor { transform-origin: 150px 256px; transition: transform .45s cubic-bezier(.4,1.6,.6,1); }
+#ovenDoor.open { transform: scaleY(-0.25) translateY(40px); }
+.steam { position: absolute; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.7); filter: blur(4px); animation: steam 1.5s ease-out forwards; z-index: 3; }
+@keyframes steam { to { transform: translateY(-120px) scale(2.5); opacity: 0; } }
+
+.pull-row { z-index: 2; display: flex; gap: 14px; margin-top: 6px; }
+.pull-btn { display: flex; flex-direction: column; align-items: center; min-width: 140px; }
+.pull-btn .cost { font-size: 14px; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.info-row { z-index: 2; margin-top: 14px; display: flex; gap: 10px; align-items: center; color: #ffe7a3; font-size: 15px; }
+.pity { background: rgba(0,0,0,.35); border-radius: 12px; padding: 4px 10px; }
+
+/* ---------- 연출 오버레이 ---------- */
+#reveal {
+  position: absolute; inset: 0; z-index: 55;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(20,8,2,.8);
+}
+#reveal.show { display: flex; }
+#reveal .flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+#reveal .flash.go { animation: flash .7s ease-out; }
+@keyframes flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+#reveal .burst {
+  position: absolute; width: 640px; height: 640px; left: 50%; top: 50%; margin: -340px 0 0 -320px;
+  background: repeating-conic-gradient(var(--burst, #fff) 0 8deg, transparent 8deg 20deg);
+  opacity: .35; border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%);
+          mask: radial-gradient(circle, #000 20%, transparent 68%);
+  animation: spin 10s linear infinite;
+}
+.counter { position: absolute; top: 18px; left: 18px; color: #fff; font-size: 20px; z-index: 3; }
+.skip-btn { position: absolute; top: 14px; right: 14px; z-index: 3; }
+.tap-hint { position: absolute; bottom: 28px; color: #fff; font-size: 18px; opacity: .8; animation: blink 1.2s infinite; z-index: 3; }
+@keyframes blink { 50% { opacity: .25; } }
+
+/* ---------- 카드 ---------- */
+.card {
+  --rc: var(--r-common);
+  position: relative;
+  width: 240px; height: 340px;
+  perspective: 1000px;
+  z-index: 3;
+}
+.card .inner {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.3,1.3,.5,1);
+}
+.card.flipped .inner { transform: rotateY(180deg); }
+.card .face {
+  position: absolute; inset: 0; border-radius: 20px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border: 5px solid #4a2511;
+  overflow: hidden;
+}
+.card .back {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,.4), transparent 50%),
+    repeating-linear-gradient(45deg, #b7682b 0 14px, #a45a22 14px 28px);
+  display: flex; align-items: center; justify-content: center;
+}
+.card .back .emblem {
+  width: 110px; height: 110px; border-radius: 50%;
+  background: #ffe7a3; border: 5px solid #6b3408;
+  display: flex; align-items: center; justify-content: center; font-size: 56px;
+}
+.card .front {
+  transform: rotateY(180deg);
+  background: linear-gradient(170deg, #fffaf0 0%, #ffe9c2 100%);
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 0 0 4px var(--rc), 0 0 40px var(--rc);
+}
+.card .front .art {
+  width: 100%; height: 62%;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--rc) 55%, #fff) 0%, color-mix(in srgb, var(--rc) 25%, #fff5e0) 70%);
+  border-bottom: 4px solid #4a2511;
+  position: relative;
+}
+.card .front .art svg, .card .front .art img { height: 88%; max-width: 90%; object-fit: contain; }
+.rarity-badge {
+  margin-top: -16px; z-index: 2;
+  padding: 3px 14px; border-radius: 14px;
+  border: 3px solid #4a2511;
+  font-size: 16px; color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.5);
+  background: var(--rc);
+}
+.rarity-legendary .rarity-badge { background: linear-gradient(90deg,#ff7b7b,#ffd66b,#7bffb0,#6bc8ff,#c77bff); }
+.rarity-ancient .rarity-badge { background: linear-gradient(90deg,#fff6c9,#ffd76b,#fff6c9); color: #7a4b00; text-shadow: none; }
+.rarity-beast .rarity-badge { background: linear-gradient(90deg,#3a0066,#8b2cff,#ff2c6a); }
+.rarity-dragon .rarity-badge { background: linear-gradient(90deg,#ff3b1f,#ffae00); }
+.card .name { margin-top: 8px; font-size: 22px; text-align: center; padding: 0 8px; line-height: 1.15; }
+.card .kind { margin-top: 4px; font-size: 15px; color: #8a4b22; }
+.card .tag {
+  position: absolute; top: 10px; left: 10px;
+  background: #ff3d3d; color: #fff; font-size: 14px;
+  border: 2px solid #fff; border-radius: 10px; padding: 1px 8px;
+  transform: rotate(-10deg);
+  z-index: 3;
+}
+.card .tag.dup { background: #7d6b5a; }
+.card .ss-count {
+  position: absolute; bottom: 8px; right: 10px;
+  font-size: 22px; color: #fff; -webkit-text-stroke: 1px #4a2511;
+  text-shadow: 0 2px 0 #4a2511;
+}
+.card.pop { animation: cardPop .55s cubic-bezier(.3,1.5,.5,1); }
+@keyframes cardPop { from { transform: translateY(120px) scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.card.hi .front::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.75) 45%, transparent 60%);
+  background-size: 250% 100%;
+  animation: shine 2.2s ease-in-out infinite;
+}
+@keyframes shine { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+
+/* ---------- 결과 화면 ---------- */
+#result { background: linear-gradient(#4a2511, #7a4320); }
+#result h2 { color: var(--gold); font-size: 30px; margin-top: 18px; text-shadow: 0 3px 0 #2a1406, 0 0 14px rgba(255,207,63,.5); }
+#result .summary { color: #ffe7a3; font-size: 15px; margin: 4px 0 8px; text-align: center; padding: 0 12px; }
+.grid {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px;
+  width: 100%; padding: 8px 12px; overflow-y: auto; flex: 1;
+  align-content: start;
+}
+.grid.single { grid-template-columns: 1fr; justify-items: center; }
+.mini {
+  --rc: var(--r-common);
+  position: relative;
+  aspect-ratio: 3/4.2;
+  border-radius: 10px; border: 3px solid #4a2511;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc) 50%, #fff) 0%, color-mix(in srgb, var(--rc) 20%, #fff3dc) 75%);
+  box-shadow: 0 0 0 2px var(--rc);
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  padding: 4px 2px;
+  cursor: pointer;
+  animation: cardPop .4s both cubic-bezier(.3,1.5,.5,1);
+  transition: transform .1s;
+}
+.mini:hover { transform: translateY(-3px); }
+.grid.single .mini { width: 150px; }
+.mini svg, .mini img { width: 90%; flex: 1; min-height: 0; }
+.mini .mr { font-size: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: #fff; background: var(--rc); border-radius: 6px; padding: 0 4px; border: 1px solid #4a2511; white-space: nowrap; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.mini .mn { font-size: 11px; text-align: center; line-height: 1.05; margin-top: 2px; word-break: keep-all; }
+.mini .ms { position: absolute; top: 2px; right: 4px; font-size: 13px; color: #fff; -webkit-text-stroke: .6px #4a2511; }
+.mini .mnew { position: absolute; top: -4px; left: -4px; background: #ff3d3d; color: #fff; font-size: 10px; border-radius: 6px; padding: 0 4px; border: 1px solid #fff; }
+.result-actions { display: flex; gap: 10px; padding: 12px 12px 22px; flex-wrap: wrap; justify-content: center; }
+
+/* ---------- 카드 뷰어 / 모달 ---------- */
+.modal {
+  position: absolute; inset: 0; z-index: 60;
+  background: rgba(10,4,0,.82);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+}
+.modal.show { display: flex; }
+.viewer-nav { display: flex; align-items: center; gap: 14px; }
+.nav-arrow {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 3px solid #4a2511; background: var(--gold);
+  font-size: 24px; color: #4a2511; cursor: pointer;
+  box-shadow: 0 3px 0 #4a2511;
+  font-family: inherit;
+}
+.nav-arrow:disabled { opacity: .35; cursor: default; }
+.viewer-count { color: #fff; font-size: 18px; margin-top: 14px; }
+.viewer-desc { color: #ffe7a3; font-size: 15px; margin-top: 6px; text-align: center; padding: 0 30px; max-width: 420px; }
+.close-x { position: absolute; top: 14px; right: 14px; }
+
+.panel {
+  background: var(--cream); border: 4px solid #4a2511; border-radius: 18px;
+  width: 90%; max-height: 80%; overflow-y: auto; padding: 16px;
+}
+.panel h3 { font-size: 22px; text-align: center; margin-bottom: 8px; }
+.panel table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.panel th, .panel td { border-bottom: 1px dashed #c9a57a; padding: 5px 4px; text-align: center; }
+.panel td:first-child { text-align: left; }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #4a2511; margin-right: 6px; vertical-align: -1px; }
+.panel .note { font-size: 12px; color: #8a4b22; margin-top: 10px; line-height: 1.5; }
+.panel .cookies-list { font-size: 13px; line-height: 1.5; margin-top: 8px; }
+.panel .cookies-list b { display: inline-block; min-width: 64px; }
+
+.toast {
+  position: absolute; left: 50%; top: 70px; transform: translateX(-50%);
+  background: rgba(40,20,5,.9); color: #fff; padding: 8px 16px; border-radius: 14px;
+  z-index: 100; font-size: 15px; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+@media (max-height: 700px) {
+  .oven-wrap { width: 250px; height: 265px; }
+  .card { width: 210px; height: 300px; }
+  .logo .l2 { font-size: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; }
+}
+</style>
+</head>
+<body>
+<div id="game">
+
+  <button class="icon-btn" id="soundBtn" style="right:12px" title="사운드 켜기/끄기">🔊</button>
+
+  <!-- ================= 1. 타이틀 ================= -->
+  <section class="screen active" id="title">
+    <svg class="bg-svg" viewBox="0 0 480 860" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="castleG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff9ec"/><stop offset="1" stop-color="#f3d7a6"/>
+        </linearGradient>
+        <linearGradient id="roofG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff7aa8"/><stop offset="1" stop-color="#e0457d"/>
+        </linearGradient>
+      </defs>
+      <!-- 구름 -->
+      <g fill="#fff" opacity=".9">
+        <ellipse cx="80" cy="140" rx="60" ry="22"/><ellipse cx="115" cy="125" rx="40" ry="24"/>
+        <ellipse cx="390" cy="220" rx="70" ry="22"/><ellipse cx="360" cy="205" rx="40" ry="22"/>
+      </g>
+      <!-- 언덕 -->
+      <path d="M0 640 Q120 560 240 610 T480 590 V860 H0Z" fill="#8fd96b"/>
+      <path d="M0 700 Q140 640 260 690 T480 670 V860 H0Z" fill="#6cc24a"/>
+      <!-- 쿠키 성 -->
+      <g transform="translate(240 600)">
+        <rect x="-110" y="-150" width="220" height="150" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
+        <rect x="-150" y="-200" width="60" height="200" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
+        <rect x="90" y="-200" width="60" height="200" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
+        <rect x="-40" y="-260" width="80" height="120" fill="url(#castleG)" stroke="#8a4b22" stroke-width="4"/>
+        <path d="M-160 -200 L-120 -270 L-80 -200Z" fill="url(#roofG)" stroke="#8a4b22" stroke-width="4"/>
+        <path d="M80 -200 L120 -270 L160 -200Z" fill="url(#roofG)" stroke="#8a4b22" stroke-width="4"/>
+        <path d="M-52 -260 L0 -350 L52 -260Z" fill="url(#roofG)" stroke="#8a4b22" stroke-width="4"/>
+        <path d="M0 -350 v-30 l24 8 -24 8" fill="#ffcf3f" stroke="#8a4b22" stroke-width="3"/>
+        <path d="M-30 0 v-60 a30 30 0 0 1 60 0 v60Z" fill="#8a4b22"/>
+        <circle cx="0" cy="-200" r="16" fill="#ffcf3f" stroke="#8a4b22" stroke-width="3"/>
+        <circle cx="-120" cy="-140" r="10" fill="#6ec6ff" stroke="#8a4b22" stroke-width="3"/>
+        <circle cx="120" cy="-140" r="10" fill="#6ec6ff" stroke="#8a4b22" stroke-width="3"/>
+        <!-- 아이싱 -->
+        <path d="M-110 -150 q13 14 27 0 q14 14 27 0 q14 14 28 0 q13 14 28 0 q14 14 27 0 q14 14 27 0 q14 14 28 0 q13 14 28 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <!-- 사탕 나무 -->
+      <g transform="translate(60 660)"><rect x="-5" y="-10" width="10" height="50" fill="#fff" stroke="#8a4b22" stroke-width="3"/><circle r="30" cy="-30" fill="#ff8ab8" stroke="#8a4b22" stroke-width="3"/></g>
+      <g transform="translate(420 650)"><rect x="-5" y="-10" width="10" height="50" fill="#fff" stroke="#8a4b22" stroke-width="3"/><circle r="30" cy="-30" fill="#9be07a" stroke="#8a4b22" stroke-width="3"/></g>
+    </svg>
+
+    <div class="topbar"><div class="currency">💎 <span class="crystalCount">0</span></div></div>
+
+    <div class="logo">
+      <div class="l1">COOKIE RUN</div>
+      <div class="l2">KINGDOM</div>
+      <div class="l3">🍪 쿠키 뽑기 시뮬레이터</div>
+    </div>
+
+    <button class="btn start-btn" id="startBtn">쿠키 뽑기 시작하기</button>
+    <div class="notice">팬메이드 시뮬레이터 · 실제 게임과 무관하며 실제 재화가 사용되지 않습니다</div>
+  </section>
+
+  <!-- ================= 2. 환영 연출 ================= -->
+  <section class="screen" id="welcome">
+    <div class="rays"></div>
+    <svg class="gnome" viewBox="0 0 200 220" aria-hidden="true">
+      <!-- 설탕노움 느낌의 안내 캐릭터 -->
+      <path d="M100 8 L150 110 H50Z" fill="#e8413c" stroke="#4a2511" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="100" cy="10" r="10" fill="#fff" stroke="#4a2511" stroke-width="5"/>
+      <ellipse cx="100" cy="140" rx="58" ry="52" fill="#ffdcb0" stroke="#4a2511" stroke-width="6"/>
+      <path d="M44 150 Q100 240 156 150 Q140 180 100 182 Q60 180 44 150Z" fill="#fff" stroke="#4a2511" stroke-width="6"/>
+      <circle cx="80" cy="132" r="7" fill="#4a2511"/><circle cx="120" cy="132" r="7" fill="#4a2511"/>
+      <circle cx="82" cy="129" r="2.5" fill="#fff"/><circle cx="122" cy="129" r="2.5" fill="#fff"/>
+      <ellipse cx="100" cy="148" rx="12" ry="9" fill="#ff9a8a" stroke="#4a2511" stroke-width="4"/>
+      <ellipse cx="66" cy="150" rx="9" ry="5" fill="#ff9a8a" opacity=".7"/><ellipse cx="134" cy="150" rx="9" ry="5" fill="#ff9a8a" opacity=".7"/>
+      <path d="M40 108 H160" stroke="#4a2511" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+    <div class="speech">자, 그럼 이제부터<br><b>뽑겠습니다!</b></div>
+  </section>
+
+  <!-- ================= 3. 뽑기 (오븐) ================= -->
+  <section class="screen" id="gacha">
+    <div class="wall"></div>
+    <button class="icon-btn" id="homeBtn" style="left:12px" title="처음으로">🏠</button>
+    <div class="topbar">
+      <div class="currency">💎 <span class="crystalCount">0</span><span class="plus" id="refillBtn" title="크리스탈 충전">+</span></div>
+    </div>
+    <div class="banner">
+      <h2>🍪 쿠키 뽑기</h2>
+      <p>오븐에서 어떤 쿠키가 구워져 나올까요?</p>
+    </div>
+
+    <div class="oven-wrap" id="ovenWrap">
+      <svg viewBox="0 0 300 320" aria-hidden="true">
+        <defs>
+          <linearGradient id="ovenBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f2c083"/><stop offset="1" stop-color="#c47a3a"/>
+          </linearGradient>
+          <radialGradient id="ovenInner" cx=".5" cy=".6" r=".6">
+            <stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#7a2c05"/>
+          </radialGradient>
+          <linearGradient id="doorG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#8a4b22"/><stop offset="1" stop-color="#5b2d10"/>
+          </linearGradient>
+        </defs>
+        <!-- 굴뚝 -->
+        <rect x="200" y="10" width="36" height="60" fill="#b8764a" stroke="#4a2511" stroke-width="5"/>
+        <rect x="194" y="4" width="48" height="16" rx="4" fill="#8a4b22" stroke="#4a2511" stroke-width="5"/>
+        <!-- 몸체(돔형 화덕) -->
+        <path d="M20 300 V150 Q20 40 150 40 Q280 40 280 150 V300Z" fill="url(#ovenBody)" stroke="#4a2511" stroke-width="6"/>
+        <!-- 벽돌 무늬 -->
+        <g stroke="#a8622b" stroke-width="3" fill="none" opacity=".7">
+          <path d="M40 120 H100 M130 90 H200 M210 130 H265 M35 200 H80 M230 210 H270 M40 270 H70 M240 280 H270"/>
+        </g>
+        <!-- 아이싱 -->
+        <path d="M34 110 Q60 130 80 106 Q100 130 124 102 Q150 128 176 102 Q200 130 220 106 Q240 130 266 110" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+        <!-- 입구 내부 -->
+        <path d="M70 256 V190 Q70 140 150 140 Q230 140 230 190 V256Z" fill="url(#ovenInner)" stroke="#4a2511" stroke-width="6"/>
+        <ellipse id="ovenGlow" cx="150" cy="210" rx="70" ry="45" fill="#ffcf3f" opacity=".0"/>
+        <!-- 문 -->
+        <g id="ovenDoor">
+          <path d="M70 256 V190 Q70 140 150 140 Q230 140 230 190 V256Z" fill="url(#doorG)" stroke="#4a2511" stroke-width="6"/>
+          <path d="M100 240 V195 Q100 165 150 165 Q200 165 200 195 V240Z" fill="#2a1406" stroke="#4a2511" stroke-width="4" opacity=".85"/>
+          <path id="doorWindowGlow" d="M100 240 V195 Q100 165 150 165 Q200 165 200 195 V240Z" fill="#ffcf3f" opacity=".15"/>
+          <rect x="120" y="244" width="60" height="10" rx="5" fill="#ffcf3f" stroke="#4a2511" stroke-width="3"/>
+        </g>
+        <!-- 받침 -->
+        <rect x="10" y="296" width="280" height="20" rx="8" fill="#8a4b22" stroke="#4a2511" stroke-width="5"/>
+        <!-- 다이얼 -->
+        <circle cx="45" cy="165" r="12" fill="#ffcf3f" stroke="#4a2511" stroke-width="4"/>
+        <circle cx="255" cy="165" r="12" fill="#ffcf3f" stroke="#4a2511" stroke-width="4"/>
+      </svg>
+    </div>
+
+    <div class="pull-row">
+      <button class="btn orange pull-btn" id="pull1">
+        <span>1회 뽑기</span><span class="cost">💎 300</span>
+      </button>
+      <button class="btn pull-btn" id="pull10">
+        <span>10회 뽑기</span><span class="cost">💎 3,000</span>
+      </button>
+    </div>
+    <div class="info-row">
+      <span class="pity">에픽 이상 확정까지 <b id="pityLeft">100</b>회</span>
+      <button class="btn brown small" id="rateBtn">확률 정보</button>
+      <button class="btn brown small" id="bookBtn">도감</button>
+    </div>
+  </section>
+
+  <!-- ================= 4. 결과 목록 ================= -->
+  <section class="screen" id="result">
+    <h2>✨ 뽑기 결과 ✨</h2>
+    <div class="summary" id="summary"></div>
+    <div class="grid" id="grid"></div>
+    <div class="result-actions">
+      <button class="btn brown" id="viewAllBtn">한 장씩 보기</button>
+      <button class="btn orange" id="againBtn">다시 뽑기</button>
+    </div>
+  </section>
+
+  <!-- 뽑기 연출 오버레이 -->
+  <div id="reveal">
+    <div class="flash" id="flash"></div>
+    <div class="burst" id="burst"></div>
+    <div class="counter" id="counter"></div>
+    <button class="btn small brown skip-btn" id="skipBtn">SKIP ▶▶</button>
+    <div id="revealCardHolder"></div>
+    <div class="tap-hint" id="tapHint">화면을 터치해 계속</div>
+  </div>
+
+  <!-- 카드 한 장씩 보기 -->
+  <div class="modal" id="viewer">
+    <button class="btn small brown close-x" id="viewerClose">닫기 ✕</button>
+    <div class="viewer-nav">
+      <button class="nav-arrow" id="prevBtn" aria-label="이전">◀</button>
+      <div id="viewerCard"></div>
+      <button class="nav-arrow" id="nextBtn" aria-label="다음">▶</button>
+    </div>
+    <div class="viewer-count" id="viewerCount"></div>
+    <div class="viewer-desc" id="viewerDesc"></div>
+  </div>
+
+  <!-- 확률 정보 / 도감 -->
+  <div class="modal" id="infoModal">
+    <div class="panel" id="infoPanel"></div>
+    <button class="btn small brown" style="margin-top:12px" id="infoClose">닫기</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* =========================================================
+   설정
+   ========================================================= */
+const CONFIG = {
+  START_CRYSTALS: 30000,
+  COST_1: 300,
+  COST_10: 3000,
+  EPIC_PITY: 100,            // 100회 내 에픽 이상 쿠키 확정
+  // true 로 바꾸고 assets/cookies/<id>.png, assets/bgm.mp3 를 넣으면 직접 준비한 이미지·음악을 사용
+  USE_LOCAL_ASSETS: false,
+};
+
+/* =========================================================
+   등급 & 확률
+   - 2025.01 공식 확률 개편 기준 합산치(레전더리/드래곤/에인션트 ≈ 4.30%,
+     슈퍼에픽 ≈ 2.40%)에 맞춰 쿠키/영혼석 비율을 배분한 근사값
+   ========================================================= */
+const RARITIES = {
+  common:    { label: '커먼',     color: 'var(--r-common)',    hex: '#b9a58d', rank: 0, cookie: 5.00, soul: 32.70, ss: [1, 3] },
+  rare:      { label: '레어',     color: 'var(--r-rare)',      hex: '#4fb0ff', rank: 1, cookie: 3.50, soul: 28.00, ss: [1, 3] },
+  epic:      { label: '에픽',     color: 'var(--r-epic)',      hex: '#d45cff', rank: 2, cookie: 2.40, soul: 21.50, ss: [1, 3] },
+  superepic: { label: '슈퍼에픽', color: 'var(--r-superepic)', hex: '#ff4f6d', rank: 3, cookie: 0.36, soul: 2.04,  ss: [1, 2] },
+  legendary: { label: '레전더리', color: 'var(--r-legendary)', hex: '#3ff0d0', rank: 4, cookie: 0.35, soul: 1.80,  ss: [1, 2] },
+  dragon:    { label: '드래곤',   color: 'var(--r-dragon)',    hex: '#ff3b1f', rank: 4, cookie: 0.10, soul: 0.50,  ss: [1, 2] },
+  ancient:   { label: '에인션트', color: 'var(--r-ancient)',   hex: '#ffe066', rank: 5, cookie: 0.30, soul: 1.20,  ss: [1, 2] },
+  beast:     { label: '비스트',   color: 'var(--r-beast)',     hex: '#8b2cff', rank: 6, cookie: 0.15, soul: 0.10,  ss: [1, 1] },
+};
+const DUP_SOULSTONES = { common: 20, rare: 20, epic: 20, superepic: 20, legendary: 20, dragon: 20, ancient: 20, beast: 20 };
+
+/* =========================================================
+   쿠키 목록 (공식 한국어 명칭 기준)
+   b: 몸 색, h: 머리/모자 색, a: 포인트 색, acc: 액세서리 종류
+   ========================================================= */
+const COOKIES = [
+  // 커먼
+  { id: 'gingerbrave',  name: '용감한 쿠키',     r: 'common', b: '#e0a060', h: '#e0a060', a: '#e8413c', acc: 'none',   desc: '쿠키 오븐을 탈출한 용감한 첫 번째 쿠키.' },
+  { id: 'strawberry',   name: '딸기맛 쿠키',     r: 'common', b: '#f4c79a', h: '#ff5a6e', a: '#6fd13a', acc: 'strawberry', desc: '수줍음 많지만 힘이 센 딸기 머리 쿠키.' },
+  { id: 'wizard',       name: '마법사맛 쿠키',   r: 'common', b: '#e8b77a', h: '#4b5bd6', a: '#ffcf3f', acc: 'wizardhat', desc: '마법 공부에 열심인 견습 마법사.' },
+  { id: 'angel',        name: '천사맛 쿠키',     r: 'common', b: '#fff1dc', h: '#ffe07a', a: '#ffffff', acc: 'halo',   desc: '구름 위에서 내려온 상냥한 천사.' },
+  { id: 'muscle',       name: '근육맛 쿠키',     r: 'common', b: '#d88a4a', h: '#5b2d10', a: '#e8413c', acc: 'band',   desc: '운동을 멈추지 않는 근육 쿠키.' },
+  { id: 'ninja',        name: '닌자맛 쿠키',     r: 'common', b: '#e0a060', h: '#3b3b4f', a: '#e8413c', acc: 'mask',   desc: '그림자처럼 움직이는 닌자.' },
+  { id: 'knight',       name: '기사맛 쿠키',     r: 'common', b: '#e8b77a', h: '#b8c2cc', a: '#4b5bd6', acc: 'helmet', desc: '왕국을 지키는 충직한 기사.' },
+  { id: 'beet',         name: '비트맛 쿠키',     r: 'common', b: '#e0a060', h: '#b3265a', a: '#6fd13a', acc: 'leaf',   desc: '백발백중 비트 궁수.' },
+  // 레어
+  { id: 'cherry',       name: '체리맛 쿠키',     r: 'rare', b: '#f4c79a', h: '#d6203a', a: '#3f9a18', acc: 'cherry',  desc: '체리 폭탄을 던지는 폭발 전문가.' },
+  { id: 'blackberry',   name: '블랙베리맛 쿠키', r: 'rare', b: '#e8c0a0', h: '#3a1d5c', a: '#6fd13a', acc: 'leaf',    desc: '저주의 힘을 다루는 블랙베리.' },
+  { id: 'rye',          name: '호밀맛 쿠키',     r: 'rare', b: '#d8a066', h: '#8a4b22', a: '#e0c060', acc: 'cowboy',  desc: '서부의 명사수 호밀.' },
+  { id: 'snowsugar',    name: '눈설탕맛 쿠키',   r: 'rare', b: '#fff6f0', h: '#9fd8ff', a: '#ffffff', acc: 'snow',    desc: '눈송이처럼 새하얀 눈설탕.' },
+  { id: 'custard',      name: '커스터드 3세맛 쿠키', r: 'rare', b: '#f6d48a', h: '#ffcf3f', a: '#e8413c', acc: 'crown', desc: '꼬마 왕 커스터드 3세.' },
+  { id: 'carrot',       name: '당근맛 쿠키',     r: 'rare', b: '#f4b070', h: '#ff8a1f', a: '#3f9a18', acc: 'leaf',    desc: '곡괭이를 든 부지런한 당근.' },
+  // 에픽
+  { id: 'espresso',     name: '에스프레소맛 쿠키', r: 'epic', b: '#d8a066', h: '#3b1d0c', a: '#ffcf3f', acc: 'glasses', desc: '커피콩 마법을 연구하는 천재 마법사.' },
+  { id: 'madeleine',    name: '마들렌맛 쿠키',   r: 'epic', b: '#f6d48a', h: '#ffe07a', a: '#4b5bd6', acc: 'helmet',  desc: '빛의 방패를 든 기사 마들렌.' },
+  { id: 'darkchoco',    name: '다크초코 쿠키',   r: 'epic', b: '#7a4a2a', h: '#1e1010', a: '#d6203a', acc: 'horns',   desc: '어둠의 검을 든 고독한 방랑자.' },
+  { id: 'licorice',     name: '감초맛 쿠키',     r: 'epic', b: '#6b5a7a', h: '#1a1a2a', a: '#7fffd4', acc: 'hood',    desc: '해골 병사를 부리는 흑마법사.' },
+  { id: 'pomegranate',  name: '석류맛 쿠키',     r: 'epic', b: '#f0c0b0', h: '#8a0f2a', a: '#ffcf3f', acc: 'hood',    desc: '석류 신전의 수호 사제.' },
+  { id: 'latte',        name: '라떼맛 쿠키',     r: 'epic', b: '#f0dcc0', h: '#c49a6c', a: '#fff5e0', acc: 'flower',  desc: '라떼 아트 마법으로 적을 밀어내는 마법사.' },
+  { id: 'vampire',      name: '뱀파이어맛 쿠키', r: 'epic', b: '#e8d0d0', h: '#2a0f1a', a: '#d6203a', acc: 'cape',    desc: '포도주스를 사랑하는 뱀파이어.' },
+  { id: 'herb',         name: '허브맛 쿠키',     r: 'epic', b: '#f0dcb0', h: '#7ac74f', a: '#ffffff', acc: 'leaf',    desc: '식물을 사랑하는 정원사 힐러.' },
+  { id: 'mintchoco',    name: '민트초코 쿠키',   r: 'epic', b: '#b8f0d8', h: '#3b1d0c', a: '#7fffd4', acc: 'violin',  desc: '바이올린으로 치유의 선율을 연주한다.' },
+  { id: 'cherryblossom',name: '벚꽃맛 쿠키',     r: 'epic', b: '#fff0f4', h: '#ffb0c8', a: '#ff6fa0', acc: 'flower',  desc: '벚꽃잎을 흩날리는 봄의 쿠키.' },
+  { id: 'chilipepper',  name: '칠리맛 쿠키',     r: 'epic', b: '#f4b070', h: '#e8413c', a: '#3f9a18', acc: 'mask',    desc: '재빠른 손놀림의 도적.' },
+  // 슈퍼에픽
+  { id: 'clottedcream', name: '클로티드크림 쿠키', r: 'superepic', b: '#fff8e8', h: '#ffe9b0', a: '#ffcf3f', acc: 'crown', desc: '영원한 시간을 기록하는 황제.' },
+  { id: 'burntcheese',  name: '번트치즈 쿠키',   r: 'superepic', b: '#e8a84a', h: '#6b3408', a: '#ff7a1f', acc: 'horns',  desc: '불타는 치즈 검을 휘두르는 전사.' },
+  { id: 'elderfaerie',  name: '엘더페어리 쿠키', r: 'superepic', b: '#f0fff0', h: '#bdf5a0', a: '#ffcf3f', acc: 'wings',  desc: '요정 왕국을 다스리는 고귀한 요정왕.' },
+  // 레전더리
+  { id: 'seafairy',     name: '바다요정 쿠키',   r: 'legendary', b: '#e0f6ff', h: '#6fb8ff', a: '#ffffff', acc: 'shell', desc: '바다의 모든 것을 품은 요정.' },
+  { id: 'frostqueen',   name: '서리여왕 쿠키',   r: 'legendary', b: '#eaf6ff', h: '#b0dcff', a: '#4fb0ff', acc: 'crown', desc: '얼음 왕좌에 앉은 서리의 여왕.' },
+  { id: 'moonlight',    name: '달빛술사 쿠키',   r: 'legendary', b: '#e8e4ff', h: '#6a5acd', a: '#ffe07a', acc: 'moon',  desc: '꿈과 달빛을 다스리는 술사.' },
+  { id: 'windarcher',   name: '바람의 궁수 쿠키', r: 'legendary', b: '#f4ffe8', h: '#9be07a', a: '#ffffff', acc: 'leaf',  desc: '바람과 함께 활을 쏘는 전설의 궁수.' },
+  { id: 'firespirit',   name: '불꽃정령 쿠키',   r: 'legendary', b: '#ffe0c0', h: '#ff5a1f', a: '#ffcf3f', acc: 'flame', desc: '타오르는 불꽃 그 자체인 정령.' },
+  { id: 'stardust',     name: '별가루 쿠키',     r: 'legendary', b: '#fff8e0', h: '#ffd76b', a: '#ffffff', acc: 'star',  desc: '별빛을 노래하는 방랑 시인.' },
+  // 드래곤
+  { id: 'pitayadragon', name: '용과맛 쿠키',     r: 'dragon', b: '#ffd0e8', h: '#ff3f9a', a: '#6fd13a', acc: 'dragonhorns', desc: '만물을 키우는 풍요의 용.' },
+  { id: 'redvelvet',    name: '레드벨벳 드래곤 쿠키', r: 'dragon', b: '#ffd8d0', h: '#b3122a', a: '#1e1010', acc: 'dragonhorns', desc: '탐욕의 힘을 지닌 붉은 용.' },
+  // 에인션트
+  { id: 'purevanilla',  name: '퓨어바닐라 쿠키', r: 'ancient', b: '#fff8e8', h: '#fff0c0', a: '#ffcf3f', acc: 'halo',  desc: '선함의 영혼석을 지닌 현자.' },
+  { id: 'hollyberry',   name: '홀리베리 쿠키',   r: 'ancient', b: '#ffe0e0', h: '#d6203a', a: '#ffcf3f', acc: 'crown', desc: '용기의 영혼석을 지닌 홀리베리 왕국의 여왕.' },
+  { id: 'darkcacao',    name: '다크카카오 쿠키', r: 'ancient', b: '#9a6a4a', h: '#1e1010', a: '#b8c2cc', acc: 'crown', desc: '결단의 영혼석을 지닌 다크카카오 왕국의 왕.' },
+  { id: 'goldencheese', name: '골든치즈 쿠키',   r: 'ancient', b: '#fff0b0', h: '#ffcf3f', a: '#ffffff', acc: 'wings', desc: '영광의 영혼석을 지닌 황금 치즈 왕국의 여왕.' },
+  { id: 'whitelily',    name: '화이트릴리 쿠키', r: 'ancient', b: '#ffffff', h: '#f0f0ff', a: '#b0e0a0', acc: 'flower', desc: '지혜의 영혼석을 지닌 다섯 번째 영웅.' },
+  // 비스트
+  { id: 'shadowmilk',   name: '섀도우밀크 쿠키', r: 'beast', b: '#dfe6ff', h: '#1a2a6a', a: '#6fd0ff', acc: 'jester', desc: '기만의 비스트, 광대 가면 뒤에 숨은 거짓의 화신.' },
+  { id: 'eternalsugar', name: '이터널슈가 쿠키', r: 'beast', b: '#fff0f8', h: '#ffb0dc', a: '#ffe07a', acc: 'horns',  desc: '나태의 비스트, 영원한 꿈속에 잠든 자.' },
+  { id: 'mysticflour',  name: '미스틱플라워 쿠키', r: 'beast', b: '#fffef0', h: '#e8e0c0', a: '#ffcf3f', acc: 'halo', desc: '공허의 비스트, 모든 것을 무(無)로 돌리려 한다.' },
+  { id: 'burningspice', name: '버닝스파이스 쿠키', r: 'beast', b: '#ffcfa0', h: '#b3122a', a: '#ff7a1f', acc: 'flame', desc: '파멸의 비스트, 세상을 불태우는 자.' },
+  { id: 'silentsalt',   name: '사일런트솔트 쿠키', r: 'beast', b: '#e8e8f0', h: '#2a2a3a', a: '#b8c2cc', acc: 'hood', desc: '침묵의 비스트, 존재 자체가 고요함인 자.' },
+];
+const BY_RARITY = {};
+COOKIES.forEach(c => (BY_RARITY[c.r] ||= []).push(c));
+
+/* =========================================================
+   저장 (브라우저 로컬 · 실패해도 동작)
+   ========================================================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('crk_gacha_' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('crk_gacha_' + k, JSON.stringify(v)); } catch {} },
+};
+const state = {
+  crystals: store.get('crystals', CONFIG.START_CRYSTALS),
+  pity: store.get('pity', 0),
+  owned: store.get('owned', {}),      // id -> true
+  souls: store.get('souls', {}),      // id -> count
+  lastResults: [],
+  muted: store.get('muted', false),
+};
+function save() {
+  store.set('crystals', state.crystals); store.set('pity', state.pity);
+  store.set('owned', state.owned); store.set('souls', state.souls); store.set('muted', state.muted);
+}
+
+/* =========================================================
+   사운드 (Web Audio 합성 — 외부 음원 없이 동작)
+   ========================================================= */
+const Sound = (() => {
+  let ctx, master, bgmTimer, bgmOn = false, bgmAudio;
+  const N = n => 440 * Math.pow(2, (n - 69) / 12);
+  function init() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = state.muted ? 0 : .5; master.connect(ctx.destination);
+  }
+  function tone(midi, t, dur, type = 'triangle', vol = .25, dest = master) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = N(midi);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + .05);
+  }
+  function noise(t, dur, vol = .2, freq = 800) {
+    const len = ctx.sampleRate * dur, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = vol;
+    s.buffer = buf; s.connect(f); f.connect(g); g.connect(master); s.start(t);
+  }
+  const seq = (notes, step, type, vol, start = 0) => {
+    const t0 = ctx.currentTime + start;
+    notes.forEach((n, i) => n != null && tone(n, t0 + i * step, step * 1.8, type, vol));
+  };
+  const api = {
+    unlock() { init(); if (ctx.state === 'suspended') ctx.resume(); },
+    setMuted(m) {
+      if (!ctx) return;
+      master.gain.setTargetAtTime(m ? 0 : .5, ctx.currentTime, .05);
+      if (bgmAudio) bgmAudio.muted = m;
+    },
+    click() { if (!ctx) return; seq([84, 91], .05, 'square', .12); },
+    welcome() {
+      if (!ctx) return;
+      seq([72, 76, 79, 84, null, 79, 84, 88], .11, 'square', .15);
+      seq([48, null, 55, null, 60, null, 60, 64], .11, 'triangle', .25);
+      noise(ctx.currentTime, .4, .15, 3000);
+    },
+    rumble(dur = 1.1) {
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(55, t); o.frequency.linearRampToValueAtTime(110, t + dur);
+      g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.12, t + .2); g.gain.linearRampToValueAtTime(.0001, t + dur);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .1);
+      for (let i = 0; i < 6; i++) tone(72 + i * 2, t + i * dur / 6, .08, 'sine', .06);
+    },
+    ding() { if (!ctx) return; seq([96, 100], .09, 'sine', .25); noise(ctx.currentTime, .25, .1, 5000); },
+    flip() { if (!ctx) return; noise(ctx.currentTime, .15, .25, 1500); },
+    reveal(r) {
+      if (!ctx) return;
+      const rank = RARITIES[r].rank;
+      if (rank <= 1) seq([79, 84], .08, 'triangle', .2);
+      else if (rank === 2) seq([76, 79, 83, 88], .08, 'square', .14);
+      else if (r === 'beast') {
+        seq([45, 44, 45, 51, 57, 56, 57, 63], .13, 'sawtooth', .12);
+        seq([69, 68, 69, 75, 81], .13, 'square', .08, .5);
+        noise(ctx.currentTime, 1.2, .25, 200);
+      } else {
+        seq([72, 76, 79, 84, 88, 91, 96], .07, 'square', .13);
+        seq([60, 64, 67, 72], .2, 'triangle', .22, .45);
+        noise(ctx.currentTime + .45, .8, .12, 6000);
+      }
+    },
+    bgm(on) {
+      if (!ctx) return;
+      if (CONFIG.USE_LOCAL_ASSETS) {
+        if (!bgmAudio) { bgmAudio = new Audio('assets/bgm.mp3'); bgmAudio.loop = true; bgmAudio.volume = .4; bgmAudio.muted = state.muted; }
+        on ? bgmAudio.play().catch(() => {}) : bgmAudio.pause();
+        return;
+      }
+      if (on === bgmOn) return;
+      bgmOn = on; clearTimeout(bgmTimer);
+      if (!on) return;
+      // 동화풍 왈츠 루프
+      const mel = [76,79,84, 83,79,76, 74,77,81, 79,77,74, 72,76,79, 81,79,76, 74,79,77, 72,null,null];
+      const bass = [48,55,60, 43,50,55, 50,57,62, 43,50,55];
+      const step = .22;
+      const loop = () => {
+        if (!bgmOn) return;
+        const t0 = ctx.currentTime + .05;
+        mel.forEach((n, i) => n != null && tone(n, t0 + i * step, step * 1.6, 'triangle', .06));
+        bass.forEach((n, i) => tone(n, t0 + i * step * 2, step * 1.9, 'sine', .07));
+        bgmTimer = setTimeout(loop, mel.length * step * 1000);
+      };
+      loop();
+    },
+  };
+  return api;
+})();
+
+/* =========================================================
+   SVG 아트 (쿠키 & 영혼석)
+   ========================================================= */
+function accessorySVG(c) {
+  const a = c.a, h = c.h, s = 'stroke="#4a2511" stroke-width="4" stroke-linejoin="round"';
+  switch (c.acc) {
+    case 'strawberry': return `<path d="M60 40 Q100 -5 140 40 Q100 55 60 40Z" fill="${h}" ${s}/><path d="M85 12 l15 10 15-10" fill="none" stroke="${a}" stroke-width="6" stroke-linecap="round"/>`;
+    case 'wizardhat':  return `<path d="M50 48 L100 -20 L150 48Z" fill="${h}" ${s}/><circle cx="100" cy="18" r="6" fill="${a}"/><circle cx="118" cy="36" r="4" fill="${a}"/>`;
+    case 'halo':       return `<ellipse cx="100" cy="8" rx="34" ry="9" fill="none" stroke="${a === '#ffffff' ? '#ffd76b' : a}" stroke-width="6"/>`;
+    case 'band':       return `<rect x="55" y="38" width="90" height="12" rx="4" fill="${a}" ${s}/>`;
+    case 'mask':       return `<rect x="52" y="54" width="96" height="16" rx="6" fill="${h}" ${s}/><path d="M146 58 l18 -8 -4 16Z" fill="${a}"/>`;
+    case 'helmet':     return `<path d="M52 60 Q52 10 100 10 Q148 10 148 60 H130 V44 H70 V60Z" fill="${h}" ${s}/><path d="M100 10 V-10 q16 4 20 18" fill="none" stroke="${a}" stroke-width="7" stroke-linecap="round"/>`;
+    case 'leaf':       return `<path d="M100 22 Q86 -6 100 -16 Q118 -2 100 22Z" fill="${a === '#ffffff' ? '#6fd13a' : a}" ${s}/>`;
+    case 'cherry':     return `<path d="M100 18 Q110 -6 128 -10" fill="none" stroke="${a}" stroke-width="5"/><circle cx="130" cy="0" r="12" fill="${h}" ${s}/>`;
+    case 'cowboy':     return `<ellipse cx="100" cy="38" rx="66" ry="12" fill="${h}" ${s}/><path d="M70 38 Q70 0 100 0 Q130 0 130 38Z" fill="${h}" ${s}/><rect x="70" y="26" width="60" height="8" fill="${a}"/>`;
+    case 'snow':       return `<g stroke="${h}" stroke-width="5" stroke-linecap="round"><path d="M140 10 v26 M127 23 h26 M131 14 l18 18 M149 14 l-18 18"/></g>`;
+    case 'crown':      return `<path d="M64 36 L70 2 L86 22 L100 -4 L114 22 L130 2 L136 36Z" fill="${a}" ${s}/><circle cx="100" cy="24" r="6" fill="#e8413c" stroke="#4a2511" stroke-width="2"/>`;
+    case 'glasses':    return `<g fill="rgba(255,255,255,.5)" ${s}><circle cx="82" cy="72" r="13"/><circle cx="118" cy="72" r="13"/></g><path d="M95 72 h10" stroke="#4a2511" stroke-width="4"/>`;
+    case 'horns':      return `<path d="M62 36 Q40 10 52 -8 Q62 16 78 26Z" fill="${a}" ${s}/><path d="M138 36 Q160 10 148 -8 Q138 16 122 26Z" fill="${a}" ${s}/>`;
+    case 'dragonhorns':return `<path d="M64 34 Q46 0 70 -16 Q70 12 82 24Z" fill="${a}" ${s}/><path d="M136 34 Q154 0 130 -16 Q130 12 118 24Z" fill="${a}" ${s}/><path d="M44 60 l-16 -6 10 18Z M156 60 l16 -6 -10 18Z" fill="${h}" ${s}/>`;
+    case 'hood':       return `<path d="M44 90 Q40 0 100 0 Q160 0 156 90 Q150 40 100 36 Q50 40 44 90Z" fill="${h}" ${s}/><circle cx="100" cy="30" r="5" fill="${a}"/>`;
+    case 'flower':     return `<g transform="translate(138 30)"><g fill="${h}" stroke="#4a2511" stroke-width="3">${[0,72,144,216,288].map(r=>`<ellipse rx="7" ry="12" cy="-10" transform="rotate(${r})"/>`).join('')}</g><circle r="6" fill="${a === '#ffffff' ? '#ffcf3f' : a}" stroke="#4a2511" stroke-width="3"/></g>`;
+    case 'cape':       return `<path d="M40 110 L20 190 L60 170 Z M160 110 L180 190 L140 170Z" fill="${a}" ${s}/><path d="M60 40 Q100 20 140 40" fill="none" stroke="${a}" stroke-width="6"/>`;
+    case 'violin':     return `<g transform="translate(160 150) rotate(20)"><ellipse rx="14" ry="22" fill="#b8641e" stroke="#4a2511" stroke-width="3"/><rect x="-3" y="-44" width="6" height="26" fill="#4a2511"/></g>`;
+    case 'wings':      return `<path d="M50 120 Q0 80 10 40 Q40 70 56 100Z M150 120 Q200 80 190 40 Q160 70 144 100Z" fill="${a === '#ffffff' ? '#fff8c0' : a}" opacity=".85" ${s}/>`;
+    case 'shell':      return `<path d="M76 30 Q100 -12 124 30Z" fill="${a}" ${s}/><path d="M100 28 V4 M88 28 L92 10 M112 28 L108 10" stroke="#4a2511" stroke-width="3"/>`;
+    case 'moon':       return `<path d="M120 -4 A26 26 0 1 0 146 30 A20 20 0 1 1 120 -4Z" fill="${a}" ${s}/>`;
+    case 'flame':      return `<path d="M100 32 Q70 10 88 -20 Q92 0 100 -6 Q104 -26 118 -30 Q112 0 130 8 Q126 26 100 32Z" fill="${a}" ${s}/>`;
+    case 'star':       return `<path d="M100 -18 l8 16 18 3 -13 12 3 18 -16 -9 -16 9 3 -18 -13 -12 18 -3Z" fill="${h}" ${s}/>`;
+    case 'jester':     return `<path d="M56 44 Q40 0 20 10 Q50 20 70 36Z M144 44 Q160 0 180 10 Q150 20 130 36Z M86 36 Q100 -20 114 36Z" fill="${h}" ${s}/><circle cx="20" cy="10" r="6" fill="${a}"/><circle cx="180" cy="10" r="6" fill="${a}"/><circle cx="100" cy="-10" r="6" fill="${a}"/>`;
+    default: return '';
+  }
+}
+function cookieSVG(c) {
+  const hair = `<path d="M54 76 Q48 22 100 20 Q152 22 146 76 Q140 46 100 44 Q60 46 54 76Z" fill="${c.h}" stroke="#4a2511" stroke-width="4"/>`;
+  const behind = ['wings', 'cape', 'hood'].includes(c.acc) ? accessorySVG(c) : '';
+  const front = ['wings', 'cape', 'hood'].includes(c.acc) ? '' : accessorySVG(c);
+  return `<svg viewBox="0 -30 200 250" xmlns="http://www.w3.org/2000/svg">
+    ${behind}
+    <!-- 몸 (진저브레드 실루엣) -->
+    <path d="M100 18 C60 18 48 50 50 80 C50 98 58 108 70 112 L40 130 C22 140 30 166 50 158 L68 150 L60 196 C56 216 84 220 88 200 L100 170 L112 200 C116 220 144 216 140 196 L132 150 L150 158 C170 166 178 140 160 130 L130 112 C142 108 150 98 150 80 C152 50 140 18 100 18Z"
+      fill="${c.b}" stroke="#4a2511" stroke-width="5" stroke-linejoin="round"/>
+    ${hair}
+    <!-- 아이싱 -->
+    <path d="M44 138 q6 -8 12 0 M144 138 q6 -8 12 0 M74 196 q6 -8 12 0 M114 196 q6 -8 12 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    <!-- 단추 -->
+    <circle cx="100" cy="130" r="6" fill="${c.a}" stroke="#4a2511" stroke-width="3"/>
+    <circle cx="100" cy="150" r="6" fill="${c.a}" stroke="#4a2511" stroke-width="3"/>
+    <!-- 얼굴 -->
+    <ellipse cx="84" cy="74" rx="6" ry="8" fill="#2a1406"/><ellipse cx="116" cy="74" rx="6" ry="8" fill="#2a1406"/>
+    <circle cx="86" cy="71" r="2.2" fill="#fff"/><circle cx="118" cy="71" r="2.2" fill="#fff"/>
+    <ellipse cx="72" cy="88" rx="7" ry="4" fill="#ff8a8a" opacity=".6"/><ellipse cx="128" cy="88" rx="7" ry="4" fill="#ff8a8a" opacity=".6"/>
+    <path d="M90 92 Q100 102 110 92" fill="none" stroke="#2a1406" stroke-width="4" stroke-linecap="round"/>
+    ${front}
+  </svg>`;
+}
+function soulstoneSVG(c) {
+  const col = RARITIES[c.r].hex;
+  return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="ssg-${c.id}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${col}"/><stop offset="1" stop-color="#2a1406" stop-opacity=".6"/>
+    </linearGradient></defs>
+    <path d="M100 10 L170 70 L150 190 L50 190 L30 70Z" fill="url(#ssg-${c.id})" stroke="#4a2511" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M100 10 L100 190 M30 70 L170 70 M100 10 L60 70 L100 190 M100 10 L140 70 L100 190" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="3"/>
+    <g transform="translate(68 78) scale(.32)" opacity=".9">
+      <path d="M100 18 C60 18 48 50 50 80 C50 98 58 108 70 112 L40 130 C22 140 30 166 50 158 L68 150 L60 196 C56 216 84 220 88 200 L100 170 L112 200 C116 220 144 216 140 196 L132 150 L150 158 C170 166 178 140 160 130 L130 112 C142 108 150 98 150 80 C152 50 140 18 100 18Z" fill="${c.h}" stroke="#fff" stroke-width="10"/>
+    </g>
+    <path d="M60 40 L80 30 L70 60Z" fill="#fff" opacity=".7"/>
+  </svg>`;
+}
+function artFor(item) {
+  const svg = item.type === 'cookie' ? cookieSVG(item.cookie) : soulstoneSVG(item.cookie);
+  if (!CONFIG.USE_LOCAL_ASSETS || item.type !== 'cookie') return svg;
+  // 로컬 이미지가 있으면 사용, 없으면 SVG로 대체
+  const fallback = encodeURIComponent(svg);
+  return `<img src="assets/cookies/${item.cookie.id}.png" alt="${item.cookie.name}" onerror="this.outerHTML=decodeURIComponent('${fallback}')">`;
+}
+
+/* =========================================================
+   뽑기 로직
+   ========================================================= */
+const TABLE = [];
+Object.entries(RARITIES).forEach(([r, v]) => {
+  TABLE.push({ r, type: 'cookie', w: v.cookie });
+  TABLE.push({ r, type: 'soul', w: v.soul });
+});
+const TOTAL_W = TABLE.reduce((s, x) => s + x.w, 0);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+function roll(filter) {
+  const table = filter ? TABLE.filter(filter) : TABLE;
+  const total = table.reduce((s, x) => s + x.w, 0);
+  let x = Math.random() * total;
+  for (const e of table) { if ((x -= e.w) < 0) return e; }
+  return table[table.length - 1];
+}
+function makeItem(entry) {
+  const cookie = pick(BY_RARITY[entry.r]);
+  const item = { type: entry.type, r: entry.r, cookie, count: 1, isNew: false, dup: false };
+  if (entry.type === 'soul') item.count = randInt(...RARITIES[entry.r].ss);
+  return item;
+}
+function drawMany(n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    state.pity++;
+    let e;
+    if (state.pity >= CONFIG.EPIC_PITY) {
+      // 천장: 에픽 이상 쿠키 확정
+      e = roll(x => x.type === 'cookie' && RARITIES[x.r].rank >= 2);
+    } else {
+      e = roll();
+    }
+    if (e.type === 'cookie' && RARITIES[e.r].rank >= 2) state.pity = 0;
+    out.push(makeItem(e));
+  }
+  // 10회 뽑기: 최소 1개의 쿠키 확정
+  if (n >= 10 && !out.some(x => x.type === 'cookie')) {
+    const e = roll(x => x.type === 'cookie');
+    if (RARITIES[e.r].rank >= 2) state.pity = 0;
+    out[n - 1] = makeItem(e);
+  }
+  // 보유/중복 처리
+  out.forEach(it => {
+    const id = it.cookie.id;
+    if (it.type === 'cookie') {
+      if (state.owned[id]) { it.dup = true; state.souls[id] = (state.souls[id] || 0) + DUP_SOULSTONES[it.r]; }
+      else { it.isNew = true; state.owned[id] = true; }
+    } else {
+      state.souls[id] = (state.souls[id] || 0) + it.count;
+    }
+  });
+  return out;
+}
+
+/* =========================================================
+   UI 헬퍼
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const screens = ['title', 'welcome', 'gacha', 'result'];
+function show(id) { screens.forEach(s => $('#' + s).classList.toggle('active', s === id)); }
+function refreshHud() {
+  document.querySelectorAll('.crystalCount').forEach(el => el.textContent = state.crystals.toLocaleString());
+  $('#pityLeft').textContent = CONFIG.EPIC_PITY - state.pity;
+  $('#pull1').disabled = state.crystals < CONFIG.COST_1;
+  $('#pull10').disabled = state.crystals < CONFIG.COST_10;
+}
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function cardHTML(item, flipped = true) {
+  const R = RARITIES[item.r];
+  const kind = item.type === 'cookie' ? '쿠키' : '영혼석';
+  const tag = item.isNew ? '<div class="tag">NEW!</div>' : item.dup ? `<div class="tag dup">중복 → 영혼석 ${DUP_SOULSTONES[item.r]}개</div>` : '';
+  const hi = R.rank >= 3 ? 'hi' : '';
+  return `<div class="card ${flipped ? 'flipped' : ''} ${hi} rarity-${item.r}" style="--rc:${R.color}">
+    <div class="inner">
+      <div class="face back"><div class="emblem">🍪</div></div>
+      <div class="face front">
+        ${tag}
+        <div class="art">${artFor(item)}${item.type === 'soul' ? `<div class="ss-count">x${item.count}</div>` : ''}</div>
+        <div class="rarity-badge">${R.label}</div>
+        <div class="name">${item.cookie.name}${item.type === 'soul' ? '<br><small>영혼석</small>' : ''}</div>
+        <div class="kind">${kind === '쿠키' ? '🍪 쿠키 획득!' : '💠 영혼석 획득'}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   화면 흐름
+   ========================================================= */
+function confetti(host, n = 40) {
+  const colors = ['#ff5a6e', '#ffcf3f', '#6fd13a', '#4fb0ff', '#d45cff', '#fff'];
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = pick(colors);
+    c.style.animationDuration = 1.8 + Math.random() * 1.6 + 's';
+    c.style.animationDelay = Math.random() * .6 + 's';
+    host.appendChild(c);
+    setTimeout(() => c.remove(), 4200);
+  }
+}
+
+$('#startBtn').addEventListener('click', async () => {
+  Sound.unlock(); Sound.click();
+  show('welcome');
+  Sound.welcome();
+  confetti($('#welcome'), 50);
+  await wait(2600);
+  show('gacha');
+  Sound.bgm(true);
+});
+$('#homeBtn').addEventListener('click', () => { Sound.click(); Sound.bgm(false); show('title'); });
+$('#refillBtn').addEventListener('click', () => {
+  Sound.click(); state.crystals += 30000; save(); refreshHud(); toast('💎 크리스탈 30,000개 충전!');
+});
+$('#soundBtn').addEventListener('click', () => {
+  Sound.unlock();
+  state.muted = !state.muted; save();
+  Sound.setMuted(state.muted);
+  $('#soundBtn').textContent = state.muted ? '🔇' : '🔊';
+});
+
+let busy = false;
+async function doPull(n) {
+  if (busy) return;
+  const cost = n === 1 ? CONFIG.COST_1 : CONFIG.COST_10;
+  if (state.crystals < cost) { toast('크리스탈이 부족해요! + 버튼으로 충전하세요'); return; }
+  busy = true;
+  Sound.unlock(); Sound.click();
+  state.crystals -= cost;
+  const results = drawMany(n);
+  state.lastResults = results;
+  save(); refreshHud();
+  await playSequence(results);
+  busy = false;
+}
+$('#pull1').addEventListener('click', () => doPull(1));
+$('#pull10').addEventListener('click', () => doPull(10));
+
+/* 오븐 → 카드 연출 */
+let skipRequested = false, tapResolve = null;
+function waitTap() { return new Promise(r => { tapResolve = r; }); }
+$('#reveal').addEventListener('click', e => {
+  if (e.target.closest('#skipBtn')) return;
+  if (tapResolve) { const r = tapResolve; tapResolve = null; r(); }
+});
+$('#skipBtn').addEventListener('click', () => {
+  skipRequested = true;
+  if (tapResolve) { const r = tapResolve; tapResolve = null; r(); }
+});
+
+function puffSteam() {
+  const wrap = $('#ovenWrap');
+  for (let i = 0; i < 3; i++) {
+    const s = document.createElement('div');
+    s.className = 'steam';
+    s.style.left = 205 / 300 * wrap.clientWidth + Math.random() * 10 + 'px';
+    s.style.top = 10 + 'px';
+    s.style.animationDelay = i * .2 + 's';
+    wrap.appendChild(s);
+    setTimeout(() => s.remove(), 2000);
+  }
+}
+
+async function ovenBake(item) {
+  // 오븐 문 창의 빛 색으로 등급 힌트
+  const R = RARITIES[item.r];
+  const glow = $('#ovenGlow'), win = $('#doorWindowGlow'), door = $('#ovenDoor'), wrap = $('#ovenWrap');
+  door.classList.remove('open');
+  win.setAttribute('fill', '#ffcf3f'); win.setAttribute('opacity', '.25');
+  wrap.classList.add('shake');
+  puffSteam();
+  Sound.rumble(R.rank >= 3 ? 1.5 : 0.9);
+  await wait(R.rank >= 3 ? 700 : 450);
+  win.setAttribute('fill', R.hex); win.setAttribute('opacity', '.85');
+  await wait(R.rank >= 3 ? 800 : 450);
+  wrap.classList.remove('shake');
+  Sound.ding();
+  glow.setAttribute('fill', R.hex); glow.setAttribute('opacity', '.9');
+  door.classList.add('open');
+  await wait(350);
+}
+
+async function playSequence(results) {
+  skipRequested = false;
+  const rev = $('#reveal'), holder = $('#revealCardHolder');
+  for (let i = 0; i < results.length && !skipRequested; i++) {
+    const it = results[i], R = RARITIES[it.r];
+    // 1) 오븐에서 굽기
+    rev.classList.remove('show');
+    await ovenBake(it);
+    if (skipRequested) break;
+    // 2) 카드 등장 (뒷면)
+    rev.classList.add('show');
+    rev.style.setProperty('--burst', R.hex);
+    $('#burst').style.display = R.rank >= 2 ? 'block' : 'none';
+    $('#counter').textContent = `${i + 1} / ${results.length}`;
+    $('#tapHint').textContent = '터치해서 카드 뒤집기';
+    holder.innerHTML = cardHTML(it, false);
+    const card = holder.firstElementChild;
+    card.classList.add('pop');
+    await waitTap();
+    if (skipRequested) break;
+    // 3) 카드 뒤집기
+    Sound.flip();
+    card.classList.add('flipped');
+    await wait(250);
+    Sound.reveal(it.r);
+    if (R.rank >= 3) {
+      const fl = $('#flash');
+      fl.style.background = it.r === 'beast' ? '#1a0033' : R.hex;
+      fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+      confetti(rev, it.r === 'beast' ? 20 : 60);
+    }
+    $('#tapHint').textContent = i < results.length - 1 ? '터치해서 다음 쿠키' : '터치해서 결과 보기';
+    await waitTap();
+  }
+  tapResolve = null;
+  rev.classList.remove('show');
+  $('#ovenDoor').classList.remove('open');
+  $('#ovenGlow').setAttribute('opacity', '0');
+  showResults(results);
+}
+
+/* 결과 목록 */
+function showResults(results) {
+  const grid = $('#grid');
+  grid.classList.toggle('single', results.length === 1);
+  grid.innerHTML = results.map((it, i) => {
+    const R = RARITIES[it.r];
+    return `<div class="mini" style="--rc:${R.color};animation-delay:${i * .06}s" data-i="${i}">
+      ${it.isNew ? '<span class="mnew">NEW</span>' : ''}
+      ${it.type === 'soul' ? `<span class="ms">x${it.count}</span>` : ''}
+      ${artFor(it)}
+      <span class="mr">${R.label}${it.type === 'soul' ? ' 영혼석' : ''}</span>
+      <span class="mn">${it.cookie.name.replace(' 쿠키', '')}</span>
+    </div>`;
+  }).join('');
+  const cookies = results.filter(x => x.type === 'cookie').length;
+  const best = results.reduce((a, b) => RARITIES[b.r].rank > RARITIES[a.r].rank ? b : a);
+  $('#summary').innerHTML = `쿠키 ${cookies}개 · 영혼석 ${results.length - cookies}개 · 최고 등급 <b style="color:${RARITIES[best.r].hex}">${RARITIES[best.r].label}</b><br>카드를 누르면 한 장씩 크게 볼 수 있어요`;
+  show('result');
+}
+$('#grid').addEventListener('click', e => {
+  const m = e.target.closest('.mini'); if (!m) return;
+  Sound.click(); openViewer(+m.dataset.i);
+});
+$('#viewAllBtn').addEventListener('click', () => { Sound.click(); openViewer(0); });
+$('#againBtn').addEventListener('click', () => { Sound.click(); show('gacha'); refreshHud(); });
+
+/* 한 장씩 보기 */
+let vIndex = 0;
+function renderViewer() {
+  const list = state.lastResults, it = list[vIndex];
+  $('#viewerCard').innerHTML = cardHTML(it, true);
+  $('#viewerCard').firstElementChild.classList.add('pop');
+  $('#viewerCount').textContent = `${vIndex + 1} / ${list.length}`;
+  $('#viewerDesc').textContent = it.cookie.desc;
+  $('#prevBtn').disabled = vIndex === 0;
+  $('#nextBtn').disabled = vIndex === list.length - 1;
+}
+function openViewer(i) { vIndex = i; renderViewer(); $('#viewer').classList.add('show'); }
+$('#prevBtn').addEventListener('click', () => { if (vIndex > 0) { vIndex--; Sound.flip(); renderViewer(); } });
+$('#nextBtn').addEventListener('click', () => { if (vIndex < state.lastResults.length - 1) { vIndex++; Sound.flip(); renderViewer(); } });
+$('#viewerClose').addEventListener('click', () => $('#viewer').classList.remove('show'));
+// 스와이프 & 키보드
+let sx = null;
+$('#viewer').addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+$('#viewer').addEventListener('touchend', e => {
+  if (sx == null) return;
+  const dx = e.changedTouches[0].clientX - sx; sx = null;
+  if (dx > 50) $('#prevBtn').click(); else if (dx < -50) $('#nextBtn').click();
+});
+document.addEventListener('keydown', e => {
+  if ($('#viewer').classList.contains('show')) {
+    if (e.key === 'ArrowLeft') $('#prevBtn').click();
+    if (e.key === 'ArrowRight') $('#nextBtn').click();
+    if (e.key === 'Escape') $('#viewerClose').click();
+  } else if ($('#reveal').classList.contains('show') && (e.key === ' ' || e.key === 'Enter')) {
+    e.preventDefault(); $('#reveal').click();
+  }
+});
+
+/* 확률 정보 / 도감 */
+function openInfo(html) { $('#infoPanel').innerHTML = html; $('#infoModal').classList.add('show'); }
+$('#infoClose').addEventListener('click', () => $('#infoModal').classList.remove('show'));
+$('#rateBtn').addEventListener('click', () => {
+  Sound.click();
+  const rows = Object.entries(RARITIES).map(([r, v]) =>
+    `<tr><td><span class="dot" style="background:${v.hex}"></span>${v.label}</td><td>${v.cookie.toFixed(2)}%</td><td>${v.soul.toFixed(2)}%</td><td>${BY_RARITY[r].length}종</td></tr>`).join('');
+  const list = Object.entries(RARITIES).map(([r, v]) =>
+    `<div><b style="color:${v.hex === '#fff1a8' ? '#c9a000' : v.hex}">${v.label}</b> ${BY_RARITY[r].map(c => c.name.replace(' 쿠키', '')).join(', ')}</div>`).join('');
+  openInfo(`<h3>📜 확률 정보</h3>
+    <table><tr><th>등급</th><th>쿠키</th><th>영혼석</th><th>수록</th></tr>${rows}</table>
+    <div class="cookies-list">${list}</div>
+    <p class="note">· 2025년 1월 공식 확률 개편 후 합산치(레전더리·드래곤·에인션트 약 4.30%, 슈퍼에픽 약 2.40%)를 기준으로 쿠키/영혼석 비율을 나눈 <b>시뮬레이터용 근사값</b>입니다.<br>
+    · 10회 뽑기 시 쿠키 1개 이상 확정 · 100회 내 에픽 이상 쿠키 확정(천장)<br>
+    · 이미 보유한 쿠키가 나오면 해당 쿠키 영혼석 20개로 전환됩니다.</p>`);
+});
+$('#bookBtn').addEventListener('click', () => {
+  Sound.click();
+  const owned = Object.keys(state.owned).length;
+  const rows = Object.entries(RARITIES).map(([r, v]) =>
+    `<div style="margin-top:6px"><b style="color:${v.hex === '#fff1a8' ? '#c9a000' : v.hex}">${v.label}</b><br>` +
+    BY_RARITY[r].map(c => `${state.owned[c.id] ? '🍪' : '⬜'} ${c.name.replace(' 쿠키', '')}${state.souls[c.id] ? ` <small>(💠${state.souls[c.id]})</small>` : ''}`).join(' · ') + '</div>').join('');
+  openInfo(`<h3>📖 쿠키 도감 (${owned}/${COOKIES.length})</h3><div class="cookies-list">${rows}</div>
+    <p class="note" style="text-align:center"><button class="btn small brown" id="resetBtn">기록 초기화</button></p>`);
+  $('#resetBtn').onclick = () => {
+    if (!confirm('보유 쿠키·영혼석·크리스탈 기록을 초기화할까요?')) return;
+    Object.assign(state, { crystals: CONFIG.START_CRYSTALS, pity: 0, owned: {}, souls: {} });
+    save(); refreshHud(); $('#infoModal').classList.remove('show'); toast('기록을 초기화했어요');
+  };
+});
+
+/* 초기화 */
+$('#soundBtn').textContent = state.muted ? '🔇' : '🔊';
+refreshHud();
+</script>
+</body>
+</html>
