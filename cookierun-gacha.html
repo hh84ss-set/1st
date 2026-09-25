@@ -531,6 +531,28 @@ body {
 .viewer-count { color: #fff; font-size: 18px; margin-top: 14px; }
 .viewer-desc { color: #ffe7a3; font-size: 15px; margin-top: 6px; text-align: center; padding: 0 30px; max-width: 420px; }
 .close-x { position: absolute; top: 14px; right: 14px; }
+#viewer { z-index: 65; background: rgba(10,4,0,.93); }
+.voice-btn { margin-top: 10px; }
+.voice-btn:disabled { filter: grayscale(.6) brightness(.9); }
+.book-row { margin-top: 10px; }
+.book-head { font-size: 16px; margin-bottom: 6px; }
+.book-head small { color: #8a4b22; font-size: 13px; }
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.book-tile {
+  position: relative; font-family: inherit; cursor: pointer;
+  aspect-ratio: 3 / 4; max-width: 100%; padding: 3px 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  border-radius: 10px; border: 2px solid var(--rc);
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc) 45%, #fff), color-mix(in srgb, var(--rc) 18%, #fff5e0));
+  transition: transform .1s;
+}
+.book-tile:hover, .book-tile:focus-visible { transform: translateY(-2px); outline: none; box-shadow: 0 0 0 2px #4a2511; }
+.book-tile img, .book-tile svg { width: 100%; flex: 1; min-height: 0; object-fit: contain; }
+.book-tile span { font-size: 10px; line-height: 1.1; color: #4a2511; text-align: center; word-break: keep-all; }
+.book-tile.locked { background: #d9c9b0; border-color: #a89880; }
+.book-tile.locked img, .book-tile.locked svg { filter: brightness(0) opacity(.35); }
+.book-tile.locked span { color: #8a7a60; }
+.has-voice { position: absolute; top: 1px; right: 3px; font-size: 10px; font-style: normal; }
 
 .panel {
   background: var(--cream); border: 4px solid #4a2511; border-radius: 18px;
@@ -770,6 +792,7 @@ body {
     </div>
     <div class="viewer-count" id="viewerCount"></div>
     <div class="viewer-desc" id="viewerDesc"></div>
+    <button class="btn small orange voice-btn" id="voiceBtn" hidden>🔊 다시 듣기</button>
   </div>
 
   <!-- 확률 정보 / 도감 -->
@@ -944,7 +967,7 @@ function save() {
    사운드 (Web Audio 합성 — 외부 음원 없이 동작)
    ========================================================= */
 const Sound = (() => {
-  let ctx, master, bgmTimer, bgmOn = false, bgmAudio, endAudio;
+  let ctx, master, bgmTimer, bgmOn = false, bgmAudio, endAudio, voiceAudio;
   const N = n => 440 * Math.pow(2, (n - 69) / 12);
   function init() {
     if (ctx) return;
@@ -980,7 +1003,12 @@ const Sound = (() => {
       a.addEventListener('ended', restore); a.addEventListener('error', restore);
       return a.play().then(() => a, () => { restore(); return false; });
     },
-    voiceFor(id) { return api.clip('voice_' + id, 1); },
+    hasVoice(id) { return CONFIG.USE_OFFICIAL_ART && !!ASSETS['voice_' + id]; },
+    voiceFor(id) {
+      if (voiceAudio) { voiceAudio.pause(); voiceAudio.dispatchEvent(new Event('ended')); voiceAudio = null; }
+      return api.clip('voice_' + id, 1).then(a => { if (a) voiceAudio = a; return a; });
+    },
+    stopVoice() { if (voiceAudio) { voiceAudio.pause(); voiceAudio.dispatchEvent(new Event('ended')); voiceAudio = null; } },
     ending(on) {
       api.endingOn = on;
       if (!on) { if (endAudio) endAudio.pause(); return; }
@@ -1498,21 +1526,40 @@ $('#grid').addEventListener('click', e => {
 $('#viewAllBtn').addEventListener('click', () => { Sound.click(); openViewer(0); });
 $('#againBtn').addEventListener('click', () => { Sound.click(); show('gacha'); refreshHud(); });
 
-/* 한 장씩 보기 */
-let vIndex = 0;
+/* 한 장씩 보기 (뽑기 결과 · 도감 공용) */
+let vIndex = 0, vList = [], vMode = 'result';
 function renderViewer() {
-  const list = state.lastResults, it = list[vIndex];
-  $('#viewerCard').innerHTML = cardHTML(it, true);
+  const it = vList[vIndex], c = it.cookie, locked = vMode === 'book' && !state.owned[c.id];
+  $('#viewerCard').innerHTML = cardHTML(it, !locked);
   $('#viewerCard').firstElementChild.classList.add('pop');
-  $('#viewerCount').textContent = `${vIndex + 1} / ${list.length}`;
-  $('#viewerDesc').textContent = it.cookie.desc;
+  $('#viewerCount').textContent = `${vIndex + 1} / ${vList.length}`;
   $('#prevBtn').disabled = vIndex === 0;
-  $('#nextBtn').disabled = vIndex === list.length - 1;
+  $('#nextBtn').disabled = vIndex === vList.length - 1;
+  const vb = $('#voiceBtn');
+  if (vMode !== 'book') { $('#viewerDesc').textContent = c.desc; vb.hidden = true; return; }
+  if (locked) {
+    $('#viewerDesc').innerHTML = `🔒 <b>${c.name}</b> · ${RARITIES[c.r].label}<br>아직 만나지 못한 쿠키예요. 오븐에서 만나 보세요!`;
+    vb.hidden = true; Sound.stopVoice(); return;
+  }
+  const souls = state.souls[c.id] ? ` · 💠 영혼석 ${state.souls[c.id]}개` : '';
+  $('#viewerDesc').innerHTML = `${c.desc}<br><small>${RARITIES[c.r].label}${souls}</small>`;
+  vb.hidden = false;
+  if (Sound.hasVoice(c.id)) {
+    vb.disabled = false; vb.textContent = '🔊 다시 듣기';
+    Sound.unlock(); Sound.voiceFor(c.id);
+  } else {
+    vb.disabled = true; vb.textContent = '🔇 공식 음성 없음';
+    Sound.stopVoice();
+  }
 }
-function openViewer(i) { vIndex = i; renderViewer(); $('#viewer').classList.add('show'); }
+function openViewer(i, list = state.lastResults, mode = 'result') {
+  vIndex = i; vList = list; vMode = mode;
+  renderViewer(); $('#viewer').classList.add('show');
+}
 $('#prevBtn').addEventListener('click', () => { if (vIndex > 0) { vIndex--; Sound.flip(); renderViewer(); } });
-$('#nextBtn').addEventListener('click', () => { if (vIndex < state.lastResults.length - 1) { vIndex++; Sound.flip(); renderViewer(); } });
-$('#viewerClose').addEventListener('click', () => $('#viewer').classList.remove('show'));
+$('#nextBtn').addEventListener('click', () => { if (vIndex < vList.length - 1) { vIndex++; Sound.flip(); renderViewer(); } });
+$('#viewerClose').addEventListener('click', () => { Sound.stopVoice(); $('#viewer').classList.remove('show'); });
+$('#voiceBtn').addEventListener('click', () => { const c = vList[vIndex].cookie; Sound.unlock(); Sound.voiceFor(c.id); });
 // 스와이프 & 키보드
 let sx = null;
 $('#viewer').addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
@@ -1563,16 +1610,33 @@ $('#trackChip').addEventListener('click', () => {
   Sound.bgm(true);
   toast('🎵 ' + TRACKS[state.track].name);
 });
+// 도감 순서 = 등급 순 (커먼 → 비스트)
+const BOOK_ORDER = Object.keys(RARITIES).flatMap(r => BY_RARITY[r]);
 $('#bookBtn').addEventListener('click', () => {
   Sound.click();
   const owned = COOKIES.filter(c => state.owned[c.id]).length;
-  const rows = Object.entries(RARITIES).map(([r, v]) =>
-    `<div style="margin-top:6px"><b style="color:${v.hex === '#fff1a8' ? '#c9a000' : v.hex}">${v.label}</b><br>` +
-    BY_RARITY[r].map(c => `${state.owned[c.id] ? '🍪' : '⬜'} ${c.name.replace(' 쿠키', '')}${state.souls[c.id] ? ` <small>(💠${state.souls[c.id]})</small>` : ''}`).join(' · ') + '</div>').join('');
-  openInfo(`<h3>📖 쿠키 도감 (${owned}/${COOKIES.length})</h3><div class="cookies-list">${rows}</div>
+  const rows = Object.entries(RARITIES).map(([r, v]) => {
+    const got = BY_RARITY[r].filter(c => state.owned[c.id]).length;
+    return `<div class="book-row"><div class="book-head"><span class="dot" style="background:${v.hex}"></span>${v.label} <small>${got}/${BY_RARITY[r].length}</small></div>
+      <div class="book-grid">${BY_RARITY[r].map(c => {
+        const has = !!state.owned[c.id], i = BOOK_ORDER.indexOf(c);
+        return `<button class="book-tile ${has ? '' : 'locked'}" style="--rc:${v.hex}" data-i="${i}" aria-label="${c.name}">
+          ${assetImg('cookie_' + c.id, '', '', cookieSVG(c))}
+          <span>${has ? c.name.replace(' 쿠키', '') : '???'}</span>
+          ${has && Sound.hasVoice(c.id) ? '<i class="has-voice">🔊</i>' : ''}
+        </button>`;
+      }).join('')}</div></div>`;
+  }).join('');
+  openInfo(`<h3>📖 쿠키 도감 (${owned}/${COOKIES.length})</h3>
+    <p class="note" style="margin:0 0 6px;text-align:center">쿠키를 누르면 카드와 목소리를 볼 수 있어요</p>
+    ${rows}
     <p class="note" style="text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       ${isComplete() ? '<button class="btn small orange" id="replayEnding">🏆 엔딩 다시 보기</button>' : ''}
       <button class="btn small brown" id="resetBtn">기록 초기화</button></p>`);
+  document.querySelectorAll('.book-tile').forEach(t => t.onclick = () => {
+    const list = BOOK_ORDER.map(c => ({ type: 'cookie', r: c.r, cookie: c, count: 1 }));
+    Sound.flip(); openViewer(+t.dataset.i, list, 'book');
+  });
   if ($('#replayEnding')) $('#replayEnding').onclick = () => { $('#infoModal').classList.remove('show'); playEnding(); };
   $('#resetBtn').onclick = e => {
     // 두 번 눌러 확인 (임베드 환경에서 confirm() 이 막혀 있음)
