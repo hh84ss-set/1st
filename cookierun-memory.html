@@ -1,0 +1,1097 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>쿠키런 킹덤 메모리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+  /* 단일 테마: 갓 구운 쿠키 — 버터 반죽, 초콜릿 글씨, 젤리 핑크 */
+  :root {
+    color-scheme: light;
+    --ground: #fff5e4;
+    --ground-2: #fde7c4;
+    --dough: #f2c27b;
+    --crust: #c9803a;
+    --ink: #4a2c1a;
+    --ink-soft: #8a6446;
+    --jelly: #ff5c8a;
+    --jelly-soft: #ffd6e2;
+    --candy: #3fa9f5;
+    --gold: #ffbf1f;
+    --line: #f1d7ae;
+    --panel: #fffdf8;
+    --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--body);
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255,191,31,.22) 0 120px, transparent 121px),
+      radial-gradient(circle at 92% 18%, rgba(255,92,138,.14) 0 90px, transparent 91px),
+      var(--ground);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 28px; }
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .logo {
+    font-family: var(--display); font-weight: 400; margin: 0; line-height: 1;
+    font-size: clamp(21px, 5.6vw, 36px); color: var(--ink); white-space: nowrap;
+    text-shadow: 0 3px 0 var(--dough);
+  }
+  .logo span { color: var(--jelly); }
+  .top-tools { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .pill-btn {
+    font: 600 13px/1 var(--body); color: var(--ink); background: var(--panel);
+    border: 2px solid var(--line); border-radius: 999px; padding: 9px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .pill-btn:hover { border-color: var(--crust); }
+  .pill-btn[aria-pressed="true"] { background: var(--jelly-soft); border-color: var(--jelly); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--candy); outline-offset: 2px; }
+
+  /* ---------- 설정 화면 ---------- */
+  .setup { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 22px; padding: 20px; box-shadow: 0 5px 0 var(--line); }
+  .panel h2 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 0 0 4px; }
+  .panel p.lead { margin: 0 0 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+  .count-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .count-row label { font-weight: 700; font-size: 14px; }
+  .stepper { display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .stepper button { width: 44px; height: 44px; border: 0; background: var(--ground-2); color: var(--ink); font: 700 22px/1 var(--body); cursor: pointer; }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper input { width: 56px; height: 44px; border: 0; text-align: center; font: 400 24px/1 var(--display); color: var(--ink); background: var(--panel); -moz-appearance: textfield; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .hint { font-size: 12px; color: var(--ink-soft); }
+  .player-rows { display: grid; gap: 10px; }
+  .player-row { display: grid; grid-template-columns: 48px 70px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 10px; border-radius: 16px; background: var(--ground); }
+  .player-row label { font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+  .player-row select { width: 100%; font: 600 15px var(--body); color: var(--ink); padding: 11px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); }
+  .player-row.dup select { border-color: #d93a3a; }
+  .bgm-row { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: 16px; background: var(--ground-2); }
+  .bgm-name { font-size: 13px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+  .bgm-name::before { content: "🎵 "; }
+  .bgm-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bgm-actions .pill-btn { font-size: 12px; padding: 8px 11px; }
+  .err { color: #c02a2a; font-size: 13px; font-weight: 600; min-height: 20px; margin: 10px 0 0; }
+  .start-btn {
+    margin-top: 8px; width: 100%; font: 400 22px/1 var(--display); color: #fff; border: 0; border-radius: 18px; padding: 18px; cursor: pointer;
+    background: linear-gradient(180deg, #ff7aa0, var(--jelly)); box-shadow: 0 6px 0 #c93a64; transition: transform .1s, box-shadow .1s;
+  }
+  .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c93a64; }
+  .start-btn:disabled { filter: grayscale(.7); opacity: .6; cursor: not-allowed; }
+  .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14px; line-height: 1.55; }
+  .rules li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; }
+  .rules li b { font-family: var(--display); font-weight: 400; color: var(--jelly); font-size: 18px; }
+  .roster { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
+  .roster figure { margin: 0; text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-soft); line-height: 1.2; word-break: keep-all; }
+  .roster .av { width: 100%; height: auto; aspect-ratio: 1; margin-bottom: 3px; }
+
+  /* 아바타(쿠키 얼굴) */
+  .av {
+    width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: none;
+    display: grid; place-items: center; font-size: 22px;
+    border: 3px solid #fff; box-shadow: 0 2px 0 var(--line);
+  }
+  .av img { width: 88%; height: 88%; object-fit: contain; display: block; }
+
+  /* ---------- 게임 화면 ---------- */
+  .game { margin-top: 10px; display: grid; gap: 8px; }
+  .scoreboard { display: flex; gap: 6px; overflow-x: auto; padding-block: 4px 6px; scrollbar-width: none; }
+  .scoreboard::-webkit-scrollbar { display: none; }
+  .player-chip {
+    flex: 1 0 auto; min-width: 118px; display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px 5px 5px; border-radius: 16px; background: var(--panel); border: 2px solid var(--line);
+    transition: transform .25s, border-color .25s, box-shadow .25s;
+  }
+  .player-chip .av { width: 36px; height: 36px; border-width: 2px; }
+  .player-chip .meta { min-width: 0; flex: 1; }
+  .player-chip .nm { display: block; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 9em; }
+  .player-chip .loot { display: flex; gap: 1px; height: 18px; overflow: hidden; max-width: 9em; }
+  .player-chip .loot img { width: 18px; height: 18px; object-fit: contain; border-radius: 50%; background: var(--ground-2); flex: none; }
+  .player-chip .loot .none { font-size: 11px; color: var(--ink-soft); }
+  .player-chip .sc { display: inline-block; font-family: var(--display); font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .player-chip .sc small { font-family: var(--body); font-size: 11px; color: var(--ink-soft); margin-left: 1px; }
+  .player-chip.active { border-color: var(--jelly); box-shadow: 0 4px 0 var(--jelly-soft), 0 0 0 3px var(--jelly-soft); transform: translateY(-2px); }
+  .player-chip.bump .sc { animation: bump .5s; }
+  @keyframes bump { 40% { transform: scale(1.5); color: var(--jelly); } }
+
+  .turn-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+  .turn { font-family: var(--display); font-size: clamp(17px, 4.4vw, 22px); display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .turn .av { width: 28px; height: 28px; border-width: 2px; }
+  .turn .who { color: var(--jelly); }
+  .turn.pop { animation: pop .45s; }
+  @keyframes pop { 0% { transform: scale(.85); opacity: .2; } 60% { transform: scale(1.06); } }
+  .left { font-size: 13px; color: var(--ink-soft); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .msg { min-height: 20px; font-size: 13px; font-weight: 700; color: var(--crust); }
+
+  /* 보드: 세로 화면 4 × 6, 가로 화면 6 × 4 — 정사각형 카드 */
+  .board-wrap { display: flex; justify-content: center; }
+  .board {
+    --cols: 4;
+    width: min(100%, max(300px, calc((100dvh - 215px) / 1.5)));
+    display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: clamp(6px, 1.6vw, 12px);
+  }
+  @media (orientation: landscape) and (min-width: 700px) {
+    .board { --cols: 6; width: min(100%, 1000px, max(420px, calc((100dvh - 200px) * 1.5))); }
+  }
+  .card { position: relative; aspect-ratio: 1 / 1; max-width: 100%; perspective: 800px; border: 0; padding: 0; background: none; cursor: pointer; font: inherit; color: inherit; }
+  .card:disabled { cursor: default; }
+  .card .inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3,1.4,.5,1); }
+  .card.up .inner, .card.taken .inner { transform: rotateY(180deg); }
+  .card .face { position: absolute; inset: 0; border-radius: clamp(10px, 2.4vw, 16px); backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+  /* 뒷면: 구운 비스킷 + 설탕 테두리 + 진저브레드 실루엣 */
+  .card .back {
+    background:
+      url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 70'%3E%3Cpath fill='%23fff5e4' fill-opacity='.9' d='M30 4a11 11 0 0 1 8 18.5c5 1 9 2 14 1a5 5 0 0 1 1 10c-5 1-9 1-13 0 1 7 3 13 7 20a5.5 5.5 0 0 1-9 6c-3-5-5-9-8-13-3 4-5 8-8 13a5.5 5.5 0 0 1-9-6c4-7 6-13 7-20-4 1-8 1-13 0a5 5 0 0 1 1-10c5 1 9 0 14-1A11 11 0 0 1 30 4z'/%3E%3Ccircle cx='26' cy='14' r='1.8' fill='%23a65f24'/%3E%3Ccircle cx='34' cy='14' r='1.8' fill='%23a65f24'/%3E%3Cpath d='M26 19q4 3 8 0' stroke='%23a65f24' stroke-width='1.6' fill='none'/%3E%3Ccircle cx='30' cy='31' r='2' fill='%23ff5c8a'/%3E%3Ccircle cx='30' cy='39' r='2' fill='%233fa9f5'/%3E%3C/svg%3E") center / 46% no-repeat,
+      radial-gradient(circle at 22% 20%, rgba(255,255,255,.35) 0 3px, transparent 4px) 0 0 / 18px 18px,
+      linear-gradient(160deg, #e59a4c, #c46f2c);
+    border: 3px solid #fff; box-shadow: inset 0 0 0 3px #f7d3a3, 0 4px 0 #b5652a;
+  }
+  .card:not(:disabled):hover .back { filter: brightness(1.06); }
+  .card .front { transform: rotateY(180deg); border: 2px solid #fff; box-shadow: 0 4px 0 rgba(74,44,26,.2); display: grid; place-items: center; }
+  .card .front img { width: 96%; height: 96%; object-fit: contain; display: block; pointer-events: none; user-select: none; }
+  .card .front .fallback { font-family: var(--display); font-size: clamp(12px, 3.4vw, 18px); text-align: center; padding: 6px; word-break: keep-all; line-height: 1.2; }
+  .card .front .fallback b { display: block; font-size: 2.2em; line-height: 1.1; font-weight: 400; }
+  .card.match .front { animation: glow .65s ease-in-out; }
+  @keyframes glow { 50% { box-shadow: 0 0 0 4px var(--gold), 0 0 24px var(--gold); transform: rotateY(180deg) scale(1.06); } }
+  .card.miss .front { animation: shake .45s; }
+  @keyframes shake { 25% { transform: rotateY(180deg) translateX(-5px); } 75% { transform: rotateY(180deg) translateX(5px); } }
+  .card.taken .inner { opacity: .25; transform: rotateY(180deg) scale(.88); transition: transform .45s, opacity .6s; }
+  .card.taken .owner {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 46%; height: auto; aspect-ratio: 1;
+  }
+
+  /* ---------- 우승 연출 ---------- */
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+  .win { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px 16px; background: radial-gradient(circle at 50% 40%, rgba(255,245,228,.7), rgba(74,44,26,.6)); backdrop-filter: blur(4px); }
+  .win-card {
+    position: relative; width: min(460px, 100%); background: var(--panel); border-radius: 28px; padding: 26px 20px 20px; text-align: center;
+    border: 4px solid #fff; box-shadow: 0 0 0 6px var(--dough), 0 24px 60px rgba(74,44,26,.4);
+    animation: winIn .7s cubic-bezier(.2,1.6,.4,1); min-height: 0; flex: 0 1 auto; overflow: auto;
+  }
+  /* 용감한 쿠키의 축하 */
+  .cheer { display: flex; align-items: flex-end; gap: 4px; width: min(480px, 100%); flex: none; z-index: 1; margin-bottom: -18px; }
+  .cheer-host {
+    flex: none; width: clamp(92px, 27vw, 140px); border: 0; padding: 0; background: none; cursor: pointer;
+    animation: cheerIn .7s .35s cubic-bezier(.2,1.6,.4,1) backwards, cheerJump .9s 1.2s ease-in-out infinite;
+  }
+  .cheer-host img { width: 100%; display: block; filter: drop-shadow(0 8px 10px rgba(74,44,26,.35)); }
+  .cheer-host.again { animation: cheerSpin .7s ease-in-out, cheerJump .9s .7s ease-in-out infinite; }
+  @keyframes cheerIn { from { transform: translate(-80%, 60%) rotate(-30deg) scale(.4); opacity: 0; } }
+  @keyframes cheerJump { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-16px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
+  @keyframes cheerSpin { 50% { transform: translateY(-26px) rotate(-200deg) scale(1.1); } }
+  .cheer-bubble {
+    position: relative; flex: 1; min-width: 0; margin-bottom: 34px; padding: 10px 14px; border-radius: 20px;
+    background: #fff; border: 3px solid var(--ink); box-shadow: 0 5px 0 rgba(74,44,26,.2);
+    font-family: var(--display); font-size: clamp(16px, 4.6vw, 22px); line-height: 1.3; color: var(--ink); word-break: keep-all;
+    animation: pop .35s .8s cubic-bezier(.2,1.6,.4,1) backwards; min-height: 2.9em;
+  }
+  .cheer-bubble::before {
+    content: ""; position: absolute; left: -12px; bottom: 16px; width: 18px; height: 18px;
+    background: #fff; border: 3px solid var(--ink); border-top: 0; border-right: 0; transform: rotate(45deg);
+  }
+  .cheer-bubble b { color: var(--jelly); font-weight: 400; }
+  @keyframes winIn { from { transform: scale(.4) rotate(-8deg); opacity: 0; } }
+  .win-card .champ { width: 96px; height: 96px; margin: 0 auto; font-size: 48px; animation: bob 1.4s ease-in-out infinite; border-width: 4px; box-shadow: 0 0 0 4px var(--gold); }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(6deg); } }
+  .win-card .congrats { font-family: var(--display); font-size: 16px; color: var(--ink-soft); margin: 12px 0 4px; letter-spacing: .08em; }
+  .win-card h2 { font-family: var(--display); font-weight: 400; margin: 0; line-height: 1.15; font-size: clamp(28px, 7vw, 40px); color: var(--jelly); text-shadow: 0 3px 0 var(--jelly-soft); }
+  .win-card .sub { margin: 8px 0 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  .haul { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 0 0 14px; }
+  .haul img { width: 40px; height: 40px; object-fit: contain; padding: 3px; border-radius: 50%; background: var(--ground-2); border: 2px solid #fff; box-shadow: 0 2px 4px rgba(74,44,26,.25); animation: dealIn .5s backwards; }
+  @keyframes dealIn { from { transform: translateY(14px) scale(.4); opacity: 0; } }
+  .rank { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; text-align: left; }
+  .rank li { display: grid; grid-template-columns: 30px 34px 1fr auto; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 14px; background: var(--ground); font-weight: 600; font-size: 14px; }
+  .rank li.first { background: #fff0bf; }
+  .rank .pl { font-family: var(--display); color: var(--ink-soft); font-size: 16px; }
+  .rank .av { width: 34px; height: 34px; border-width: 2px; }
+  .rank .pt { font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums; }
+  .win-actions { display: flex; gap: 8px; }
+  .win-actions button { flex: 1; }
+  .win-actions .start-btn { margin: 0; font-size: 18px; padding: 14px; }
+  .win-actions .pill-btn { border-radius: 18px; font-size: 15px; }
+
+  /* ---------- 오프닝: 사회자 쿠키 + 플레이어 소개 + 카운트다운 ---------- */
+  .opening {
+    position: fixed; inset: 0; z-index: 35; overflow: hidden; cursor: pointer;
+    display: grid; grid-template-rows: 1fr auto; justify-items: center; align-items: end;
+    padding: 56px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    background: radial-gradient(circle at 50% 58%, #fff7e6 0 22%, #ffd48a 55%, #f59b45 100%);
+    animation: opIn .35s ease-out;
+  }
+  .opening.out { animation: opOut .45s ease-in forwards; }
+  @keyframes opIn { from { opacity: 0; } }
+  @keyframes opOut { to { opacity: 0; transform: scale(1.15); } }
+  .op-rays {
+    position: absolute; left: 50%; top: 58%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax;
+    background: repeating-conic-gradient(rgba(255,255,255,.34) 0 8deg, transparent 8deg 20deg);
+    animation: spin 14s linear infinite; pointer-events: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .op-side { position: absolute; bottom: 30%; width: min(34vw, 220px); pointer-events: none; filter: drop-shadow(0 6px 10px rgba(74,44,26,.25)); }
+  .op-side img { width: 100%; display: block; }
+  .op-side.l { left: -4%; animation: fromL .6s .15s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .op-side.r { right: -4%; animation: fromR .6s .25s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .op-side.tl { left: 4%; top: 9%; bottom: auto; width: min(24vw, 150px); animation: fromL .6s .35s cubic-bezier(.2,1.4,.4,1) backwards; }
+  .op-side.tr { right: 4%; top: 9%; bottom: auto; width: min(24vw, 150px); animation: fromR .6s .45s cubic-bezier(.2,1.4,.4,1) backwards; }
+  @keyframes fromL { from { transform: translateX(-120%) rotate(-20deg); } }
+  @keyframes fromR { from { transform: translateX(120%) rotate(20deg); } }
+  .op-stage { position: relative; display: grid; justify-items: center; gap: 6px; z-index: 1; }
+  .op-bubble {
+    position: relative; max-width: min(88vw, 460px); min-height: 1.3em; padding: 14px 20px; border-radius: 24px;
+    background: #fff; color: var(--ink); font-family: var(--display); font-size: clamp(22px, 6.4vw, 36px); line-height: 1.25; text-align: center;
+    box-shadow: 0 6px 0 rgba(74,44,26,.18); border: 3px solid var(--ink); word-break: keep-all;
+    animation: pop .35s .45s cubic-bezier(.2,1.6,.4,1) backwards;
+  }
+  .op-bubble::after {
+    content: ""; position: absolute; left: 50%; bottom: -16px; width: 26px; height: 26px; margin-left: -13px;
+    background: #fff; border: 3px solid var(--ink); border-top: 0; border-left: 0; transform: rotate(45deg);
+  }
+  .op-bubble b { color: var(--jelly); font-weight: 400; }
+  .opening.counting .op-bubble { opacity: .2; transition: opacity .25s; }
+  .op-host { width: min(58vw, 330px); animation: hostIn .7s .1s cubic-bezier(.2,1.5,.4,1) backwards, hostBob 1.1s 1s ease-in-out infinite; }
+  .op-host img { width: 100%; display: block; filter: drop-shadow(0 10px 12px rgba(74,44,26,.3)); }
+  @keyframes hostIn { from { transform: translateY(90%) scale(.5); opacity: 0; } }
+  @keyframes hostBob { 50% { transform: translateY(-8px) rotate(-3deg); } }
+  .op-players { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 6px; margin-top: 14px; max-width: 100%; }
+  .op-player { display: grid; justify-items: center; gap: 3px; font-weight: 700; font-size: 12px; color: var(--ink); animation: pop .4s cubic-bezier(.2,1.6,.4,1) backwards; }
+  .op-player .av { width: 58px; height: 58px; border-width: 3px; box-shadow: 0 4px 0 rgba(74,44,26,.2); }
+  .op-player span { background: #fff; padding: 2px 8px; border-radius: 999px; max-width: 7.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .op-vs { font-family: var(--display); font-size: 22px; color: #fff; text-shadow: 0 2px 0 var(--jelly), 0 0 8px var(--jelly); animation: pop .3s backwards; }
+  .op-count {
+    position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 2;
+    font-family: var(--display); font-size: clamp(110px, 38vw, 220px); color: #fff; line-height: 1;
+    -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; text-shadow: 0 10px 0 rgba(74,44,26,.35);
+  }
+  .op-count span { animation: countPop .5s cubic-bezier(.2,1.6,.4,1); }
+  .op-count span.go { color: var(--gold); font-size: .62em; }
+  @keyframes countPop { 0% { transform: scale(2.4); opacity: 0; } 60% { transform: scale(.92); opacity: 1; } }
+  .op-skip {
+    position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 3;
+    font: 700 13px/1 var(--body); color: var(--ink); background: rgba(255,255,255,.85); border: 2px solid var(--ink);
+    border-radius: 999px; padding: 8px 12px; cursor: pointer;
+  }
+  /* 오프닝이 끝나면 카드가 한 장씩 깔림 */
+  .board.deal .card { animation: deal .45s cubic-bezier(.2,1.4,.4,1) backwards; }
+  @keyframes deal { from { transform: translateY(-60px) rotate(-25deg) scale(.3); opacity: 0; } }
+
+  @media (max-width: 760px) { .setup { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 520px) {
+    .wrap { padding-block: 10px 20px; }
+    .top-tools .pill-btn { padding: 8px 10px; font-size: 14px; }
+    .top-tools .lbl { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="logo">쿠키런 킹덤 <span>메모리</span></h1>
+    <div class="top-tools">
+      <button class="pill-btn" id="musicBtn" type="button" aria-pressed="true">🎵<span class="lbl"> 음악</span></button>
+      <button class="pill-btn" id="soundBtn" type="button" aria-pressed="true">🔊</button>
+      <button class="pill-btn" id="homeBtn" type="button" hidden aria-label="처음으로">🏠<span class="lbl"> 처음으로</span></button>
+    </div>
+  </header>
+
+  <!-- 설정 화면 -->
+  <section class="setup" id="setup">
+    <div class="panel">
+      <h2>누가 왕국에 출전할까요?</h2>
+      <p class="lead">플레이어 수를 정하고, 각자 함께할 쿠키를 골라 주세요.</p>
+      <div class="count-row">
+        <label for="playerCount">플레이어 수</label>
+        <div class="stepper">
+          <button type="button" id="minusBtn" aria-label="플레이어 한 명 줄이기">−</button>
+          <input type="number" id="playerCount" min="2" max="6" value="2" inputmode="numeric">
+          <button type="button" id="plusBtn" aria-label="플레이어 한 명 늘리기">+</button>
+        </div>
+        <span class="hint">2 ~ 6명</span>
+      </div>
+      <div class="player-rows" id="playerRows"></div>
+      <div class="bgm-row">
+        <span class="bgm-name" id="bgmName">기본 음악: 쿠키 왕국 행진곡</span>
+        <div class="bgm-actions">
+          <button class="pill-btn" id="bgmPreview" type="button">▶ 미리 듣기</button>
+          <label class="pill-btn" for="bgmFile">🎼 내 음악 올리기</label>
+          <input type="file" id="bgmFile" accept="audio/*" hidden>
+          <button class="pill-btn" id="bgmClear" type="button" hidden>기본 음악으로</button>
+        </div>
+      </div>
+      <p class="err" id="setupErr" role="alert"></p>
+      <button class="start-btn" id="startBtn" type="button">모험 시작! 🍪</button>
+    </div>
+
+    <div class="panel">
+      <h2>게임 방법</h2>
+      <p class="lead">4 × 6, 모두 24장 · 12쌍. 쿠키 36종 중 12종이 판마다 무작위로 나와요.</p>
+      <ul class="rules">
+        <li><b>1</b><span>내 차례에 카드 두 장을 차례로 눌러 뒤집어요.</span></li>
+        <li><b>2</b><span>같은 쿠키면 그 짝은 <strong>내 것</strong>! 한 번 더 뒤집을 수 있어요.</span></li>
+        <li><b>3</b><span>다른 쿠키면 다시 덮이고 <strong>다음 플레이어</strong> 차례로 넘어가요.</span></li>
+        <li><b>4</b><span>모든 짝을 찾으면 끝. 가장 많은 짝을 모은 플레이어가 우승이에요.</span></li>
+      </ul>
+      <div class="roster" id="roster" aria-label="등장하는 쿠키"></div>
+    </div>
+  </section>
+
+  <!-- 게임 화면 -->
+  <section class="game" id="game" hidden>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="turn-bar">
+      <div class="turn" id="turn" aria-live="polite"></div>
+      <div class="left" id="left"></div>
+    </div>
+    <div class="msg" id="msg" aria-live="polite"></div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+  </section>
+</div>
+
+
+<div class="win" id="win" hidden>
+  <div class="cheer">
+    <button class="cheer-host" id="cheerHost" type="button" aria-label="용감한 쿠키에게 한 번 더 축하받기"></button>
+    <div class="cheer-bubble" id="cheerBubble" aria-live="polite"></div>
+  </div>
+  <div class="win-card" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="av champ" id="champ">🏆</div>
+    <p class="congrats">🏆 CONGRATULATIONS! 🏆</p>
+    <h2 id="winTitle"></h2>
+    <p class="sub" id="winSub"></p>
+    <div class="haul" id="haul" aria-label="우승자가 모은 쿠키"></div>
+    <ol class="rank" id="rank"></ol>
+    <div class="win-actions">
+      <button class="pill-btn" id="newBtn" type="button">쿠키 다시 고르기</button>
+      <button class="start-btn" id="againBtn" type="button">한 판 더! 🍪</button>
+    </div>
+  </div>
+</div>
+
+<div class="opening" id="opening" hidden>
+  <div class="op-rays"></div>
+  <div class="op-side tl" id="opTL"></div>
+  <div class="op-side tr" id="opTR"></div>
+  <div class="op-side l" id="opL"></div>
+  <div class="op-side r" id="opR"></div>
+  <button class="op-skip" id="opSkip" type="button">건너뛰기 ›</button>
+  <div class="op-stage">
+    <div class="op-bubble" id="opBubble" aria-live="polite"></div>
+    <div class="op-host" id="opHost"></div>
+  </div>
+  <div class="op-players" id="opPlayers"></div>
+  <div class="op-count" id="opCount" aria-live="assertive"></div>
+</div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  // 『쿠키런: 킹덤』 쿠키 — 일러스트 cookies/<id>.webp, 얼굴 cookies/<id>_face.webp (없으면 이름 카드)
+  const COOKIES = [
+    { id: "gingerbrave",      name: "용감한 쿠키",         color: "#f4b56a" },
+    { id: "pure_vanilla",     name: "퓨어바닐라 쿠키",     color: "#f6e7b0" },
+    { id: "hollyberry",       name: "홀리베리 쿠키",       color: "#ff9aa8" },
+    { id: "dark_cacao",       name: "다크카카오 쿠키",     color: "#b5a3c4" },
+    { id: "golden_cheese",    name: "골든치즈 쿠키",       color: "#ffd24a" },
+    { id: "white_lily",       name: "화이트릴리 쿠키",     color: "#efe8d6" },
+    { id: "shadow_milk",      name: "쉐도우밀크 쿠키",     color: "#9fb4e8" },
+    { id: "mystic_flour",     name: "미스틱플라워 쿠키",   color: "#e8e2d2" },
+    { id: "burning_spice",    name: "버닝스파이스 쿠키",   color: "#ff9a6a" },
+    { id: "eternal_sugar",    name: "이터널슈가 쿠키",     color: "#ffc9e4" },
+    { id: "silent_salt",      name: "사일런트솔트 쿠키",   color: "#b0b4c4" },
+    { id: "frost_queen",      name: "서리여왕 쿠키",       color: "#b9e4f7" },
+    { id: "sea_fairy",        name: "바다요정 쿠키",       color: "#8fd3f4" },
+    { id: "moonlight",        name: "달빛술사 쿠키",       color: "#a8acec" },
+    { id: "black_pearl",      name: "흑진주 쿠키",         color: "#8fb0d8" },
+    { id: "wind_archer",      name: "바람궁수 쿠키",       color: "#b6e39a" },
+    { id: "dark_enchantress", name: "어둠마녀 쿠키",       color: "#c9a0c8" },
+    { id: "custard",          name: "커스터드 3세맛 쿠키", color: "#ffd86b" },
+    { id: "espresso",         name: "에스프레소맛 쿠키",   color: "#c9a88a" },
+    { id: "madeleine",        name: "마들렌맛 쿠키",       color: "#f2cf73" },
+    { id: "latte",            name: "라떼맛 쿠키",         color: "#e6cdb0" },
+    { id: "pomegranate",      name: "석류맛 쿠키",         color: "#f08a9a" },
+    { id: "vampire",          name: "뱀파이어맛 쿠키",     color: "#d890a8" },
+    { id: "kumiho",           name: "구미호맛 쿠키",       color: "#ffb3c4" },
+    { id: "parfait",          name: "파르페맛 쿠키",       color: "#ffc3dc" },
+    { id: "clotted_cream",    name: "클로티드크림 쿠키",   color: "#f4e3b0" },
+    { id: "capsaicin",        name: "캡사이신맛 쿠키",     color: "#ff8f7a" },
+    { id: "strawberry",       name: "딸기맛 쿠키",         color: "#ff9bb3" },
+    { id: "wizard",           name: "마법사맛 쿠키",       color: "#b9a3ea" },
+    { id: "cherry_blossom",   name: "벚꽃맛 쿠키",         color: "#ffc0d3" },
+    { id: "cream_puff",       name: "슈크림맛 쿠키",       color: "#ffe79a" },
+    { id: "princess",         name: "공주맛 쿠키",         color: "#ffb8d6" },
+    { id: "sorbet_shark",     name: "샤벳상어맛 쿠키",     color: "#8fd8e8" },
+    { id: "mango",            name: "망고맛 쿠키",         color: "#ffd36b" },
+    { id: "avocado",          name: "아보카도맛 쿠키",     color: "#b7dc8a" },
+    { id: "snow_sugar",       name: "눈설탕맛 쿠키",       color: "#cfe9fb" },
+  ];
+  COOKIES.forEach(c => { c.img = `cookies/${c.id}.webp`; c.face = `cookies/${c.id}_face.webp`; c.ok = true; });
+  const byId = Object.fromEntries(COOKIES.map(c => [c.id, c]));
+  const PAIRS = 12;
+  const $ = (id) => document.getElementById(id);
+
+  // 이미지를 못 받은 쿠키는 이름 카드로 대신 보여줌
+  COOKIES.forEach(c => {
+    const im = new Image();
+    im.onerror = () => { c.ok = false; renderRoster(); renderRows(); };
+    im.src = c.img;
+  });
+  function faceBg(c) { return `background: radial-gradient(circle at 50% 38%, #fff 0 34%, ${c.color} 75%)`; }
+  function avatar(c, cls = "") {
+    return `<span class="av ${cls}" style="${faceBg(c)}">${c.ok ? `<img src="${c.face}" alt="">` : "🍪"}</span>`;
+  }
+  function cardFace(c) {
+    return c.ok ? `<img src="${c.img}" alt="" draggable="false">`
+                : `<span class="fallback"><b>🍪</b>${c.name}</span>`;
+  }
+
+  // ---------- 사운드: 효과음(합성) + 배경음악 ----------
+  // 효과음과 배경음악은 각자 켜고 끌 수 있고, 설정은 이 브라우저에 기억됨
+  let actx = null, sfxBus = null, bgmBus = null;
+  let soundOn = true, musicOn = true;
+  try { soundOn = localStorage.getItem("crk-sfx") !== "off"; musicOn = localStorage.getItem("crk-bgm") !== "off"; } catch (e) {}
+  function ac() {
+    if (!actx) {
+      try {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        sfxBus = actx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(actx.destination);
+        bgmBus = actx.createGain(); bgmBus.gain.value = 0; bgmBus.connect(actx.destination);
+      } catch (e) { actx = null; }
+    }
+    if (actx && actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  // 한 음: 파형·음정 미끄러짐·음량 포락선
+  function tone(freq, start, dur, type = "triangle", vol = 0.12, glideTo = 0, bus) {
+    const a = ac(); if (!a) return;
+    if (!bus && !soundOn) return;
+    const t = a.currentTime + start;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur * 0.9);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(bus || sfxBus);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  let noiseBuf = null;
+  function noise(start, dur, vol, fromHz, toHz, bus, type = "bandpass") {
+    const a = ac(); if (!a) return;
+    if (!bus && !soundOn) return;
+    if (!noiseBuf) {
+      noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t = a.currentTime + start;
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = noiseBuf; f.type = type; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(fromHz, t);
+    if (toHz) f.frequency.exponentialRampToValueAtTime(toHz, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(bus || sfxBus);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  const bell = (f, s, v = 0.12, d = 0.5) => { tone(f, s, d, "sine", v); tone(f * 2, s, d * 0.6, "sine", v * 0.35); tone(f * 3.01, s, d * 0.3, "sine", v * 0.12); };
+  const sfx = {
+    tap:    () => { tone(520, 0, 0.07, "sine", 0.1, 820); noise(0, 0.03, 0.05, 3000); },           // 일반 버튼 '뽁'
+    up:     () => { tone(660, 0, 0.08, "sine", 0.1, 990); tone(990, 0.06, 0.08, "sine", 0.07); },  // 늘리기
+    down:   () => { tone(700, 0, 0.08, "sine", 0.1, 460); },                                        // 줄이기
+    pick:   (i = 0) => { const f = [523, 587, 659, 698, 784, 880][i % 6]; bell(f, 0, 0.11, 0.35); bell(f * 1.5, 0.07, 0.07, 0.3); }, // 쿠키 고르기
+    error:  () => { tone(260, 0, 0.12, "square", 0.05); tone(245, 0.13, 0.16, "square", 0.05); },
+    start:  () => {                                                                                 // 모험 시작 징글
+      [523, 659, 784, 1046].forEach((f, i) => bell(f, i * 0.08, 0.13, 0.4));
+      [1318, 1568, 2093].forEach((f, i) => tone(f, 0.36 + i * 0.05, 0.5, "sine", 0.06));
+      noise(0.3, 0.5, 0.05, 6000, 12000, null, "highpass");
+    },
+    flip:   () => { noise(0, 0.12, 0.12, 900, 4200); tone(880, 0.02, 0.07, "triangle", 0.07, 1320); }, // 카드 '휙'
+    match:  () => {                                                                                 // 짝! 반짝 차임
+      bell(1046, 0, 0.13, 0.5); bell(1318, 0.09, 0.12, 0.5); bell(1568, 0.18, 0.12, 0.7); bell(2093, 0.27, 0.08, 0.8);
+      noise(0.2, 0.45, 0.04, 7000, 12000, null, "highpass");
+    },
+    miss:   () => { tone(392, 0, 0.18, "triangle", 0.12, 330); tone(311, 0.16, 0.28, "triangle", 0.12, 233); }, // 뿌잉~
+    drumroll: () => { for (let i = 0; i < 14; i++) noise(i * 0.035, 0.05, 0.05 + i * 0.004, 1800, 0); tone(98, 0.5, 0.35, "sine", 0.2, 50); },
+    blip:   (i = 0) => tone([784, 880, 988, 880][i % 4], 0, 0.05, "square", 0.025),                  // 말풍선 타자
+    count:  () => { tone(880, 0, 0.16, "square", 0.06); tone(880, 0, 0.2, "sine", 0.12); },
+    go:     () => {
+      [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, i * 0.05, 0.5, "triangle", 0.12));
+      bell(2093, 0.25, 0.08, 0.9); noise(0.05, 0.6, 0.06, 5000, 12000, null, "highpass");
+      tone(80, 0, 0.3, "sine", 0.25, 40);
+    },
+    cheer:  () => {                                                                                 // 관중 환호 + 휘파람
+      for (let i = 0; i < 18; i++) noise(i * 0.06, 0.18, 0.05, 900 + Math.random() * 2500, 0);
+      tone(1400, 0.1, 0.35, "sine", 0.05, 2600); tone(1600, 0.55, 0.3, "sine", 0.05, 2900);
+    },
+    deal:   () => { for (let i = 0; i < 8; i++) noise(i * 0.09, 0.06, 0.06, 1500 + i * 300, 4000); },
+    turn:   () => { tone(784, 0, 0.09, "sine", 0.06); tone(1046, 0.08, 0.12, "sine", 0.06); },
+    win:    () => {
+      [523, 659, 784, 1046, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * 0.11, 0.3, "triangle", 0.13));
+      [1046, 1318, 1568, 2093].forEach((f, i) => bell(f, 1.0 + i * 0.06, 0.08, 1.2));
+    },
+  };
+
+  // 배경음악 1) 올린 음악 파일 — 이 브라우저(IndexedDB)에 저장
+  const bgmAudio = new Audio(); bgmAudio.loop = true; bgmAudio.volume = 0.45;
+  let customBgm = null;   // { name, url }
+  function idb() {
+    return new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open("crk-memory", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+  }
+  async function kv(mode, fn) {
+    try {
+      const db = await idb();
+      return await new Promise((res, rej) => {
+        const tx = db.transaction("kv", mode); const q = fn(tx.objectStore("kv"));
+        tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error);
+      });
+    } catch (e) { return undefined; }
+  }
+
+  // 배경음악 2) 기본 음악 — 이 게임을 위해 만든 경쾌한 행진곡(132 BPM, 16마디 반복)
+  const BPM = 132, STEP = 60 / BPM / 2;     // 8분음표 길이
+  const _ = 0;
+  const MELODY = [
+    72,_,76,79, 76,_,72,_,   69,_,72,76, 74,72,71,_,   72,_,77,76, 74,_,72,74,   76,_,74,_, 71,_,67,_,
+    72,_,76,79, 84,_,81,79,  77,_,76,77, 81,_,79,77,   76,74,72,74, 77,76,74,71, 72,_,_,67, 72,_,_,_,
+    81,_,79,77, 76,_,77,_,   79,_,77,76, 74,_,71,_,    76,_,74,72, 71,_,72,_,    69,_,_,72, 76,_,_,_,
+    77,_,81,_, 84,_,81,_,    83,_,79,_, 74,_,79,_,     84,_,79,76, 72,_,76,79,   77,_,74,_, 71,_,67,_,
+  ];
+  // 마디별 화음(근음, 3음, 5음)
+  const CHORDS = [
+    [48,52,55],[45,48,52],[41,45,48],[43,47,50], [48,52,55],[41,45,48],[50,53,57],[48,52,55],
+    [41,45,48],[43,47,50],[40,43,47],[45,48,52], [41,45,48],[43,47,50],[48,52,55],[43,47,53],
+  ];
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  let bgmTimer = 0, nextTime = 0, step = 0;
+  function playStep(i, t) {
+    const a = actx, when = t - a.currentTime;
+    const bar = Math.floor(i / 8) % 16, beat = i % 8;
+    const m = MELODY[i % MELODY.length];
+    if (m) { tone(hz(m), when, STEP * 1.8, "sine", 0.11, 0, bgmBus); tone(hz(m) * 2, when, STEP * 0.9, "sine", 0.025, 0, bgmBus); }
+    const ch = CHORDS[bar];
+    if (beat % 4 === 0) tone(hz(ch[0] - 12), when, STEP * 1.6, "triangle", 0.16, 0, bgmBus);        // 베이스 '쿵'
+    if (beat % 4 === 2) tone(hz(ch[2] - 12), when, STEP * 1.2, "triangle", 0.12, 0, bgmBus);        // 베이스 '짝'
+    if (beat % 2 === 1) ch.forEach(n => tone(hz(n + 12), when, STEP * 0.7, "square", 0.012, 0, bgmBus)); // 뒷박 화음
+    if (beat % 4 === 0) tone(110, when, 0.12, "sine", 0.18, 45, bgmBus);                             // 킥
+    if (beat % 2 === 1) noise(when, 0.04, 0.03, 8000, 0, bgmBus, "highpass");                        // 하이햇
+    if (beat === 2 || beat === 6) noise(when, 0.09, 0.05, 2200, 0, bgmBus);                           // 스네어
+  }
+  function synthStart() {
+    if (bgmTimer) return;
+    nextTime = actx.currentTime + 0.1; step = 0;
+    bgmTimer = setInterval(() => {
+      while (nextTime < actx.currentTime + 0.25) { playStep(step, nextTime); nextTime += STEP; step++; }
+    }, 60);
+  }
+  function synthStop() { clearInterval(bgmTimer); bgmTimer = 0; }
+
+  let bgmWanted = false;   // 게임 화면에서만 재생
+  function bgmSync() {
+    const a = ac(); if (!a) return;
+    const play = bgmWanted && musicOn;
+    if (customBgm) {
+      synthStop();
+      if (play) { bgmAudio.play().catch(() => {}); } else bgmAudio.pause();
+    } else {
+      bgmAudio.pause();
+      bgmBus.gain.cancelScheduledValues(a.currentTime);
+      bgmBus.gain.setTargetAtTime(play ? 0.55 : 0, a.currentTime, 0.15);
+      if (play) synthStart(); else setTimeout(() => { if (!(bgmWanted && musicOn)) synthStop(); }, 600);
+    }
+  }
+  // 우승 팡파르 동안 배경음악을 잠깐 줄임
+  function duckBgm(sec) {
+    if (!actx) return;
+    const t = actx.currentTime;
+    bgmBus.gain.setTargetAtTime(0.12, t, 0.08);
+    bgmBus.gain.setTargetAtTime(musicOn && bgmWanted ? 0.55 : 0, t + sec, 0.4);
+    bgmAudio.volume = 0.12; setTimeout(() => { bgmAudio.volume = 0.45; }, sec * 1000);
+  }
+
+  function syncSoundButtons() {
+    $("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+    $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+    $("soundBtn").setAttribute("aria-label", soundOn ? "효과음 끄기" : "효과음 켜기");
+    $("musicBtn").innerHTML = musicOn ? `🎵<span class="lbl"> 음악</span>` : `🎵<span class="lbl"> 음악 꺼짐</span>`;
+    $("musicBtn").setAttribute("aria-pressed", String(musicOn));
+    $("musicBtn").setAttribute("aria-label", musicOn ? "배경음악 끄기" : "배경음악 켜기");
+    $("bgmName").textContent = customBgm ? `내 음악: ${customBgm.name}` : "기본 음악: 쿠키 왕국 행진곡";
+    $("bgmClear").hidden = !customBgm;
+  }
+  $("soundBtn").addEventListener("click", () => {
+    soundOn = !soundOn; syncSoundButtons();
+    try { localStorage.setItem("crk-sfx", soundOn ? "on" : "off"); } catch (e) {}
+    sfx.tap();
+  });
+  $("musicBtn").addEventListener("click", () => {
+    musicOn = !musicOn; syncSoundButtons(); sfx.tap();
+    try { localStorage.setItem("crk-bgm", musicOn ? "on" : "off"); } catch (e) {}
+    bgmSync();
+  });
+  $("bgmFile").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("audio/")) { sfx.error(); $("bgmName").textContent = "음악 파일(MP3, M4A, OGG 등)만 올릴 수 있어요."; return; }
+    if (customBgm) URL.revokeObjectURL(customBgm.url);
+    customBgm = { name: f.name.replace(/\.[^.]+$/, ""), url: URL.createObjectURL(f) };
+    bgmAudio.src = customBgm.url;
+    await kv("readwrite", st => st.put({ name: customBgm.name, blob: f }, "bgm"));
+    sfx.pick(2); syncSoundButtons(); bgmSync();
+  });
+  $("bgmClear").addEventListener("click", async () => {
+    if (customBgm) URL.revokeObjectURL(customBgm.url);
+    customBgm = null; bgmAudio.removeAttribute("src");
+    await kv("readwrite", st => st.delete("bgm"));
+    sfx.down(); syncSoundButtons(); bgmSync();
+  });
+  $("bgmPreview").addEventListener("click", () => {
+    sfx.tap();
+    bgmWanted = !bgmWanted;
+    $("bgmPreview").textContent = bgmWanted ? "⏸ 멈추기" : "▶ 미리 듣기";
+    if (bgmWanted && !musicOn) { musicOn = true; syncSoundButtons(); }
+    bgmSync();
+  });
+  (async () => {
+    const saved = await kv("readonly", st => st.get("bgm"));
+    if (saved && saved.blob) {
+      customBgm = { name: saved.name, url: URL.createObjectURL(saved.blob) };
+      bgmAudio.src = customBgm.url;
+    }
+    syncSoundButtons();
+  })();
+  syncSoundButtons();
+
+  // ---------- 설정 화면 ----------
+  let chosen = ["gingerbrave", "pure_vanilla", "hollyberry", "dark_cacao", "golden_cheese", "white_lily"];
+
+  function renderRoster() {
+    $("roster").innerHTML = COOKIES.map(c => `<figure>${avatar(c)}<figcaption>${c.name}</figcaption></figure>`).join("");
+  }
+  function clampCount(n) { return Math.min(6, Math.max(2, Number.isFinite(n) ? Math.round(n) : 2)); }
+  function renderRows() {
+    const n = clampCount(+$("playerCount").value);
+    $("playerCount").value = n;
+    $("minusBtn").disabled = n <= 2;
+    $("plusBtn").disabled = n >= 6;
+    let html = "";
+    for (let i = 0; i < n; i++) {
+      const cur = byId[chosen[i]];
+      html += `<div class="player-row" data-i="${i}">
+          ${avatar(cur)}
+          <label for="p${i + 1}">플레이어 ${i + 1}</label>
+          <select id="p${i + 1}" data-i="${i}">
+            ${COOKIES.map(c => `<option value="${c.id}" ${c.id === cur.id ? "selected" : ""}>${c.name}</option>`).join("")}
+          </select>
+        </div>`;
+    }
+    $("playerRows").innerHTML = html;
+    validate();
+  }
+  function validate() {
+    const n = clampCount(+$("playerCount").value);
+    const picks = chosen.slice(0, n);
+    const dups = new Set(picks.filter((id, i) => picks.indexOf(id) !== i));
+    document.querySelectorAll(".player-row").forEach(row => row.classList.toggle("dup", dups.has(picks[+row.dataset.i])));
+    $("setupErr").textContent = dups.size
+      ? `${[...dups].map(id => byId[id].name).join(", ")}을(를) 두 명 이상이 골랐어요. 서로 다른 쿠키를 골라 주세요.`
+      : "";
+    $("startBtn").disabled = dups.size > 0;
+  }
+  $("playerRows").addEventListener("change", (e) => {
+    if (e.target.tagName !== "SELECT") return;
+    chosen[+e.target.dataset.i] = e.target.value;
+    renderRows();
+    const dup = document.querySelector(".player-row.dup");
+    dup ? sfx.error() : sfx.pick(+e.target.dataset.i);
+  });
+  $("playerCount").addEventListener("change", () => { sfx.tap(); renderRows(); });
+  $("minusBtn").addEventListener("click", () => { sfx.down(); $("playerCount").value = +$("playerCount").value - 1; renderRows(); });
+  $("plusBtn").addEventListener("click", () => {
+    const n = clampCount(+$("playerCount").value);
+    if (n >= 6) return;
+    sfx.up();
+    const used = new Set(chosen.slice(0, n));
+    if (used.has(chosen[n])) chosen[n] = COOKIES.find(c => !used.has(c.id)).id;
+    $("playerCount").value = n + 1; renderRows();
+  });
+
+  // ---------- 게임 ----------
+  let S = null;
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+
+  function startGame(playerIds) {
+    const picks = shuffle(COOKIES.slice()).slice(0, PAIRS);
+    S = {
+      players: playerIds.map(id => ({ id, score: 0, loot: [] })),
+      cur: 0,
+      deck: shuffle(picks.flatMap(c => [c.id, c.id])),
+      up: [], taken: {}, lock: false,
+    };
+    $("setup").hidden = true; $("game").hidden = false; $("homeBtn").hidden = false; $("win").hidden = true;
+    stopFx();
+    buildBoard(); renderScore(); renderTurn(); setMsg("");
+    window.scrollTo(0, 0);
+    S.lock = true;
+    cheerTimers.forEach(clearTimeout); cheerTimers = [];
+    playOpening(S.players.map(p => byId[p.id]), () => {
+      S.lock = false;
+      bgmWanted = true; bgmSync();
+      const board = $("board");
+      [...board.children].forEach((el, i) => { el.style.animationDelay = `${i * 0.03}s`; });
+      board.classList.remove("deal"); void board.offsetWidth; board.classList.add("deal");
+      sfx.deal();
+    });
+  }
+
+  // ---------- 오프닝 ----------
+  // 사회자 용감한 쿠키 등장 → "자, 그럼 이제 게임을 시작합니다!" → 플레이어 소개 → 3·2·1 → START
+  let opTimers = [], opDone = null;
+  const LINE = "자, 그럼 이제 게임을 시작합니다!";
+  function img(c) { return c.ok ? `<img src="${c.img}" alt="">` : ""; }
+  function playOpening(players, done) {
+    const op = $("opening");
+    const at = (ms, fn) => opTimers.push(setTimeout(fn, ms));
+    opDone = done;
+    // 주변 인기 쿠키 4명(플레이어가 고른 쿠키와 사회자는 빼고 무작위)
+    const star = ["pure_vanilla", "hollyberry", "dark_cacao", "golden_cheese", "white_lily", "shadow_milk", "sea_fairy", "moonlight", "frost_queen", "mystic_flour", "eternal_sugar", "burning_spice"]
+      .filter(id => id !== "gingerbrave" && !players.some(p => p.id === id));
+    const side = shuffle(star).slice(0, 4).map(id => byId[id]);
+    ["opL", "opR", "opTL", "opTR"].forEach((el, i) => { $(el).innerHTML = side[i] ? img(side[i]) : ""; });
+    $("opHost").innerHTML = img(byId.gingerbrave);
+    $("opBubble").innerHTML = "";
+    $("opPlayers").innerHTML = "";
+    $("opCount").innerHTML = "";
+    op.classList.remove("out", "counting");
+    op.hidden = false;
+
+    sfx.drumroll();
+    // 말풍선: 한 글자씩
+    [...LINE].forEach((ch, i) => at(520 + i * 42, () => {
+      const shown = LINE.slice(0, i + 1);
+      $("opBubble").innerHTML = shown.length === LINE.length ? LINE.replace("게임을 시작합니다!", "<b>게임을 시작합니다!</b>") : shown;
+      if (ch.trim()) sfx.blip(i);
+    }));
+    at(560, () => speak(LINE));
+    // 플레이어 소개
+    const t0 = 520 + LINE.length * 42 + 200;
+    players.forEach((c, i) => at(t0 + i * 170, () => {
+      const box = $("opPlayers");
+      if (i > 0) box.insertAdjacentHTML("beforeend", `<span class="op-vs">VS</span>`);
+      box.insertAdjacentHTML("beforeend", `<div class="op-player">${avatar(c)}<span>${c.name}</span></div>`);
+      sfx.pick(i);
+    }));
+    // 카운트다운
+    const t1 = t0 + players.length * 170 + 350;
+    ["3", "2", "1"].forEach((n, i) => at(t1 + i * 520, () => {
+      op.classList.add("counting");
+      $("opCount").innerHTML = `<span>${n}</span>`;
+      sfx.count();
+    }));
+    at(t1 + 1560, () => { $("opCount").innerHTML = `<span class="go">START!</span>`; sfx.go(); });
+    at(t1 + 2150, finishOpening);
+  }
+  function finishOpening() {
+    opTimers.forEach(clearTimeout); opTimers = [];
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const op = $("opening");
+    if (op.hidden) return;
+    op.classList.add("out");
+    setTimeout(() => { op.hidden = true; op.classList.remove("out"); }, 450);
+    const d = opDone; opDone = null;
+    if (d) d();
+  }
+  $("opening").addEventListener("click", () => { if (opDone) { sfx.tap(); finishOpening(); } });
+  // 브라우저 음성으로 사회자 대사 읽기(효과음이 켜져 있을 때만, 지원하는 기기에서)
+  function speak(text) {
+    if (!soundOn) return;
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR"; u.pitch = 1.7; u.rate = 1.12; u.volume = 1;
+      const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("ko"));
+      if (v) u.voice = v;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  function buildBoard() {
+    $("board").innerHTML = S.deck.map((id, i) => {
+      const c = byId[id];
+      return `<button class="card" type="button" data-i="${i}" aria-label="${i + 1}번 카드, 뒤집힘">
+        <span class="inner">
+          <span class="face back"></span>
+          <span class="face front" style="${faceBg(c)}">${cardFace(c)}</span>
+        </span>
+      </button>`;
+    }).join("");
+  }
+  const cardEl = (i) => $("board").children[i];
+
+  function renderScore() {
+    $("scoreboard").innerHTML = S.players.map((p, i) => {
+      const c = byId[p.id];
+      return `<div class="player-chip ${i === S.cur ? "active" : ""}">
+        ${avatar(c)}
+        <span class="meta">
+          <span class="nm">${c.name}</span>
+          <span class="loot">${p.loot.map(id => byId[id].ok ? `<img src="${byId[id].face}" alt="">` : "🍪").join("") || `<span class="none">아직 없어요</span>`}</span>
+        </span>
+        <span class="sc">${p.score}<small>쌍</small></span>
+      </div>`;
+    }).join("");
+    $("left").textContent = `남은 짝 ${PAIRS - Object.keys(S.taken).length / 2}`;
+    const chip = $("scoreboard").children[S.cur];
+    if (chip) chip.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+  function renderTurn() {
+    const c = byId[S.players[S.cur].id];
+    const t = $("turn");
+    t.innerHTML = `${avatar(c)}<span><span class="who">${c.name}</span> 차례!</span>`;
+    t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop");
+  }
+  function setMsg(s) { $("msg").textContent = s; }
+
+  $("board").addEventListener("click", (e) => {
+    const btn = e.target.closest(".card");
+    if (!btn || !S || S.lock) return;
+    const i = +btn.dataset.i;
+    if (S.taken[i] !== undefined || S.up.includes(i)) return;
+    ac();
+    const c = byId[S.deck[i]];
+    btn.classList.add("up");
+    btn.setAttribute("aria-label", `${i + 1}번 카드, ${c.name}`);
+    sfx.flip();
+    S.up.push(i);
+    if (S.up.length < 2) return;
+
+    S.lock = true;
+    const [a, b] = S.up;
+    const player = S.players[S.cur];
+    const pc = byId[player.id];
+    const ca = byId[S.deck[a]];
+    const ok = S.deck[a] === S.deck[b];
+    cardEl(a).classList.add(ok ? "match" : "miss"); cardEl(b).classList.add(ok ? "match" : "miss");
+    ok ? sfx.match() : sfx.miss();
+    setTimeout(() => ok ? take(a, b, player, pc, ca) : pass(a, b), ok ? 700 : 1000);
+  });
+
+  function take(a, b, player, pc, got) {
+    [a, b].forEach(k => {
+      const el = cardEl(k);
+      el.classList.remove("match", "up");
+      el.classList.add("taken");
+      el.disabled = true;
+      el.setAttribute("aria-label", `${k + 1}번 카드, ${got.name} — ${pc.name}이(가) 획득`);
+      el.insertAdjacentHTML("beforeend", avatar(pc, "owner"));
+      S.taken[k] = S.cur;
+    });
+    player.score++; player.loot.push(got.id);
+    S.up = []; S.lock = false;
+    setMsg(`🎉 ${pc.name}, ${got.name} 획득! 한 번 더 뒤집어요.`);
+    renderScore();
+    $("scoreboard").children[S.cur].classList.add("bump");
+    if (Object.keys(S.taken).length === S.deck.length) finish();
+  }
+  function pass(a, b) {
+    [a, b].forEach(k => {
+      const el = cardEl(k);
+      el.classList.remove("up", "miss");
+      el.setAttribute("aria-label", `${k + 1}번 카드, 뒤집힘`);
+    });
+    S.up = []; S.lock = false;
+    S.cur = (S.cur + 1) % S.players.length;
+    setMsg(`아쉬워요! ${byId[S.players[S.cur].id].name}에게 차례가 넘어가요.`);
+    sfx.turn();
+    renderScore(); renderTurn();
+  }
+
+  function finish() {
+    const ranked = S.players.map(p => ({ ...p })).sort((x, y) => y.score - x.score);
+    const top = ranked[0].score;
+    const winners = ranked.filter(p => p.score === top);
+    const names = winners.map(p => byId[p.id].name);
+    const champ = byId[winners[0].id];
+    $("champ").outerHTML = avatar(champ, "champ").replace('class="av champ"', 'class="av champ" id="champ"');
+    $("winTitle").textContent = winners.length > 1 ? `${names.join(" & ")} 공동 우승!` : `${names[0]} 우승!`;
+    $("winSub").textContent = winners.length > 1
+      ? `${top}쌍으로 나란히 1위! 쿠키 왕국에 축제가 열렸어요 ✨`
+      : `${PAIRS}쌍 중 ${top}쌍을 모아 오늘의 쿠키 왕국 챔피언이 되었어요! 👑`;
+    $("haul").innerHTML = winners.length === 1
+      ? winners[0].loot.map((id, n) => byId[id].ok ? `<img src="${byId[id].face}" alt="${byId[id].name}" style="animation-delay:${0.5 + n * 0.07}s">` : "").join("")
+      : "";
+    let place = 0, prev = null;
+    $("rank").innerHTML = ranked.map((p, idx) => {
+      if (p.score !== prev) { place = idx + 1; prev = p.score; }
+      const c = byId[p.id];
+      return `<li class="${place === 1 ? "first" : ""}">
+        <span class="pl">${place === 1 ? "👑" : place + "위"}</span>
+        ${avatar(c)}
+        <span>${c.name}</span>
+        <span class="pt">${p.score}쌍</span>
+      </li>`;
+    }).join("");
+    cheerLine = winners.length > 1
+      ? `와아~ 모두 대단해요! <b>${names.join(", ")}</b>, 공동 우승 축하해요!`
+      : winners[0].id === "gingerbrave"
+        ? `해냈다! 바로 나, <b>용감한 쿠키</b>가 챔피언이야! 다들 고마워!`
+        : `축하해요, <b>${names[0]}</b>! 오늘의 쿠키 왕국 챔피언이에요!`;
+    $("cheerHost").innerHTML = byId.gingerbrave.ok ? `<img src="${byId.gingerbrave.img}" alt="">` : "🍪";
+    $("cheerBubble").innerHTML = "";
+    setTimeout(() => {
+      $("win").hidden = false;
+      $("againBtn").focus();
+      duckBgm(4.5);
+      sfx.win();
+      celebrate(winners.map(p => byId[p.id].color));
+      cheer(900);
+    }, 450);
+  }
+
+  // ---------- 우승 축하: 용감한 쿠키 ----------
+  let cheerLine = "", cheerTimers = [];
+  function cheer(delay) {
+    cheerTimers.forEach(clearTimeout); cheerTimers = [];
+    const plain = cheerLine.replace(/<\/?b>/g, "");
+    const at = (ms, fn) => cheerTimers.push(setTimeout(fn, delay + ms));
+    at(0, () => { sfx.cheer(); speak(plain); });
+    [...plain].forEach((ch, i) => at(i * 38, () => {
+      $("cheerBubble").textContent = plain.slice(0, i + 1);
+      if (ch.trim() && i % 2 === 0) sfx.blip(i);
+    }));
+    at(plain.length * 38 + 30, () => { $("cheerBubble").innerHTML = cheerLine; });
+  }
+  $("cheerHost").addEventListener("click", () => {
+    const h = $("cheerHost");
+    h.classList.remove("again"); void h.offsetWidth; h.classList.add("again");
+    celebrate(["#f4b56a", "#ff5c8a", "#ffbf1f"]);
+    cheer(0);
+  });
+
+  $("startBtn").addEventListener("click", () => { ac(); sfx.start(); startGame(chosen.slice(0, clampCount(+$("playerCount").value))); });
+  $("againBtn").addEventListener("click", () => { sfx.start(); startGame(S.players.map(p => p.id)); });
+  $("newBtn").addEventListener("click", () => { sfx.tap(); goHome(); });
+  $("homeBtn").addEventListener("click", () => { sfx.tap(); goHome(); });
+  function goHome() {
+    opDone = null; finishOpening();
+    bgmWanted = false; bgmSync();
+    $("bgmPreview").textContent = "▶ 미리 듣기";
+    $("win").hidden = true; stopFx();
+    cheerTimers.forEach(clearTimeout); cheerTimers = [];
+    try { speechSynthesis.cancel(); } catch (e) {}
+    $("game").hidden = true; $("setup").hidden = false; $("homeBtn").hidden = true;
+    renderRows();
+  }
+
+  // ---------- 축하 효과: 꽃가루 + 불꽃 ----------
+  const cv = $("fx"), cx = cv.getContext("2d");
+  let parts = [], raf = 0, fxUntil = 0, burstTimer = 0;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function resize() {
+    const d = window.devicePixelRatio || 1;
+    cv.width = innerWidth * d; cv.height = innerHeight * d;
+    cx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  addEventListener("resize", resize); resize();
+
+  function confetti(n, colors) {
+    for (let k = 0; k < n; k++) {
+      const fromLeft = k % 2 === 0;
+      parts.push({
+        kind: Math.random() < 0.25 ? "heart" : Math.random() < 0.4 ? "star" : "rect",
+        x: fromLeft ? -10 : innerWidth + 10,
+        y: innerHeight * (0.55 + Math.random() * 0.4),
+        vx: (fromLeft ? 1 : -1) * (6 + Math.random() * 9),
+        vy: -(10 + Math.random() * 10),
+        g: 0.28, drag: 0.985,
+        r: 5 + Math.random() * 7,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1, fade: 0.0025 + Math.random() * 0.003,
+      });
+    }
+  }
+  function burst(colors) {
+    const x = innerWidth * (0.15 + Math.random() * 0.7), y = innerHeight * (0.12 + Math.random() * 0.35);
+    const n = 46;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2, sp = 3 + Math.random() * 4.5;
+      parts.push({
+        kind: "spark", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        g: 0.06, drag: 0.975, r: 2 + Math.random() * 2, rot: 0, vr: 0,
+        color: colors[k % colors.length], life: 1, fade: 0.012 + Math.random() * 0.01,
+      });
+    }
+    tone(180 + Math.random() * 60, 0, 0.25, "sawtooth", 0.02);
+  }
+  function drawHeart(r) {
+    cx.beginPath();
+    cx.moveTo(0, r * 0.35);
+    cx.bezierCurveTo(-r, -r * 0.4, -r * 0.45, -r * 1.1, 0, -r * 0.45);
+    cx.bezierCurveTo(r * 0.45, -r * 1.1, r, -r * 0.4, 0, r * 0.35);
+    cx.fill();
+  }
+  function drawStar(r) {
+    cx.beginPath();
+    for (let k = 0; k < 10; k++) {
+      const rr = k % 2 ? r * 0.45 : r, a = (k / 10) * Math.PI * 2 - Math.PI / 2;
+      cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    cx.closePath(); cx.fill();
+  }
+  function tick() {
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+    for (const p of parts) {
+      p.vx *= p.drag; p.vy = p.vy * p.drag + p.g;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= p.fade;
+      cx.save();
+      cx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.4));
+      cx.translate(p.x, p.y); cx.rotate(p.rot);
+      cx.fillStyle = p.color;
+      if (p.kind === "rect") cx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+      else if (p.kind === "heart") drawHeart(p.r);
+      else if (p.kind === "star") drawStar(p.r);
+      else { cx.beginPath(); cx.arc(0, 0, p.r, 0, Math.PI * 2); cx.fill(); }
+      cx.restore();
+    }
+    if (parts.length || performance.now() < fxUntil) raf = requestAnimationFrame(tick);
+    else raf = 0;
+  }
+  function celebrate(winnerCards) {
+    const colors = ["#ff5c8a", "#3fa9f5", "#ffbf1f", "#c9803a", "#ffffff", "#8a5a3a"]
+      .concat(winnerCards);
+    if (reduce) { confetti(40, colors); parts.forEach(p => { p.vx *= .3; p.vy = 0; p.y = Math.random() * innerHeight; }); tick(); return; }
+    fxUntil = performance.now() + 6000;
+    confetti(160, colors);
+    let shots = 0;
+    burstTimer = setInterval(() => {
+      burst(colors);
+      if (shots % 3 === 0) confetti(50, colors);
+      if (++shots > 12) { clearInterval(burstTimer); burstTimer = 0; }
+    }, 420);
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  function stopFx() {
+    if (burstTimer) clearInterval(burstTimer);
+    burstTimer = 0; parts = []; fxUntil = 0;
+    if (raf) cancelAnimationFrame(raf); raf = 0;
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+  }
+
+  renderRoster();
+  renderRows();
+})();
+</script>
