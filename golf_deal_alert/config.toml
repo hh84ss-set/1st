@@ -25,9 +25,9 @@ feeds = [
 
 [dealbada]
 enabled = true
-# 그누보드 bo_table 값. 골프포럼 목록 주소(…/bbs/board.php?bo_table=XXX)의 XXX 로 확인·수정.
+# 그누보드 bo_table 값 (골프포럼 = forum_golf). 목록 주소 …/bbs/board.php?bo_table=XXX 의 XXX.
 # RSS 가 있으면 RSS, 없으면 목록 페이지를 읽는다.
-boards = ["golf", "deal_domestic"]
+boards = ["forum_golf", "deal_domestic"]
 
 [aliexpress]
 enabled = true

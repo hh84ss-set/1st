@@ -34,7 +34,7 @@
    (키가 없으면 알리 검색만 건너뛰고 나머지는 정상 동작)
 
 ### 1-2. 딜바다
-설정 불필요. 다만 `config.toml` 의 `dealbada.boards` 가 골프포럼의 실제 `bo_table` 값과 맞는지
+설정 불필요. 다만 `config.toml` 의 `dealbada.boards` 의 골프포럼 값(`forum_golf`)이 바뀌지 않았는지
 브라우저 주소창(`…/bbs/board.php?bo_table=XXX`)에서 확인하세요.
 
 ### 2. 카카오톡 나에게 보내기
