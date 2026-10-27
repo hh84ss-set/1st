@@ -1,0 +1,80 @@
+name: golf-deal-alert
+
+on:
+  schedule:
+    - cron: "17 * * * *"  # 매시 17분: 뽐뿌 RSS 수집
+    - cron: "0 23 * * *"  # 매일 23:00 UTC = 08:00 KST: 카카오톡 알림
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [digest, collect]
+        default: digest
+      dry_run:
+        type: boolean
+        default: false
+
+concurrency:
+  group: golf-deal-alert
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: .state
+          key: golf-deal-state-${{ github.run_id }}
+          restore-keys: golf-deal-state-
+
+      - name: Run
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          KAKAO_NEW_REFRESH_TOKEN_FILE: ${{ runner.temp }}/kakao_refresh_token
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          mkdir -p .state
+          MODE=collect
+          [ "$EVENT_SCHEDULE" = "0 23 * * *" ] && MODE=digest
+          [ -n "$INPUT_MODE" ] && MODE="$INPUT_MODE"
+          ARGS=()
+          [ "$INPUT_DRY_RUN" = "true" ] && ARGS+=(--dry-run)
+          python -m golf_deal_alert.alert --mode "$MODE" --state .state/state.json "${ARGS[@]}"
+
+      - name: Rotate Kakao refresh token
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          TOKEN_FILE: ${{ runner.temp }}/kakao_refresh_token
+        run: |
+          if [ ! -s "$TOKEN_FILE" ]; then exit 0; fi
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::카카오 리프레시 토큰이 갱신됐지만 GH_PAT 가 없어 Secret 을 교체하지 못했습니다. kakao_auth 로 재발급하세요."
+            exit 0
+          fi
+          gh secret set KAKAO_REFRESH_TOKEN --repo "${{ github.repository }}" < "$TOKEN_FILE"
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .state
+          key: golf-deal-state-${{ github.run_id }}
