@@ -32,24 +32,41 @@ class Match:
     per_dozen: int
 
 
-def evaluate(deal, cfg, max_price=None):
-    """조건 충족 시 Match, 아니면 None. max_price 로 가격 상한만 바꿔 볼 수 있다."""
+def check(deal, cfg, max_price=None):
+    """반환: (Match 또는 None, 탈락 사유). max_price 로 가격 상한만 바꿔 볼 수 있다."""
     f = cfg["filter"]
-    if deal.price is None:
-        return None
     text = normalize(deal.title + " " + deal.category)
-    if any(normalize(k) in text for k in f["exclude_keywords"] + f["accessory_keywords"]):
-        return None
+    hit = [k for k in f["exclude_keywords"] + f["accessory_keywords"] if normalize(k) in text]
+    if hit:
+        return None, f"제외어 '{hit[0]}'"
     if deal.category and "골프공" not in deal.category:
-        return None
+        return None, "골프공 카테고리 아님"
     ball = classify(deal.title)
-    if ball is None or not all(p in f["allowed_pieces"] for p in ball.pieces):
-        return None
+    if ball is None:
+        return None, "우레탄 3·4피스 모델 판별 불가"
+    if not all(p in f["allowed_pieces"] for p in ball.pieces):
+        return None, f"{ball.name} {ball.pieces_label}"
+    if deal.price is None:
+        return None, "제목에 가격 없음"
     qty, estimated = extract_quantity(deal.title)
     per_dozen = round(deal.price * 12 / qty)
-    if not f["min_price_per_dozen"] <= per_dozen <= (max_price or f["max_price_per_dozen"]):
-        return None
-    return Match(deal, ball, qty, estimated, per_dozen)
+    if per_dozen < f["min_price_per_dozen"]:
+        return None, f"더즌당 {won(per_dozen)} (옵션가/로스트볼 의심)"
+    if per_dozen > (max_price or f["max_price_per_dozen"]):
+        return None, f"더즌당 {won(per_dozen)} (기준 초과)"
+    return Match(deal, ball, qty, estimated, per_dozen), ""
+
+
+def evaluate(deal, cfg, max_price=None):
+    """조건 충족 시 Match, 아니면 None."""
+    return check(deal, cfg, max_price)[0]
+
+
+_GOLF_BALL = re.compile(r"골프공|골프볼|golfball|우레탄")
+
+
+def is_golf_ball_post(deal):
+    return bool(_GOLF_BALL.search(normalize(deal.title)) or classify(deal.title))
 
 
 # ---------------------------------------------------------------- state
@@ -91,12 +108,19 @@ def collect(cfg, state, now, pages=1, log=print):
     state["pending"] = {k: v for k, v in state["pending"].items()
                         if datetime.fromisoformat(v["seen_at"]) >= cutoff}
     log(f"[collect] 수집 {stats}, 누적 후보 {len(state['pending'])}건")
-    return stats
+    # 이번에 읽은 골프공 관련 글 중 탈락한 것과 사유 (검색 리포트용)
+    rejected = []
+    for d in deals:
+        if is_golf_ball_post(d):
+            m, reason = check(d, cfg, near_max)
+            if m is None:
+                rejected.append((d, reason))
+    return stats, rejected
 
 
 def search(cfg, state, now, log=print):
-    """반환: (조건충족 목록, 아깝게 탈락 목록, 소스별 수집 현황)"""
-    stats = collect(cfg, state, now, pages=cfg["search"]["dealbada_pages"], log=log)
+    """반환: (조건충족 목록, 아깝게 탈락 목록, 소스별 수집 현황, 골프공 글 탈락 사유)"""
+    stats, rejected = collect(cfg, state, now, pages=cfg["search"]["dealbada_pages"], log=log)
     deals = {k: Deal(**v["deal"]) for k, v in state["pending"].items()}
 
     ncfg = cfg["naver"]
@@ -126,7 +150,7 @@ def search(cfg, state, now, log=print):
             near.append(m)
     hits.sort(key=lambda m: m.per_dozen)
     near.sort(key=lambda m: m.per_dozen)
-    return hits, near, stats
+    return hits, near, stats, rejected
 
 
 # ---------------------------------------------------------------- 리포트
@@ -174,7 +198,7 @@ def _conditions(m, cfg):
     return lines
 
 
-def render_report(hits, near, stats, cfg, now):
+def render_report(hits, near, stats, rejected, cfg, now):
     f = cfg["filter"]
     pieces = "·".join(str(p) for p in f["allowed_pieces"])
     out = [
@@ -196,6 +220,12 @@ def render_report(hits, near, stats, cfg, now):
     if near:
         out += [f"### 🔸 아깝게 탈락 (더즌당 {won(f['max_price_per_dozen'] + 1)} ~ "
                 f"{won(f['near_max_price_per_dozen'])})", ""] + _table(near[:10]) + [""]
+    if rejected:
+        out += [f"<details><summary>이번에 읽은 골프공 관련 글 중 탈락 {len(rejected)}건 · 사유</summary>", ""]
+        out += [f"- [{_cell(d.title)[:60]}]({d.url}) — {reason}" for d, reason in rejected[:30]]
+        out += ["", "</details>", ""]
+    else:
+        out += ["_이번에 읽은 글 중 골프공 관련 글이 없었습니다._", ""]
     return "\n".join(out)
 
 

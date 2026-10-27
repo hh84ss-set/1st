@@ -164,10 +164,10 @@ class SearchReportTest(unittest.TestCase):
             return alert.search(CFG, state, datetime(2026, 10, 27, 9, tzinfo=KST), log=lambda *_: None), state
 
     def test_search_and_report(self):
-        (hits, near, stats), state = self.run_search()
+        (hits, near, stats, rejected), state = self.run_search()
         self.assertEqual([m.per_dozen for m in hits], [26500, 27000])
         self.assertEqual(stats["뽐뿌"], 1)
-        report = render_report(hits, near, stats, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        report = render_report(hits, near, stats, rejected, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
         self.assertIn("✅ 조건 충족 2건", report)
         self.assertIn("네이버현대카드 5% 추가적립", report)
         self.assertIn("N+멤버십", report)
@@ -177,13 +177,14 @@ class SearchReportTest(unittest.TestCase):
         d = deal("[쿠팡] 프로V1 1더즌 (32,000원/무료)", 32000)
         self.assertIsNone(evaluate(d, CFG))
         m = evaluate(d, CFG, CFG["filter"]["near_max_price_per_dozen"])
-        report = render_report([], [m], {}, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        report = render_report([], [m], {}, [(d, "더즌당 32,000원 (기준 초과)")], CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
         self.assertIn("지금은 조건에 맞는 딜이 없습니다", report)
         self.assertIn("아깝게 탈락", report)
+        self.assertIn("기준 초과", report)
 
     def test_table_escapes_pipe(self):
         m = evaluate(deal("[쿠팡] 프로V1 | 1더즌 (25,000원)", 25000), CFG)
-        report = render_report([m], [], {}, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        report = render_report([m], [], {}, [], CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
         row = [l for l in report.splitlines() if l.startswith("| 1 |")][0]
         self.assertEqual(row.count("|"), 7)
 
