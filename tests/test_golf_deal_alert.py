@@ -7,7 +7,8 @@ from golf_deal_alert import kakao
 from golf_deal_alert.alert import KST, build_messages, evaluate
 from golf_deal_alert.balls import classify
 from golf_deal_alert.parsing import extract_benefits, extract_price, extract_quantity
-from golf_deal_alert.sources import Deal, naver_deals_from_json, ppomppu_deals_from_rss
+from golf_deal_alert.sources import (Deal, ali_deals_from_json, ali_sign, dealbada_deals_from_list,
+                                     naver_deals_from_json, post_body, ppomppu_deals_from_rss)
 
 CFG = tomllib.loads(
     (Path(__file__).parents[1] / "golf_deal_alert" / "config.toml").read_text(encoding="utf-8"))
@@ -101,6 +102,55 @@ class SourcesTest(unittest.TestCase):
         self.assertTrue(d.naverpay)
         self.assertIn("네이버현대카드 5% 추가적립", d.benefits)
         self.assertEqual(evaluate(d, CFG).per_dozen, 27000)
+
+
+DEALBADA_LIST = """
+<ul><li class="list"><a href="https://www.dealbada.com/bbs/board.php?bo_table=golf&amp;wr_id=9001">
+ <span class="cate">공구</span> [스마트스토어] 스릭슨 Z-STAR 1더즌 (26,500원/무료)</a>
+ <a href="https://www.dealbada.com/bbs/board.php?bo_table=golf&amp;wr_id=9001#c_1">3</a></li>
+<li><a href="./board.php?bo_table=golf&amp;wr_id=9002">드라이버 샤프트 고민입니다</a></li>
+<li><a href="./board.php?bo_table=other&amp;wr_id=1">다른 게시판</a></li></ul>"""
+
+ALI_JSON = {"aliexpress_affiliate_product_query_response": {"resp_result": {
+    "resp_code": 200, "resp_msg": "success", "result": {"current_record_count": 2, "products": {"product": [
+        {"product_id": 1005001, "product_title": "타이틀리스트 프로 V1 골프공 12 개",
+         "target_sale_price": "27800.0", "target_app_sale_price": "25900.0", "discount": "30%",
+         "promotion_link": "https://s.click.aliexpress.com/e/_abc"},
+        {"product_id": 1005002, "product_title": "Titleist Pro V1 Used Golf Balls 12pcs",
+         "target_sale_price": "15000", "product_detail_url": "https://www.aliexpress.com/item/1005002.html"},
+    ]}}}}}
+
+
+class MoreSourcesTest(unittest.TestCase):
+    def test_dealbada_list(self):
+        deals = dealbada_deals_from_list(DEALBADA_LIST, "golf")
+        self.assertEqual([d.key for d in deals], ["dealbada:golf:9001", "dealbada:golf:9002"])
+        d = deals[0]
+        self.assertTrue(d.url.startswith("https://www.dealbada.com/bbs/board.php?bo_table=golf&wr_id=9001"))
+        self.assertTrue(d.naverpay)
+        self.assertEqual(evaluate(d, CFG).per_dozen, 26500)
+        self.assertIsNone(evaluate(deals[1], CFG))
+
+    def test_post_body(self):
+        page = '<div id="nav">쿠폰함</div><div id="bo_v_con">KB카드 5% 할인<br>본문</div><div id="bo_v_share">'
+        self.assertEqual(extract_benefits("t", post_body(page)), ["KB카드 5% 할인"])
+
+    def test_ali_sign_matches_official_sdk_rule(self):
+        import hashlib
+        params = {"b": "2", "a": "1", "method": "x"}
+        expected = hashlib.md5("SECa1b2methodxSEC".encode()).hexdigest().upper()
+        self.assertEqual(ali_sign("SEC", params), expected)
+
+    def test_ali_parse(self):
+        deals = ali_deals_from_json(ALI_JSON)
+        self.assertEqual(deals[0].price, 25900)
+        self.assertIn("앱 전용가", deals[0].benefits[0])
+        self.assertEqual(evaluate(deals[0], CFG).per_dozen, 25900)
+        self.assertIsNone(evaluate(deals[1], CFG))  # used 제외
+
+    def test_ali_error(self):
+        with self.assertRaises(RuntimeError):
+            ali_deals_from_json({"error_response": {"code": "IncompleteSignature"}})
 
 
 class MessageTest(unittest.TestCase):

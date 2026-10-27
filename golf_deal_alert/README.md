@@ -12,8 +12,8 @@
 ## 동작 방식
 
 ```
-매시 17분  뽐뿌 RSS 수집 → 조건 충족 글을 state(Actions 캐시)에 쌓아 둠
-매일 08시  쌓인 뽐뿌 글 (+ 네이버쇼핑 API, 키가 있을 때만) → 필터 → 더즌당 최저가순 → 카카오톡
+매시 17분  뽐뿌 RSS + 딜바다(골프포럼·국내핫딜) 수집 → 조건 충족 글을 state(Actions 캐시)에 쌓아 둠
+매일 08시  쌓인 글 + 알리익스프레스 제휴 API 검색 (+ 네이버쇼핑 API, 기존 키가 있을 때만) → 필터 → 더즌당 최저가순 → 카카오톡
 ```
 
 - 뽐뿌 RSS에는 최근 글만 담겨서, 하루 한 번만 읽으면 밤사이 올라온 딜을 놓칩니다. 그래서 매시간 모아 둡니다.
@@ -27,12 +27,22 @@
 기본값은 `naver.enabled = false` 이며 뽐뿌 RSS만으로 동작합니다. 기존 키가 있다면 Secrets
 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 를 등록하고 `enabled = true` 로 바꾸면 됩니다.
 
+### 1-1. 알리익스프레스 제휴 API
+1. [portals.aliexpress.com](https://portals.aliexpress.com) 에 어필리에이트로 가입 → Tracking ID 생성
+2. [openservice.aliexpress.com](https://openservice.aliexpress.com) 개발자 등록 → 앱 생성(Affiliate API) → 승인 후 App Key / App Secret
+3. GitHub Secrets: `ALI_APP_KEY`, `ALI_APP_SECRET`, `ALI_TRACKING_ID`
+   (키가 없으면 알리 검색만 건너뛰고 나머지는 정상 동작)
+
+### 1-2. 딜바다
+설정 불필요. 다만 `config.toml` 의 `dealbada.boards` 가 골프포럼의 실제 `bo_table` 값과 맞는지
+브라우저 주소창(`…/bbs/board.php?bo_table=XXX`)에서 확인하세요.
+
 ### 2. 카카오톡 나에게 보내기
 1. [developers.kakao.com](https://developers.kakao.com) → 내 애플리케이션 → 앱 추가
 2. **카카오 로그인** 활성화, Redirect URI 에 `https://localhost` 추가
 3. **동의항목** → '카카오톡 메시지 전송(talk_message)' 사용 설정
 4. **플랫폼 → Web 사이트 도메인** 에 메시지 링크 도메인 등록 (미등록 도메인은 링크가 열리지 않음)
-   `https://www.ppomppu.co.kr`, `https://m.ppomppu.co.kr`, `https://smartstore.naver.com`, `https://brand.naver.com`, `https://search.shopping.naver.com`
+   `https://www.ppomppu.co.kr`, `https://m.ppomppu.co.kr`, `https://www.dealbada.com`, `https://s.click.aliexpress.com`, `https://www.aliexpress.com`, `https://smartstore.naver.com`, `https://brand.naver.com`
 5. 리프레시 토큰 발급 (로컬 PC에서):
    ```bash
    python -m golf_deal_alert.kakao_auth url --key <REST_API_KEY>
@@ -58,6 +68,8 @@ GitHub의 예약 실행(schedule)은 **기본 브랜치에 있는 워크플로�
 - `naver.queries`: 검색할 모델 키워드
 
 ## 한계
+- 알리익스프레스: 앱 전용가는 표시하지만, 알리 쿠폰이나 카드사 프로모션은 API로 받을 수 없어 '결제화면 확인'으로 표시합니다. 프리미엄 브랜드 공은 가품이나 재생볼이 섞여 있을 수 있으니 판매자 평점을 꼭 확인하세요.
+- 딜바다 골프포럼은 잡담 글도 섞여 있습니다. 제목에 가격이 있는 글만 후보로 삼습니다.
 - 네이버쇼핑 API는 **카드 할인이나 쿠폰 정보를 주지 않습니다.** 그래서 이 항목은 '상품페이지 혜택 확인'으로 표시합니다. 카드·쿠폰 조건 원문은 뽐뿌 글에서 가져옵니다.
 - 네이버 `lprice`는 최저 옵션가라서, 1슬리브 옵션 가격이 대표가로 잡힐 수 있습니다. 이런 경우를 거르려고 더즌당 10,000원 미만은 제외합니다.
 - 수량 표기가 없는 상품은 1더즌으로 가정하고, 메시지에 그렇게 표시합니다.

@@ -1,7 +1,7 @@
 """골프공 핫딜 알리미.
 
-  python -m golf_deal_alert.alert --mode collect   # 뽐뿌 RSS 를 모아 state 에 적재 (매시)
-  python -m golf_deal_alert.alert --mode digest    # 적재분 + 네이버쇼핑 검색 → 카카오톡 (매일 08시)
+  python -m golf_deal_alert.alert --mode collect   # 뽐뿌·딜바다를 모아 state 에 적재 (매시)
+  python -m golf_deal_alert.alert --mode digest    # 적재분 + 알리익스프레스(+네이버) 검색 → 카카오톡 (매일 08시)
   python -m golf_deal_alert.alert --mode digest --dry-run   # 전송 없이 메시지만 출력
 """
 import argparse
@@ -17,7 +17,7 @@ from pathlib import Path
 from . import kakao
 from .balls import Ball, classify, normalize
 from .parsing import extract_quantity
-from .sources import Deal, fetch_naver, fetch_ppomppu
+from .sources import Deal, enrich_benefits, fetch_aliexpress, fetch_dealbada, fetch_naver, fetch_ppomppu
 
 KST = timezone(timedelta(hours=9))
 DEFAULT_CONFIG = Path(__file__).with_name("config.toml")
@@ -71,18 +71,23 @@ def _deal_from_dict(d):
 
 
 def collect(cfg, state, now, log=print):
-    """뽐뿌 RSS 는 최근 글만 담기므로 매시간 모아 두었다가 아침에 한꺼번에 보낸다."""
-    if not cfg["ppomppu"]["enabled"]:
-        return []
+    """커뮤니티 게시판은 최근 글만 보이므로 매시간 모아 두었다가 아침에 한꺼번에 보낸다."""
+    deals = []
+    if cfg["ppomppu"]["enabled"]:
+        deals += fetch_ppomppu(cfg["ppomppu"]["feeds"], log=log)
+    if cfg["dealbada"]["enabled"]:
+        deals += fetch_dealbada(cfg["dealbada"]["boards"], log=log)
     found = []
-    for deal in fetch_ppomppu(cfg["ppomppu"]["feeds"], log=log):
-        if evaluate(deal, cfg):
-            state["pending"][deal.key] = {"deal": asdict(deal), "seen_at": now.isoformat()}
-            found.append(deal)
+    for deal in deals:
+        if deal.key in state["pending"] or not evaluate(deal, cfg):
+            continue
+        enrich_benefits(deal, log=log)
+        state["pending"][deal.key] = {"deal": asdict(deal), "seen_at": now.isoformat()}
+        found.append(deal)
     cutoff = now - timedelta(hours=cfg["notify"]["pending_hours"])
     state["pending"] = {k: v for k, v in state["pending"].items()
                         if datetime.fromisoformat(v["seen_at"]) >= cutoff}
-    log(f"[collect] 뽐뿌 조건충족 {len(found)}건, 대기중 {len(state['pending'])}건")
+    log(f"[collect] 커뮤니티 신규 조건충족 {len(found)}건, 대기중 {len(state['pending'])}건")
     return found
 
 
@@ -96,6 +101,14 @@ def gather_matches(cfg, state, now, log=print):
             deals.setdefault(d.key, d)
     elif ncfg["enabled"]:
         log("[warn] NAVER_CLIENT_ID/SECRET 이 없어 네이버쇼핑 검색을 건너뜁니다")
+    acfg = cfg["aliexpress"]
+    ali_key, ali_secret = os.environ.get("ALI_APP_KEY"), os.environ.get("ALI_APP_SECRET")
+    if acfg["enabled"] and ali_key and ali_secret:
+        for d in fetch_aliexpress(acfg["queries"], ali_key, ali_secret,
+                                  os.environ.get("ALI_TRACKING_ID", ""), acfg["ship_to_country"], log=log):
+            deals.setdefault(d.key, d)
+    elif acfg["enabled"]:
+        log("[warn] ALI_APP_KEY/SECRET 이 없어 알리익스프레스 검색을 건너뜁니다")
 
     matches = [m for m in (evaluate(d, cfg) for d in deals.values()) if m]
     matches.sort(key=lambda m: m.per_dozen)
@@ -143,6 +156,9 @@ def format_match(m, idx, total, cfg):
         lines += [f"- {b}" for b in d.benefits]
     elif d.source == "네이버쇼핑":
         lines.append("💳 카드·쿠폰: API 미제공 → 상품페이지 '혜택' 확인")
+    if d.source == "알리익스프레스":
+        lines.append("💳 카드·쿠폰: 알리 앱 쿠폰/카드사 프로모션은 결제화면 확인")
+        lines.append("⚠️ 해외직구: 정품여부·배송비·도착일 확인")
     if d.naverpay and cfg["naver"]["plus_membership"]:
         rate = cfg["naver"]["plus_extra_rate"]
         lines.append(f"🟢 N+멤버십 적립대상(N페이 결제) · 약 {won(int(d.price * rate))}"
