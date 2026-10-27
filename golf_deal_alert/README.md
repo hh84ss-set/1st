@@ -13,7 +13,7 @@
 
 ```
 매시 17분  뽐뿌 RSS 수집 → 조건 충족 글을 state(Actions 캐시)에 쌓아 둠
-매일 08시  쌓인 뽐뿌 글 + 네이버쇼핑 검색 API → 필터 → 더즌당 최저가순 → 카카오톡
+매일 08시  쌓인 뽐뿌 글 (+ 네이버쇼핑 API, 키가 있을 때만) → 필터 → 더즌당 최저가순 → 카카오톡
 ```
 
 - 뽐뿌 RSS에는 최근 글만 담겨서, 하루 한 번만 읽으면 밤사이 올라온 딜을 놓칩니다. 그래서 매시간 모아 둡니다.
@@ -22,9 +22,10 @@
 
 ## 설정 (최초 1회)
 
-### 1. 네이버 검색 API
-1. [developers.naver.com](https://developers.naver.com) → 애플리케이션 등록 → 사용 API **검색** 선택
-2. Client ID / Secret → GitHub Secrets `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
+### 1. 네이버 쇼핑 검색 API (현재 사용 불가)
+네이버 쇼핑 검색 API는 2026-07-31 종료되어 신규 발급이 불가합니다(NAVER API HUB로도 이관되지 않음).
+기본값은 `naver.enabled = false` 이며 뽐뿌 RSS만으로 동작합니다. 기존 키가 있다면 Secrets
+`NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 를 등록하고 `enabled = true` 로 바꾸면 됩니다.
 
 ### 2. 카카오톡 나에게 보내기
 1. [developers.kakao.com](https://developers.kakao.com) → 내 애플리케이션 → 앱 추가

@@ -24,7 +24,9 @@ feeds = [
 ]
 
 [naver]
-enabled = true
+# 네이버 쇼핑 검색 API 는 2026-07-31 종료되어 신규 발급 불가 (대체 API 없음).
+# 기존에 발급받은 키가 있을 때만 true 로 켜세요.
+enabled = false
 display = 100
 queries = [
   "프로V1 골프공", "프로V1x 골프공", "타이틀리스트 AVX 골프공", "투어스피드 골프공",
