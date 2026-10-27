@@ -1,0 +1,55 @@
+name: golf-deal-search
+
+on:
+  # 버튼 실행: Actions → golf-deal-search → Run workflow → 결과는 실행 화면 Summary 에 표로 표시
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [search, collect]
+        default: search
+  # 백그라운드 수집: 커뮤니티 RSS 는 최근 글만 담겨서 매시간 모아 둔다 (알림 없음, 키 불필요)
+  schedule:
+    - cron: "17 * * * *"
+
+concurrency:
+  group: golf-deal-search
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: .state
+          key: golf-deal-state-${{ github.run_id }}
+          restore-keys: golf-deal-state-
+
+      - name: Run
+        env:
+          # 선택 사항: 키가 없으면 해당 소스만 건너뛴다
+          ALI_APP_KEY: ${{ secrets.ALI_APP_KEY }}
+          ALI_APP_SECRET: ${{ secrets.ALI_APP_SECRET }}
+          ALI_TRACKING_ID: ${{ secrets.ALI_TRACKING_ID }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          MODE: ${{ inputs.mode || 'collect' }}
+        run: python -m golf_deal_alert.alert --mode "$MODE" --state .state/state.json
+
+      - name: Save state
+        uses: actions/cache/save@v4
+        with:
+          path: .state
+          key: golf-deal-state-${{ github.run_id }}

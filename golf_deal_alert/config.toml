@@ -3,6 +3,8 @@
 [filter]
 # 더즌(12구)당 가격 상한
 max_price_per_dozen = 28000
+# 이 가격까지는 '아깝게 탈락'으로 참고 표시
+near_max_price_per_dozen = 35000
 # 이보다 싸면 '1슬리브 옵션가'가 대표가로 잡혔거나 로스트볼일 가능성이 높아 제외
 min_price_per_dozen = 10000
 # 허용 피스 수 (TaylorMade TP5/TP5x 는 5피스라 기본 제외 — 포함하려면 5 추가)
@@ -18,7 +20,7 @@ accessory_keywords = ["볼집게", "리트리버", "볼라이너", "거리측정
 
 [ppomppu]
 enabled = true
-# 뽐뿌게시판(국내) RSS. 매시간 수집해서 아침에 모아 보낸다.
+# 뽐뿌게시판(국내) RSS. RSS 는 최근 글만 담기므로 매시간 백그라운드로 모아 둔다.
 feeds = [
   "https://www.ppomppu.co.kr/rss.php?id=ppomppu",
 ]
@@ -60,12 +62,10 @@ plus_membership = true
 plus_extra_rate = 0.04
 
 [my_benefits]
-# 내가 가진 상시 혜택. N페이(스마트스토어) 딜에 함께 표시된다.
+# 내가 가진 상시 혜택. N페이(스마트스토어) 딜의 조건란에 함께 표시된다.
 # 예: "네이버현대카드 N페이 결제 시 추가 적립(전월실적 조건)"
 naverpay = []
 
-[notify]
-max_deals = 10        # 한 번에 보낼 최대 딜 수
-max_per_model = 3     # 같은 모델 최대 개수
-resend_after_days = 7 # 같은 딜은 가격이 내려가지 않는 한 이 기간 동안 다시 보내지 않음
-pending_hours = 26    # 뽐뿌 수집분 보관 시간
+[search]
+keep_hours = 72       # 백그라운드 수집분을 검색 결과에 포함하는 기간
+dealbada_pages = 3    # 버튼 검색 시 딜바다 게시판을 몇 쪽까지 읽을지

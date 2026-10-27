@@ -3,8 +3,8 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
-from golf_deal_alert import kakao
-from golf_deal_alert.alert import KST, build_messages, evaluate
+from golf_deal_alert import alert
+from golf_deal_alert.alert import KST, evaluate, render_report
 from golf_deal_alert.balls import classify
 from golf_deal_alert.parsing import extract_benefits, extract_price, extract_quantity
 from golf_deal_alert.sources import (Deal, ali_deals_from_json, ali_sign, dealbada_deals_from_list,
@@ -153,20 +153,39 @@ class MoreSourcesTest(unittest.TestCase):
             ali_deals_from_json({"error_response": {"code": "IncompleteSignature"}})
 
 
-class MessageTest(unittest.TestCase):
-    def test_split_limit(self):
-        long = "\n".join(f"- 조건 {i} " + "가" * 60 for i in range(10))
-        self.assertTrue(all(len(c) <= kakao.TEXT_LIMIT for c in kakao.split_text(long)))
-        self.assertEqual(kakao.split_text("a\nb"), ["a\nb"])
+class SearchReportTest(unittest.TestCase):
+    def run_search(self):
+        from unittest import mock
+        with mock.patch.object(alert, "fetch_ppomppu", lambda feeds, log: ppomppu_deals_from_rss(RSS)), \
+             mock.patch.object(alert, "fetch_dealbada",
+                               lambda boards, pages, log: dealbada_deals_from_list(DEALBADA_LIST, "golf")), \
+             mock.patch.object(alert, "enrich_benefits", lambda d, log: None):
+            state = {"pending": {}}
+            return alert.search(CFG, state, datetime(2026, 10, 27, 9, tzinfo=KST), log=lambda *_: None), state
 
-    def test_build(self):
-        d = deal("[네이버] 프로V1 2더즌 (50,000원)", 50000, naverpay=True,
-                 benefits=["삼성카드 7% 청구할인 " + "(조건)" * 30])
-        msgs = build_messages([evaluate(d, CFG)], CFG, datetime(2026, 10, 27, 8, tzinfo=KST))
-        self.assertTrue(all(len(t) <= kakao.TEXT_LIMIT for t, _ in msgs))
-        joined = "\n".join(t for t, _ in msgs)
-        self.assertIn("더즌당 25,000원", joined)
-        self.assertIn("N+멤버십", joined)
+    def test_search_and_report(self):
+        (hits, near, stats), state = self.run_search()
+        self.assertEqual([m.per_dozen for m in hits], [26500, 27000])
+        self.assertEqual(stats["뽐뿌"], 1)
+        report = render_report(hits, near, stats, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        self.assertIn("✅ 조건 충족 2건", report)
+        self.assertIn("네이버현대카드 5% 추가적립", report)
+        self.assertIn("N+멤버십", report)
+        self.assertEqual(len(state["pending"]), 2)
+
+    def test_near_miss(self):
+        d = deal("[쿠팡] 프로V1 1더즌 (32,000원/무료)", 32000)
+        self.assertIsNone(evaluate(d, CFG))
+        m = evaluate(d, CFG, CFG["filter"]["near_max_price_per_dozen"])
+        report = render_report([], [m], {}, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        self.assertIn("지금은 조건에 맞는 딜이 없습니다", report)
+        self.assertIn("아깝게 탈락", report)
+
+    def test_table_escapes_pipe(self):
+        m = evaluate(deal("[쿠팡] 프로V1 | 1더즌 (25,000원)", 25000), CFG)
+        report = render_report([m], [], {}, CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        row = [l for l in report.splitlines() if l.startswith("| 1 |")][0]
+        self.assertEqual(row.count("|"), 7)
 
 
 if __name__ == "__main__":

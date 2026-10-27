@@ -147,22 +147,25 @@ def post_body(html_text):
     return m.group(1) if m else ""
 
 
-def fetch_dealbada(boards, log=print):
-    deals = []
+def fetch_dealbada(boards, pages=1, log=print):
+    """RSS 가 있으면 RSS 로 최근 글을, 없거나 pages>1 이면 목록 페이지를 pages 쪽까지 읽는다."""
+    deals = {}
     for board in boards:
         try:
             raw = http_get(f"{DEALBADA}/bbs/rss.php?bo_table={board}")
             got = community_deals_from_rss(raw, "딜바다", "dealbada") if b"<item" in raw else []
         except Exception:
             got = []
-        if not got:  # RSS 미제공 게시판이면 목록 페이지 파싱
+        for page in range(1 if not got else 2, pages + 1):
             try:
-                got = dealbada_deals_from_list(
-                    decode(http_get(f"{DEALBADA}/bbs/board.php?bo_table={board}")), board)
+                html_text = decode(http_get(f"{DEALBADA}/bbs/board.php?bo_table={board}&page={page}"))
+                got += dealbada_deals_from_list(html_text, board)
             except Exception as e:
-                log(f"[warn] 딜바다 '{board}' 수집 실패: {e}")
-        deals += got
-    return deals
+                log(f"[warn] 딜바다 '{board}' {page}쪽 수집 실패: {e}")
+                break
+        for d in got:
+            deals.setdefault(d.key, d)
+    return list(deals.values())
 
 
 def enrich_benefits(deal, log=print):
