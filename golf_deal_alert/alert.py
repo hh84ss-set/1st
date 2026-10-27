@@ -32,6 +32,9 @@ class Match:
     per_dozen: int
 
 
+NO_PRICE = "제목에 가격 없음"
+
+
 def check(deal, cfg, max_price=None):
     """반환: (Match 또는 None, 탈락 사유). max_price 로 가격 상한만 바꿔 볼 수 있다."""
     f = cfg["filter"]
@@ -47,7 +50,7 @@ def check(deal, cfg, max_price=None):
     if not all(p in f["allowed_pieces"] for p in ball.pieces):
         return None, f"{ball.name} {ball.pieces_label}"
     if deal.price is None:
-        return None, "제목에 가격 없음"
+        return None, NO_PRICE
     qty, estimated = extract_quantity(deal.title)
     per_dozen = round(deal.price * 12 / qty)
     if per_dozen < f["min_price_per_dozen"]:
@@ -220,9 +223,17 @@ def render_report(hits, near, stats, rejected, cfg, now):
     if near:
         out += [f"### 🔸 아깝게 탈락 (더즌당 {won(f['max_price_per_dozen'] + 1)} ~ "
                 f"{won(f['near_max_price_per_dozen'])})", ""] + _table(near[:10]) + [""]
-    if rejected:
-        out += [f"<details><summary>이번에 읽은 골프공 관련 글 중 탈락 {len(rejected)}건 · 사유</summary>", ""]
-        out += [f"- [{_cell(d.title)[:60]}]({d.url}) — {reason}" for d, reason in rejected[:30]]
+    # 모델은 조건에 맞는데 제목에 가격이 없는 글(포럼 글 등)은 본문을 직접 봐야 한다
+    no_price = [(d, r) for d, r in rejected if r == NO_PRICE]
+    others = [(d, r) for d, r in rejected if r != NO_PRICE]
+    if no_price:
+        out += [f"### 🔎 가격 확인 필요 {len(no_price)}건 (모델은 조건 충족, 제목에 가격 없음)", ""]
+        out += [f"- {classify(d.title).name} — [{_cell(d.title)[:60]}]({d.url}) · {d.source}"
+                for d, _ in no_price[:15]]
+        out.append("")
+    if others:
+        out += [f"<details><summary>이번에 읽은 골프공 관련 글 중 탈락 {len(others)}건 · 사유</summary>", ""]
+        out += [f"- [{_cell(d.title)[:60]}]({d.url}) — {reason}" for d, reason in others[:30]]
         out += ["", "</details>", ""]
     else:
         out += ["_이번에 읽은 글 중 골프공 관련 글이 없었습니다._", ""]

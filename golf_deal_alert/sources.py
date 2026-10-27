@@ -132,6 +132,7 @@ def dealbada_deals_from_list(html_text, board):
     seen, deals = set(), []
     for href, wr_id, inner in re.findall(pattern, html_text, re.S | re.I):
         title = re.sub(r"\s+", " ", html_to_text(inner)).strip()
+        title = re.sub(r"\s*댓글\s*\d+\s*개$", "", title)
         if wr_id in seen or len(title) < 4 or "comment" in href:
             continue
         seen.add(wr_id)
