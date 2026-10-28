@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import tomllib
+import urllib.parse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -235,9 +236,29 @@ def render_report(hits, near, stats, rejected, cfg, now):
         out += [f"<details><summary>이번에 읽은 골프공 관련 글 중 탈락 {len(others)}건 · 사유</summary>", ""]
         out += [f"- [{_cell(d.title)[:60]}]({d.url}) — {reason}" for d, reason in others[:30]]
         out += ["", "</details>", ""]
-    else:
+    elif not no_price:
         out += ["_이번에 읽은 글 중 골프공 관련 글이 없었습니다._", ""]
-    return "\n".join(out)
+    return "\n".join(out + _link_section(cfg))
+
+
+NAVER_SEARCH = "https://search.shopping.naver.com/search/all?"
+ALI_SEARCH = "https://www.aliexpress.com/wholesale?"
+
+
+def _link_section(cfg):
+    """네이버쇼핑·알리는 자동 조회 수단이 없어 가격 낮은순 검색 링크로 대신한다."""
+    items = cfg.get("links", {}).get("items", [])
+    if not items:
+        return []
+    rows = ["### 🔗 직접 확인 · 가격 낮은순 검색", "",
+            "_네이버쇼핑·알리는 가격을 자동으로 읽지 못해 검색 링크만 제공합니다. "
+            "정렬이 풀려 있으면 '낮은 가격순'을 눌러 주세요._", "",
+            "| 모델 | 네이버쇼핑 | 알리익스프레스 |", "|---|---|---|"]
+    for it in items:
+        naver = NAVER_SEARCH + urllib.parse.urlencode({"query": it["naver"], "sort": "price_asc"})
+        ali = ALI_SEARCH + urllib.parse.urlencode({"SearchText": it["ali"], "SortType": "price_asc"})
+        rows.append(f"| {it['name']} | [{_cell(it['naver'])}]({naver}) | [{_cell(it['ali'])}]({ali}) |")
+    return rows + [""]
 
 
 def main(argv=None):

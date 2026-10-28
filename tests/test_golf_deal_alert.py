@@ -193,6 +193,18 @@ class SearchReportTest(unittest.TestCase):
         html_text = '<a href="./board.php?bo_table=forum_golf&amp;wr_id=1">커클랜드볼 6박스 댓글 8 개</a>'
         self.assertEqual(dealbada_deals_from_list(html_text, "forum_golf")[0].title, "커클랜드볼 6박스")
 
+    def test_link_section(self):
+        report = render_report([], [], {}, [], CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
+        self.assertIn("직접 확인", report)
+        self.assertIn("https://search.shopping.naver.com/search/all?query=%ED%94%84%EB%A1%9CV1", report)
+        self.assertIn("https://www.aliexpress.com/wholesale?SearchText=Titleist+Pro+V1+golf+balls&SortType=price_asc", report)
+
+    def test_no_price_only_does_not_claim_no_golf_posts(self):
+        d = deal("스릭슨 Z Star 반반공 할인 정보", None)
+        report = render_report([], [], {}, [(d, alert.check(d, CFG)[1])], CFG,
+                               datetime(2026, 10, 27, 9, tzinfo=KST))
+        self.assertNotIn("골프공 관련 글이 없었습니다", report)
+
     def test_table_escapes_pipe(self):
         m = evaluate(deal("[쿠팡] 프로V1 | 1더즌 (25,000원)", 25000), CFG)
         report = render_report([m], [], {}, [], CFG, datetime(2026, 10, 27, 9, tzinfo=KST))
