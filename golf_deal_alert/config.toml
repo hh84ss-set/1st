@@ -69,3 +69,39 @@ naverpay = []
 [search]
 keep_hours = 72       # 백그라운드 수집분을 검색 결과에 포함하는 기간
 dealbada_pages = 3    # 버튼 검색 시 딜바다 게시판을 몇 쪽까지 읽을지
+
+# 결과표 하단 '직접 확인' 링크 (네이버쇼핑·알리 가격 낮은순 검색)
+[[links.items]]
+name = "Titleist Pro V1 / V1x"
+naver = "프로V1 골프공 1더즌"
+ali = "Titleist Pro V1 golf balls"
+
+[[links.items]]
+name = "Callaway Chrome Soft"
+naver = "크롬소프트 골프공 1더즌"
+ali = "Callaway Chrome Soft golf balls"
+
+[[links.items]]
+name = "Srixon Z-Star"
+naver = "스릭슨 Z스타 골프공 1더즌"
+ali = "Srixon Z-Star golf balls"
+
+[[links.items]]
+name = "Bridgestone Tour B"
+naver = "브리지스톤 투어B 골프공 1더즌"
+ali = "Bridgestone Tour B golf balls"
+
+[[links.items]]
+name = "Kirkland Signature"
+naver = "커클랜드 골프공"
+ali = "Kirkland Signature golf balls"
+
+[[links.items]]
+name = "TaylorMade Tour Response"
+naver = "투어리스폰스 골프공 1더즌"
+ali = "TaylorMade Tour Response golf balls"
+
+[[links.items]]
+name = "우레탄 3·4피스 (브랜드 무관)"
+naver = "우레탄 3피스 골프공 1더즌"
+ali = "urethane 3 piece golf balls"
